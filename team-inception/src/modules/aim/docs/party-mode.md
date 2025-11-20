@@ -29,7 +29,7 @@ Type `/air:core:workflows:party-mode` (or `*party-mode` from any agent), and sud
 
 1. Party mode reads `{air_folder}/_cfg/agent-manifest.csv`
 2. Loads ALL installed agents (already includes your customizations from install)
-3. AIRchetipo Master orchestrates - picks 2-3 relevant agents per message based on topic
+3. Virgilio (AIRchetipo Master) orchestrates - picks 2-3 relevant agents per message based on topic
 4. Agents respond in character, can agree/disagree/build on each other's ideas
 5. Discussion continues until you type "exit" or reach natural conclusion
 
@@ -173,7 +173,7 @@ Party mode can include **19+ agents** from all installed modules:
 
 **AIB (1 agent):** AIRchetipo Builder
 
-**Core (1 agent):** AIRchetipo Master (orchestrator)
+**Core (1 agent):** Virgilio (orchestrator)
 
 **Custom:** Any agents you've created
 
@@ -203,10 +203,10 @@ Party mode can include **19+ agents** from all installed modules:
 Vary your questions or explicitly request other perspectives: "Game Designer, your thoughts?"
 
 **Discussion going in circles?**
-AIRchetipo Master will summarize and redirect, or you can make a decision and move on.
+Virgilio will summarize and redirect, or you can make a decision and move on.
 
 **Too many agents talking?**
-Make your topic more specific - AIRchetipo Master picks 2-3 agents based on relevance.
+Make your topic more specific - Virgilio picks 2-3 agents based on relevance.
 
 **Agents not using customizations?**
 Make sure you ran `npx airchetipo install` after creating customization files.

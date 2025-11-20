@@ -113,7 +113,7 @@ If sharded epics and working on Epic 3:
 ### CLI Command
 
 ```bash
-# Activate air-master or analyst agent, then:
+# Activate air-master (Virgilio) or analyst agent, then:
 /shard-doc
 ```
 

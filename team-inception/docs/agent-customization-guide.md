@@ -10,7 +10,7 @@ After installation, find agent customization files in:
 
 ```
 {air_folder}/_cfg/agents/
-├── core-air-master.customize.yaml
+├── core-air-master.customize.yaml  # Virgilio (AIRchetipo Master)
 ├── aim-dev.customize.yaml
 ├── aim-pm.customize.yaml
 └── ... (one file per installed agent)
@@ -31,7 +31,7 @@ npx airchetipo@alpha build <agent-name>
 
 # Examples:
 npx airchetipo@alpha build aim-dev
-npx airchetipo@alpha build core-air-master
+npx airchetipo@alpha build core-air-master  # Virgilio (AIRchetipo Master)
 npx airchetipo@alpha build aim-pm
 ```
 

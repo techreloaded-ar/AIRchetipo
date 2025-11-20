@@ -112,7 +112,7 @@ Automatically adjusts planning depth and documentation based on project needs:
 
 **🤖 6 Specialized Agents**
 
-PM • Strategist • Analyst • Architect • UX Designer • AIRchetipo Master (Orchestrator)
+PM • Strategist • Analyst • Architect • UX Designer • Virgilio (AIRchetipo Master)
 
 **📚 Documentation**
 
@@ -200,7 +200,7 @@ The installer provides:
 ```
 your-project/
 └── {air_folder}/
-    ├── core/         # Core framework + AIRchetipo Master agent
+    ├── core/         # Core framework + Virgilio (AIRchetipo Master) agent
     ├── aim/          # AIRchetipo (12 agents, 34 workflows)
     ├── aib/          # AIRchetipo Builder (1 agent, 7 workflows)
     └── _cfg/         # Your customizations (survives updates)

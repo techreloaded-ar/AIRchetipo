@@ -136,7 +136,7 @@ If you have documentation but files are huge (>500 lines, 10+ level 2 sections):
 1. **First:** Run `shard-doc` tool to split large files:
 
    ```bash
-   # Load AIRchetipo Master or any agent
+   # Load Virgilio (AIRchetipo Master) or any agent
    {air_folder}/core/tools/shard-doc.xml --input docs/massive-doc.md
    ```
 

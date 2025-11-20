@@ -157,13 +157,13 @@ Agent that designs system architecture, creates architecture documents, performs
 
 Agent that creates UX design documents, interaction patterns, and visual specifications for UI-heavy projects.
 
-### AIRchetipo Master
+### Virgilio (AIRchetipo Master)
 
 Meta-level orchestrator agent from AIRchetipo Core. Facilitates party mode, lists available tasks and workflows, and provides high-level guidance across all modules.
 
 ### Party Mode
 
-Multi-agent collaboration feature where all installed agents (from AIM, AIB, custom modules) discuss challenges together in real-time. AIRchetipo Master orchestrates, selecting 2-3 relevant agents per message for natural cross-talk and debate. Best for strategic decisions, creative brainstorming, cross-functional alignment, and complex problem-solving. See [Party Mode Guide](./party-mode.md).
+Multi-agent collaboration feature where all installed agents (from AIM, AIB, custom modules) discuss challenges together in real-time. Virgilio orchestrates, selecting 2-3 relevant agents per message for natural cross-talk and debate. Best for strategic decisions, creative brainstorming, cross-functional alignment, and complex problem-solving. See [Party Mode Guide](./party-mode.md).
 
 ---
 

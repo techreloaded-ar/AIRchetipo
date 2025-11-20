@@ -522,7 +522,7 @@ Trust your expertise - AIM supports your decisions.
 
 1. Run `/air:core:workflows:party-mode` (or `*party-mode` from any agent)
 2. Introduce your topic
-3. AIRchetipo Master selects 2-3 most relevant agents per message
+3. Virgilio selects 2-3 most relevant agents per message
 4. Agents cross-talk, debate, and build on each other's ideas
 
 **Best for:**

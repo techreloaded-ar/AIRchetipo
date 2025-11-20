@@ -38,9 +38,9 @@ The AIRchetipo Module (AIM) provides a comprehensive team of specialized AI agen
 
 **Meta (1 core agent):**
 
-- AIRchetipo Master (Orchestrator)
+- Virgilio (AIRchetipo Master)
 
-**Total:** 6 AIM agents + AIRchetipo Master + cross-module party mode support
+**Total:** 6 AIM agents + Virgilio + cross-module party mode support
 
 ---
 
@@ -235,9 +235,9 @@ The AIRchetipo Module (AIM) provides a comprehensive team of specialized AI agen
 
 ## Special Purpose Agents
 
-### AIRchetipo Master 🧙
+### Virgilio (AIRchetipo Master) 🧙
 
-**Role:** AIRchetipo Master Executor, Knowledge Custodian, and Workflow Orchestrator
+**Role:** Virgilio (AIRchetipo Master) Executor, Knowledge Custodian, and Workflow Orchestrator
 
 **When to Use:**
 
@@ -257,7 +257,7 @@ The AIRchetipo Module (AIM) provides a comprehensive team of specialized AI agen
 - `list-tasks` - Show all available tasks from task-manifest.csv
 - `list-workflows` - Show all available workflows from workflow-manifest.csv
 
-**Communication Style:** Direct and comprehensive. Refers to himself in third person ("AIRchetipo Master recommends..."). Expert-level communication focused on efficient execution. Presents information systematically using numbered lists.
+**Communication Style:** Direct and comprehensive. Refers to himself in third person ("Virgilio recommends..."). Expert-level communication focused on efficient execution. Presents information systematically using numbered lists.
 
 **Principles:**
 
@@ -286,7 +286,7 @@ Get all your installed agents in one conversation for multi-perspective discussi
 # OR from any agent: *party-mode
 ```
 
-**What happens:** AIRchetipo Master orchestrates 2-3 relevant agents per message. They discuss, debate, and collaborate in real-time.
+**What happens:** Virgilio orchestrates 2-3 relevant agents per message. They discuss, debate, and collaborate in real-time.
 
 **Best for:** Strategic decisions, creative brainstorming, post-mortems, sprint retrospectives, complex problem-solving.
 
@@ -616,14 +616,14 @@ Load PM or Architect → *correct-course
 
 Quick reference for agent selection:
 
-| Agent                 | Icon | Primary Phase   | Key Workflows                                 | Best For                            |
-| --------------------- | ---- | --------------- | --------------------------------------------- | ----------------------------------- |
-| **Strategist**        | 📊   | 1 (Analysis)    | brainstorm, brief, research, document-project | Discovery, requirements, brownfield |
-| **PM**                | 📋   | 2 (Planning)    | prd, tech-spec                                | Planning, requirements docs         |
-| **Analyst**           | 🔍   | 2 (Planning)    | create-epics-and-stories                      | Story crafting, PRD decomposition   |
-| **UX Designer**       | 🎨   | 2 (Planning)    | create-design, validate-design                | UX-heavy projects, design           |
-| **Architect**         | 🏗️   | 3 (Solutioning) | architecture, gate-check                      | Technical design, architecture      |
-| **AIRchetipo Master** | 🧙   | Meta            | party-mode, list tasks/workflows              | Orchestration, multi-agent          |
+| Agent           | Icon | Primary Phase   | Key Workflows                                 | Best For                            |
+| --------------- | ---- | --------------- | --------------------------------------------- | ----------------------------------- |
+| **Strategist**  | 📊   | 1 (Analysis)    | brainstorm, brief, research, document-project | Discovery, requirements, brownfield |
+| **PM**          | 📋   | 2 (Planning)    | prd, tech-spec                                | Planning, requirements docs         |
+| **Analyst**     | 🔍   | 2 (Planning)    | create-epics-and-stories                      | Story crafting, PRD decomposition   |
+| **UX Designer** | 🎨   | 2 (Planning)    | create-design, validate-design                | UX-heavy projects, design           |
+| **Architect**   | 🏗️   | 3 (Solutioning) | architecture, gate-check                      | Technical design, architecture      |
+| **Virgilio**    | 🧙   | Meta            | party-mode, list tasks/workflows              | Orchestration, multi-agent          |
 
 ### Agent Capabilities Summary
 
@@ -640,7 +640,7 @@ Quick reference for agent selection:
 
 **Meta (1 agent):**
 
-- AIRchetipo Master: Orchestration and party mode
+- Virgilio: Orchestration and party mode
 
 ---
 

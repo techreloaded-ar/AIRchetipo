@@ -87,7 +87,7 @@
     </check>
 
     <check if="discussion becomes circular or repetitive">
-      <action>The AIRchetipo Master will summarize</action>
+      <action>Virgilio (AIRchetipo Master) will summarize</action>
       <action>Redirect to new aspects or ask for user guidance</action>
     </check>
 
@@ -175,7 +175,7 @@
 ## Moderation Notes
 
 <moderation>
-  <note>If discussion becomes circular, have air-master summarize and redirect</note>
+  <note>If discussion becomes circular, have Virgilio summarize and redirect</note>
   <note>If user asks for specific agent, let that agent take primary lead</note>
   <note>Balance fun and productivity based on conversation tone</note>
   <note>Ensure all agents stay true to their merged personalities</note>

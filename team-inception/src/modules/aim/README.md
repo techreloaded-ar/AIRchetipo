@@ -33,7 +33,7 @@ aim/
 ### Agent Roster
 
 **Planning & Solutioning:** PM, Strategist, Architect, SM, UX Designer
-**Orchestration:** AIRchetipo Master (from Core)
+**Orchestration:** Virgilio (AIRchetipo Master) (from Core)
 
 👉 **[Full Agents Guide](./docs/agents-guide.md)** - Roles, workflows, and when to use each agent
 
