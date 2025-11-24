@@ -92,6 +92,111 @@ This becomes a thread that connects throughout the PRD.</action>
 <template-output>research_documents</template-output>
 </step>
 
+<step n="1.5" goal="Vision Articulation">
+<action>Build a clear, compelling vision statement
+
+Through conversation, extract:
+
+"Where do you see this product in 3-5 years?"
+"What change do you want to see in the world because of this product?"
+"What's the ultimate impact you're aiming for?"
+
+INTENT: Create a north star that guides all decisions
+
+Structure the vision:
+
+1. **Vision Statement** - One compelling sentence capturing the future state
+2. **Strategic Objectives** - 3-5 key objectives that move toward the vision
+3. **Long-term Impact** - The transformational change this product will create
+
+Connect vision to what makes it special:
+The vision should amplify the unique value proposition discovered in Step 1.</action>
+
+<template-output>vision_statement</template-output>
+<template-output>strategic_objectives</template-output>
+<template-output>long_term_impact</template-output>
+</step>
+
+<step n="1.6" goal="Business Model Canvas (Simplified)">
+<action>Create a simplified business model overview
+
+Through natural conversation, map out the key business elements:
+
+SIMPLIFIED CANVAS - Focus on 5 core areas:
+
+1. **Value Proposition** - What unique value does this create?
+2. **Customer Segments** - Who are the target customers? (will detail in Personas next)
+3. **Revenue Model** - How will this generate revenue/value?
+4. **Key Resources** - What critical resources are needed?
+5. **Cost Structure** - What are the main cost drivers?
+
+For B2C products: Focus on user value and engagement model
+For B2B products: Focus on business value and pricing tiers
+For internal tools: Focus on efficiency gains and resource optimization
+For open source: Focus on community value and sustainability
+
+Keep it high-level - this is strategic context, not a full business plan.</action>
+
+<template-output>business_model_canvas</template-output>
+</step>
+
+<step n="1.7" goal="Persona Definition">
+<action>Define the 2 primary user personas
+
+For each persona, create a rich profile through conversation:
+
+"Who are the main types of users for this product?"
+"What are their goals, frustrations, and contexts?"
+
+For each of 2 personas, capture:
+
+- **Name and Role** (fictional but representative)
+- **Background** - Context, experience level, environment
+- **Goals** - What they want to achieve
+- **Pain Points** - Current frustrations and challenges
+- **Behaviors** - How they work, what tools they use
+- **Motivations** - What drives them
+- **Tech Savviness** - Their comfort level with technology
+
+INTENT: Create empathy anchors for all design decisions
+
+These personas should reflect the customer segments from the Business Model Canvas.</action>
+
+<template-output>persona_1_name</template-output>
+<template-output>persona_1_profile</template-output>
+<template-output>persona_2_name</template-output>
+<template-output>persona_2_profile</template-output>
+</step>
+
+<step n="1.8" goal="Customer Journey Mapping">
+<action>Map the journey for each persona
+
+For each persona, map their journey with the product:
+
+JOURNEY STRUCTURE:
+
+1. **Awareness** - How do they discover the product?
+2. **Consideration** - What makes them consider using it?
+3. **First Use** - Their initial experience (critical!)
+4. **Regular Use** - How they engage day-to-day
+5. **Advocacy** - What makes them recommend it?
+
+For each stage, identify:
+
+- Key touchpoints
+- Emotions (frustrations, delights)
+- Opportunities for value delivery
+- Potential drop-off points
+
+INTENT: Understand the complete user experience from discovery to advocacy
+
+Connect journey stages to functional requirements:
+Each stage should inform what capabilities the product needs.</action>
+
+<template-output>persona_1_journey</template-output>
+<template-output>persona_2_journey</template-output>
+</step>
+
 <step n="2" goal="Success Definition">
 <action>Define what winning looks like for THIS specific product
 
@@ -445,49 +550,171 @@ Skip categories that don't apply!</action>
 </check>
 </step>
 
-<step n="10" goal="Review PRD and transition to epics">
-<action>Review the PRD we've built together
+<step n="9.5" goal="High-Level Architecture">
+<action>Define the technical architecture at a high level
 
-"Let's review what we've captured:
+INTENT: Provide architectural direction without over-specifying implementation details
 
-- Vision: [summary]
-- Success: [key metrics]
-- Scope: [MVP highlights]
-- Requirements: [count] functional, [count] non-functional
-- Special considerations: [domain/innovation]
+Through conversation, determine:
 
-Does this capture your product vision?"</action>
+"What kind of architecture are you envisioning?"
+"Are there technology preferences or constraints?"
+"What's the expected scale and complexity?"
 
-<template-output>prd_summary</template-output>
+ARCHITECTURE AREAS TO COVER:
 
-<action>After PRD review and refinement complete:
+1. **High-Level Architecture**
+   - Overall system architecture (monolith, microservices, serverless, etc.)
+   - Key components and their relationships
+   - Data flow and integration patterns
+   - Architectural diagram description (textual)
 
-"Excellent! Now we need to break these requirements into implementable epics and stories.
+2. **Technology Stack**
+   - Primary programming language(s)
+   - Frontend framework (if applicable)
+   - Backend framework
+   - API style (REST, GraphQL, gRPC, etc.)
 
-For the epic breakdown, you have two options:
+3. **Database and Persistence**
+   - Database type (relational, document, graph, time-series, etc.)
+   - Specific database technology (PostgreSQL, MongoDB, etc.)
+   - Data modeling approach
+   - Caching strategy if relevant
 
-1. Start a new session focused on epics (recommended for complex projects)
-2. Continue here (I'll transform requirements into epics now)
+4. **Frameworks and Libraries**
+   - Core frameworks for each layer
+   - Key libraries for critical functionality
+   - Development and build tools
 
-Which would you prefer?"
+5. **Infrastructure** (optional)
+   - Cloud provider preference (AWS, Azure, GCP, on-premise)
+   - Hosting approach (containers, serverless, VMs)
+   - CI/CD considerations
 
-If new session:
-"To start epic planning in a new session:
+ADAPTATION RULES:
 
-1. Save your work here
-2. Start fresh and run: workflow epics-stories
-3. It will load your PRD and create the epic breakdown
+- For MVPs: Favor proven, simple technologies
+- For scale: Consider distributed architecture early
+- For specific domains: Respect domain-specific tech (e.g., real-time needs WebSocket)
+- For regulated industries: Consider compliance requirements in tech choices
 
-This keeps each session focused and manageable."
+Connect architecture to requirements:
 
-If continue:
-"Let's continue with epic breakdown here..."
-[Proceed with epics-stories subworkflow]
-Set project_track based on workflow status (AIRchetipo or Enterprise Method)
-Generate epic_details for the epics breakdown document</action>
+- FRs drive what components are needed
+- NFRs drive how components are architected
+- Project type influences architectural patterns
 
-<template-output>project_track</template-output>
+Keep it high-level: Detailed technical decisions belong in the Architecture workflow.</action>
+
+<template-output>high_level_architecture</template-output>
+<template-output>technology_stack</template-output>
+<template-output>database_architecture</template-output>
+<template-output>frameworks_and_libraries</template-output>
+<check if="infrastructure discussed">
+<template-output>infrastructure_overview</template-output>
+</check>
+</step>
+
+<step n="10" goal="Epic Breakdown">
+<action>Transform functional requirements into implementable epics and high-level stories
+
+CRITICAL: Epics are the bridge between strategic requirements and tactical implementation
+
+EPIC BREAKDOWN PROCESS:
+
+1. **Review all Functional Requirements** from Step 8
+   - Group related FRs into logical capability domains
+   - Identify natural implementation boundaries
+
+2. **Create Epics** - Each epic should:
+   - Represent a significant capability area
+   - Deliver standalone value when completed
+   - Be implementable in 2-4 weeks (typical)
+   - Include 5-15 user stories
+
+3. **Define High-Level User Stories** for each epic:
+   - Use standard format: "As a [persona], I want [capability], so that [benefit]"
+   - Keep stories at high level (detailed AC comes later)
+   - Ensure stories cover all FRs
+   - Identify dependencies between stories
+
+4. **Prioritization**:
+   - Mark epics as MVP, Growth, or Vision (based on scope from Step 3)
+   - Order epics by dependency and value delivery
+   - Highlight critical path epics
+
+EPIC STRUCTURE:
+
+For each epic, provide:
+
+- Epic title and goal
+- Which FRs it implements
+- 5-15 high-level user stories
+- Dependencies on other epics
+- Estimated complexity (Small/Medium/Large)
+- Priority (MVP/Growth/Vision)
+
+STORY ALTITUDE:
+Stories should be high-level - detailed acceptance criteria come during UX and Architecture workflows.
+
+Example good story: "As a user, I can create and save custom reports"
+Example too detailed: "As a user, I can click the 'New Report' button, select from 5 chart types, configure X/Y axes with dropdowns, and save to LocalStorage with auto-generated UUID"
+
+COVERAGE VALIDATION:
+Before completing, verify every FR from Step 8 is covered by at least one story.
+Create an FR coverage map showing which epic/story implements each FR.</action>
+
+<template-output>epics_overview</template-output>
 <template-output>epic_details</template-output>
+</step>
+
+<step n="10.5" goal="Roadmap Planning">
+<action>Create a high-level roadmap that sequences epic delivery over time
+
+INTENT: Provide a strategic timeline without over-committing to specific dates
+
+ROADMAP STRUCTURE - Organize by PHASES, not specific dates:
+
+Think in phases/quarters rather than weeks:
+
+- **Phase 1 / Q1**: Foundation & MVP
+- **Phase 2 / Q2**: Growth Features
+- **Phase 3 / Q3**: Scale & Optimization
+- **Phase 4 / Q4**: Vision Features
+
+For each phase, define:
+
+1. **Goals** - What this phase achieves
+2. **Epics Included** - Which epics from Step 10 are delivered
+3. **Key Milestones** - Major achievements or releases
+4. **Success Metrics** - How to measure phase completion
+5. **Dependencies** - What must be complete from previous phases
+
+PRIORITIZATION PRINCIPLES:
+
+- Foundation first: Core capabilities that others depend on
+- Value early: Deliver user value as soon as possible
+- Risk early: Tackle unknowns and innovations early
+- Dependencies: Respect technical and functional dependencies
+- MVP completeness: Ensure Phase 1 delivers complete MVP from Step 3
+
+ADAPTATION RULES:
+
+- Startup MVP: 1-2 phases max, focus on proving concept
+- Enterprise product: 4-6 phases, include pilot and rollout
+- Internal tool: 2-3 phases, include training and adoption
+- Complex domain: Add validation/compliance phases
+
+Connect to scope:
+
+- MVP scope → Phase 1
+- Growth features → Phase 2-3
+- Vision features → Phase 3-4
+
+Keep it high-level and flexible:
+"This roadmap provides strategic direction. Specific timelines will depend on team velocity and priorities."</action>
+
+<template-output>roadmap_phases</template-output>
 </step>
 
 <step n="11" goal="Complete PRD and suggest next steps">
@@ -501,24 +728,33 @@ Generate epic_details for the epics breakdown document</action>
 
 <output>**✅ PRD Complete, {user_name}!**
 
-Your product requirements are documented and ready for implementation.
+Your comprehensive product requirements document is ready, including:
 
 **Created:**
 
-- **PRD.md** - Complete requirements adapted to {project_type} and {domain}
+- **PRD.md** - Complete requirements document including:
+  - Vision & Strategic Objectives
+  - Business Model
+  - User Personas & Customer Journeys
+  - Functional & Non-Functional Requirements
+  - High-Level Architecture
+  - Epic Breakdown with User Stories
+  - Roadmap
+
+All adapted to {project_type} and {domain}.
 
 **Next Steps:**
 
-1. **Epic Breakdown** (Required)
-   Run: `workflow create-epics-and-stories` to decompose requirements into implementable stories
+1. **UX Design** (If UI exists)
+   Run: `workflow ux-design` for detailed interaction design and prototyping
 
-2. **UX Design** (If UI exists)
-   Run: `workflow ux-design` for detailed user experience design
+2. **Detailed Architecture** (Recommended)
+   Run: `workflow create-architecture` for in-depth technical architecture decisions
 
-3. **Architecture** (Recommended)
-   Run: `workflow create-architecture` for technical architecture decisions
+3. **Story Refinement**
+   Use epics and stories from the PRD to start sprint planning and implementation
 
-What makes your product special - {product_value_summary} - is captured throughout the PRD and will guide all subsequent work.
+What makes your product special - {product_value_summary} - is woven throughout the PRD and will guide all design and development work.
 </output>
 </step>
 

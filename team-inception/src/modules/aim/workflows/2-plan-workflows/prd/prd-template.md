@@ -16,6 +16,50 @@
 
 ---
 
+## Vision
+
+{{vision_statement}}
+
+### Obiettivi Strategici
+
+{{strategic_objectives}}
+
+### Impatto a Lungo Termine
+
+{{long_term_impact}}
+
+---
+
+## Business Model
+
+{{business_model_canvas}}
+
+---
+
+## Target Users
+
+### Persona 1: {{persona_1_name}}
+
+{{persona_1_profile}}
+
+### Persona 2: {{persona_2_name}}
+
+{{persona_2_profile}}
+
+---
+
+## Customer Journey
+
+### Journey - {{persona_1_name}}
+
+{{persona_1_journey}}
+
+### Journey - {{persona_2_name}}
+
+{{persona_2_journey}}
+
+---
+
 ## Project Classification
 
 **Technical Type:** {{project_type}}
@@ -199,13 +243,42 @@ _No specific non-functional requirements identified for this project type._
 
 ---
 
-## Implementation Planning
+## Architettura di Massima
 
-### Epic Breakdown Required
+{{high_level_architecture}}
 
-Requirements must be decomposed into epics and bite-sized stories (200k context limit).
+### Stack Tecnologico Proposto
 
-**Next Step:** Run `workflow epics-stories` to create the implementation breakdown.
+{{technology_stack}}
+
+### Database e Persistenza
+
+{{database_architecture}}
+
+### Framework e Librerie Principali
+
+{{frameworks_and_libraries}}
+
+{{#if infrastructure_overview}}
+
+### Infrastruttura
+
+{{infrastructure_overview}}
+{{/if}}
+
+---
+
+## Epic Breakdown
+
+{{epics_overview}}
+
+{{epic_details}}
+
+---
+
+## Roadmap
+
+{{roadmap_phases}}
 
 ---
 
@@ -226,9 +299,9 @@ Requirements must be decomposed into epics and bite-sized stories (200k context 
 
 ## Next Steps
 
-1. **Epic & Story Breakdown** - Run: `workflow epics-stories`
-2. **UX Design** (if UI) - Run: `workflow ux-design`
-3. **Architecture** - Run: `workflow create-architecture`
+1. **UX Design** (if UI) - Run: `workflow ux-design` for detailed interaction design
+2. **Technical Architecture** - Run: `workflow create-architecture` for detailed technical decisions
+3. **Story Implementation** - Use epic breakdown above to start implementation planning
 
 ---
 
