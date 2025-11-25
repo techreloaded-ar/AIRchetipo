@@ -20,11 +20,11 @@
 
 {{vision_statement}}
 
-### Obiettivi Strategici
+### Strategic Objectives
 
 {{strategic_objectives}}
 
-### Impatto a Lungo Termine
+### Long-Term Impact
 
 {{long_term_impact}}
 
@@ -243,25 +243,25 @@ _No specific non-functional requirements identified for this project type._
 
 ---
 
-## Architettura di Massima
+## High-Level Architecture
 
 {{high_level_architecture}}
 
-### Stack Tecnologico Proposto
+### Proposed Technology Stack
 
 {{technology_stack}}
 
-### Database e Persistenza
+### Database and Persistence
 
 {{database_architecture}}
 
-### Framework e Librerie Principali
+### Main Frameworks and Libraries
 
 {{frameworks_and_libraries}}
 
 {{#if infrastructure_overview}}
 
-### Infrastruttura
+### Infrastructure
 
 {{infrastructure_overview}}
 {{/if}}
