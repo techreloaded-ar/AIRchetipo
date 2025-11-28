@@ -59,9 +59,9 @@
     4. ✅ Success Criteria
     5. 📦 Product Scope (MVP, Growth, Vision)
     6. 🏗️ Project Classification
-    7. ⚙️ Functional Requirements
-    8. 🚀 Non-Functional Requirements
-    9. 🏛️ High-Level Architecture
+    7. 📐 Technical Architecture
+    8. ⚙️ Functional Requirements
+    9. 🚀 Non-Functional Requirements
     10. 📋 Epic Breakdown
     11. 🗺️ Roadmap
 
@@ -80,19 +80,22 @@
 
   <substep n="3a" goal="Determine Discussion Phase and Relevant Agents">
     <action>Check PRD completeness tracker to determine current phase:</action>
-      - Phase 1: Discovery (Vision, Business Model, Personas, Journey)
-      - Phase 2: Requirements (Scope, FRs, NFRs, Project Classification)
-      - Phase 3: Planning (Architecture, Epics, Roadmap)
-      - Phase 4: Validation (Review completeness, fill gaps)
+      - Phase 1: Discovery (Vision, Business Model, Personas, Journey, Scope, Project Classification)
+      - Phase 2: Technical Architecture (MANDATORY - Architect leads)
+      - Phase 3: Requirements (FRs, NFRs, Domain-specific)
+      - Phase 4: Planning (Epics, Roadmap)
+      - Phase 5: Validation (Review completeness, fill gaps)
 
     <action>Select 2-3 most relevant agents for current phase:</action>
       - Phase 1: Product Manager, Strategist, UX Designer
-      - Phase 2: Product Manager, Architect, Analyst
-      - Phase 3: Architect, Product Manager, Analyst
-      - Phase 4: All agents for final review
+      - Phase 2: Architect MUST lead, Product Manager provides context
+      - Phase 3: Product Manager, Analyst, Architect (for technical feasibility)
+      - Phase 4: Architect, Product Manager, Analyst
+      - Phase 5: All agents for final review
 
     <action>Identify what information is still missing from checklist</action>
     <note>If user addresses specific agent by name, prioritize that agent</note>
+    <critical>Phase 2 (Technical Architecture) is MANDATORY and cannot be skipped. Architect must provide a complete architectural proposal before proceeding to Phase 3.</critical>
 
   </substep>
 
@@ -112,6 +115,45 @@
       - Challenge assumptions constructively
       - Offer insights based on their expertise
       - Connect different aspects of the product vision
+
+    <special-instructions for="Architect" phase="Phase 2: Technical Architecture">
+      <critical>When Phase 2 begins, Architect MUST take the lead and propose a complete technical architecture.</critical>
+
+      <action>Architect should:</action>
+        1. **Analyze** project type, domain, requirements, and constraints collected in Phase 1
+        2. **Propose** a concrete architectural pattern (e.g., "Modular Monolith", "Microservices", "Serverless")
+        3. **Specify** exact technologies with versions:
+           - Programming language(s) (e.g., "TypeScript 5.3 with Node.js 20.x")
+           - Backend framework (e.g., "NestJS 10.x" or "Express 4.18")
+           - Frontend framework if needed (e.g., "React 18.2 with Next.js 14")
+           - Database (e.g., "PostgreSQL 16 with Prisma ORM 5.x")
+        4. **Design** directory structure with clear organization pattern
+        5. **Define** development environment setup (Docker, local, cloud-based)
+        6. **Outline** build and CI/CD pipeline approach
+        7. **Specify** deployment strategy and infrastructure
+        8. **Justify** each major decision based on:
+           - Project requirements and constraints
+           - Scalability and performance needs
+           - Team expertise (if known) or industry best practices
+
+      <format>
+        Architect should present the architecture as a PROPOSAL, not questions:
+
+        "Based on what we've discussed, I propose the following architecture:
+
+        **System Architecture:** [Pattern with justification]
+        **Technology Stack:** [Specific technologies with versions]
+        **Database:** [Specific choice with rationale]
+        ...
+
+        This approach will [explain benefits for this specific project].
+
+        What do you think? Any constraints or preferences I should consider?"
+      </format>
+
+      <note>Architect can ask clarifying questions FIRST if critical information is missing, but MUST then provide a concrete proposal.</note>
+      <note>The proposal should be specific enough that a developer could start setting up the project immediately.</note>
+    </special-instructions>
 
     <action>Enable natural cross-talk between agents:</action>
       - Agents can reference each other by name
@@ -368,15 +410,90 @@
     </check>
   </section>
 
-  <section name="High-Level Architecture">
-    <action>Document architecture overview and technology choices</action>
-    <template-output>high_level_architecture</template-output>
-    <template-output>technology_stack</template-output>
-    <template-output>database_architecture</template-output>
-    <template-output>frameworks_and_libraries</template-output>
-    <check if="infrastructure discussed">
+  <section name="Technical Architecture">
+    <critical>This section is MANDATORY and must be complete. Architect is responsible for all architectural decisions.</critical>
+
+    <action>Document complete technical architecture proposed by the Architect</action>
+
+    <subsection name="System Architecture">
+      <template-output>high_level_architecture</template-output>
+      <template-output>architecture_pattern</template-output>
+      <template-output>architecture_components</template-output>
+    </subsection>
+
+    <subsection name="Technology Stack">
+      <template-output>technology_stack</template-output>
+      <template-output>programming_languages</template-output>
+      <template-output>backend_framework</template-output>
+      <check if="frontend exists">
+        <template-output>frontend_framework</template-output>
+      </check>
+    </subsection>
+
+    <subsection name="Database and Persistence">
+      <template-output>database_architecture</template-output>
+      <template-output>database_technology</template-output>
+      <template-output>data_modeling_approach</template-output>
+      <template-output>migration_strategy</template-output>
+    </subsection>
+
+    <subsection name="Frameworks and Libraries">
+      <template-output>frameworks_and_libraries</template-output>
+      <template-output>auth_libraries</template-output>
+      <template-output>api_libraries</template-output>
+      <template-output>testing_libraries</template-output>
+      <template-output>logging_libraries</template-output>
+      <template-output>validation_libraries</template-output>
+    </subsection>
+
+    <subsection name="Project Structure">
+      <template-output>directory_structure</template-output>
+      <template-output>code_organization_pattern</template-output>
+      <template-output>directory_layout_example</template-output>
+    </subsection>
+
+    <subsection name="Development Environment">
+      <template-output>development_environment</template-output>
+      <template-output>required_dev_tools</template-output>
+      <template-output>local_setup_approach</template-output>
+      <template-output>environment_config_management</template-output>
+    </subsection>
+
+    <subsection name="Build and CI/CD">
+      <template-output>build_pipeline</template-output>
+      <template-output>build_tool</template-output>
+      <template-output>testing_strategy_pipeline</template-output>
+      <template-output>deployment_automation</template-output>
+      <template-output>environment_promotion_strategy</template-output>
+    </subsection>
+
+    <subsection name="Deployment Strategy">
+      <template-output>deployment_strategy</template-output>
+      <template-output>target_infrastructure</template-output>
+      <template-output>containerization_approach</template-output>
+      <template-output>hosting_model</template-output>
+      <template-output>scaling_strategy</template-output>
+      <template-output>deployment_pattern</template-output>
+    </subsection>
+
+    <subsection name="Infrastructure">
       <template-output>infrastructure_overview</template-output>
-    </check>
+      <template-output>compute_resources</template-output>
+      <template-output>storage_solutions</template-output>
+      <template-output>networking_setup</template-output>
+      <check if="cdn needed">
+        <template-output>cdn_services</template-output>
+      </check>
+      <template-output>monitoring_tools</template-output>
+    </subsection>
+
+    <subsection name="Architecture Decisions">
+      <action>Document key architectural decisions and their rationale</action>
+      <template-output>architecture_decisions</template-output>
+    </subsection>
+
+    <note>All architectural choices must be concrete and specific (e.g., "Node.js 20.x with Express 4.18" not just "Node.js backend")</note>
+    <note>Architect must justify technology choices based on project requirements, scalability needs, and team constraints</note>
   </section>
 
   <section name="Epic Breakdown">
@@ -411,9 +528,9 @@
 
 <step n="5" goal="Present PRD and Exit Party Mode">
   <action>Have 2-3 agents celebrate the completion with characteristic responses</action>
-  <action>Presenta un menù post-PRD con i possibili passi successivi e chiedi all'utente di scegliere prima di concludere</action>
-  <action>Opzione 1: proporre la creazione di un backlog di user stories complete di acceptance criteria tramite `workflow create-epics-and-stories`</action>
-  <action>Opzione 2: proporre la generazione di un documento di architettura tecnica completo tramite `workflow architecture`</action>
+  <action>Present a menu with possible next steps and ask the user to choose before concluding</action>
+  <action>Option 1: propose the creation of a complete backlog (backlog.md) with epics, user stories, acceptance criteria, test scenarios, and technical notes via `workflow create-epics-and-stories`</action>
+  <action>Option 2: Complete the inception and exit from the party mode</action>
   <action>Descrivi l'output atteso per ogni opzione e attendi esplicitamente che l'utente risponda con la preferenza desiderata</action>
 
   <format>
@@ -446,8 +563,9 @@
 
     **Menù post-PRD (seleziona un'opzione):**
 
-    1. 📋 **Crea Backlog con User Stories + Acceptance Criteria**
-       - Output: documento dettagliato con epics, user stories e acceptance criteria pronti per la pianificazione
+    1. 📋 **Crea Product Backlog Completo**
+       - Output: backlog.md con epiche, user stories, acceptance criteria, test scenarios (edge cases + error handling), dipendenze e note tecniche
+       - Le stories sono ordinate per priorità (MVP first)
        - Esegui: `workflow create-epics-and-stories`
 
     2. 🏛️ **Crea Documento di Architettura Tecnica Completo**

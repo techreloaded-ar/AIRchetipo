@@ -1,6 +1,6 @@
 # {{project_name}} - Product Requirements Document
 
-**Author:** {{user_name}}
+**Author:** Archetipo
 **Date:** {{date}}
 **Version:** 1.0
 
@@ -243,28 +243,138 @@ _No specific non-functional requirements identified for this project type._
 
 ---
 
-## High-Level Architecture
+## Technical Architecture
+
+> **Proposed by:** Leonardo (Architect)
+
+### System Architecture
 
 {{high_level_architecture}}
 
-### Proposed Technology Stack
+**Architectural Pattern:** {{architecture_pattern}}
+
+**Key Components:**
+
+{{architecture_components}}
+
+### Technology Stack
 
 {{technology_stack}}
+
+**Programming Languages:**
+
+{{programming_languages}}
+
+**Backend Framework:**
+
+{{backend_framework}}
+
+{{#if frontend_framework}}
+
+**Frontend Framework:**
+
+{{frontend_framework}}
+{{/if}}
 
 ### Database and Persistence
 
 {{database_architecture}}
 
-### Main Frameworks and Libraries
+**Database Technology:** {{database_technology}}
+
+**Data Modeling Approach:** {{data_modeling_approach}}
+
+**Migration Strategy:** {{migration_strategy}}
+
+### Frameworks and Libraries
 
 {{frameworks_and_libraries}}
 
-{{#if infrastructure_overview}}
+**Core Libraries:**
 
-### Infrastructure
+- **Authentication/Authorization:** {{auth_libraries}}
+- **API Layer:** {{api_libraries}}
+- **Testing:** {{testing_libraries}}
+- **Logging/Monitoring:** {{logging_libraries}}
+- **Validation:** {{validation_libraries}}
+
+### Project Structure
+
+{{directory_structure}}
+
+**Code Organization:** {{code_organization_pattern}}
+
+**Example Directory Layout:**
+
+```text
+{{directory_layout_example}}
+```
+
+### Development Environment
+
+{{development_environment}}
+
+**Required Tools:**
+
+{{required_dev_tools}}
+
+**Local Setup:**
+
+{{local_setup_approach}}
+
+**Environment Configuration:**
+
+{{environment_config_management}}
+
+### Build & CI/CD Pipeline
+
+{{build_pipeline}}
+
+**Build Tool:** {{build_tool}}
+
+**Testing Strategy:**
+
+{{testing_strategy_pipeline}}
+
+**Deployment Automation:**
+
+{{deployment_automation}}
+
+**Environment Promotion:**
+
+{{environment_promotion_strategy}}
+
+### Deployment Strategy
+
+{{deployment_strategy}}
+
+**Target Infrastructure:** {{target_infrastructure}}
+
+**Containerization:** {{containerization_approach}}
+
+**Hosting Model:** {{hosting_model}}
+
+**Scaling Strategy:** {{scaling_strategy}}
+
+**Deployment Pattern:** {{deployment_pattern}}
+
+### Infrastructure Overview
 
 {{infrastructure_overview}}
+
+**Cloud Services:**
+
+- **Compute:** {{compute_resources}}
+- **Storage:** {{storage_solutions}}
+- **Networking:** {{networking_setup}}
+{{#if cdn_services}}
+- **CDN/Edge:** {{cdn_services}}
 {{/if}}
+- **Monitoring:** {{monitoring_tools}}
+
+### Architecture Decision Records
+
+{{architecture_decisions}}
 
 ---
 

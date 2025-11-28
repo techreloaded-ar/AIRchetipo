@@ -65,7 +65,56 @@ This checklist guides the party-mode agents to collect all necessary information
 - [ ] **Complexity Level** - Low, Medium, High, Critical
 - [ ] **Domain Context Summary** (if complex domain)
 
-### 8. Domain-Specific Requirements (if applicable)
+### 8. Technical Architecture (MANDATORY - Leonardo leads this section)
+
+Architect must propose a complete technical architecture based on the project requirements collected so far. This is NOT optional - every PRD must include a detailed architectural proposal.
+
+- [ ] **Overall System Architecture** - Architectural pattern (Monolith, Microservices, Serverless, Modular Monolith, etc.) with justification
+- [ ] **Key Components** - Main components/modules and their relationships (diagram description or detailed list)
+- [ ] **Technology Stack** - MUST include:
+  - Primary programming language(s) with version
+  - Backend framework(s) and version
+  - Frontend framework(s) and version (if applicable)
+  - Database technology and version
+- [ ] **Database Architecture** - MUST include:
+  - Database type (SQL/NoSQL/Hybrid) with specific technology
+  - Data modeling approach (relational, document, graph, etc.)
+  - Schema design principles
+- [ ] **Frameworks and Libraries** - Core libraries for:
+  - Authentication/Authorization
+  - API layer (REST/GraphQL/gRPC)
+  - Testing (unit, integration, e2e)
+  - Logging and monitoring
+- [ ] **Directory Structure** - Proposed project organization:
+  - Main folders and their purpose
+  - Code organization pattern (feature-based, layer-based, domain-driven)
+  - Configuration files location
+- [ ] **Development Environment** - MUST include:
+  - Required development tools
+  - Local development setup (Docker, VM, native)
+- [ ] **Build & CI/CD Pipeline** - MUST include:
+  - Build tool and process
+  - Testing strategy in pipeline
+  - Deployment automation approach
+- [ ] **Deployment Strategy** - MUST include:
+  - Target infrastructure (Cloud provider, on-premise, hybrid)
+  - Containerization approach (Docker, Kubernetes, etc.)
+  - Hosting model (VMs, containers, serverless, PaaS)
+- [ ] **Infrastructure Overview** - Cloud services and infrastructure components:
+  - Compute resources
+  - Storage solutions
+  - Networking setup
+  - CDN and edge services (if needed)
+  - Monitoring and observability tools
+
+**Architect's Responsibility:** Propose concrete, specific technologies and justify choices based on:
+
+- Project type and domain requirements
+- Scalability and performance needs
+- Budget constraints (if mentioned)
+- Time-to-market requirements
+
+### 9. Domain-Specific Requirements (if applicable)
 
 - [ ] **Regulatory Requirements**
 - [ ] **Compliance Needs**
@@ -140,16 +189,7 @@ Collect only those that matter for THIS product:
 - [ ] **Accessibility Requirements** (if broad audience)
 - [ ] **Integration Requirements** (if connecting systems)
 
-### 14. High-Level Architecture
-
-- [ ] **Overall System Architecture** - Monolith, microservices, serverless, etc.
-- [ ] **Key Components** - Main components and their relationships
-- [ ] **Technology Stack** - Primary languages, frameworks, database
-- [ ] **Database Architecture** - Type, technology, data modeling approach
-- [ ] **Frameworks and Libraries** - Core frameworks for each layer
-- [ ] **Infrastructure Overview** (optional) - Cloud provider, hosting approach
-
-### 15. Epic Breakdown
+### 14. Epic Breakdown
 
 - [ ] **Epics Overview** - Summary of all epics
 - [ ] **Epic Details** - For each epic:
@@ -160,7 +200,7 @@ Collect only those that matter for THIS product:
   - Estimated complexity (Small/Medium/Large)
   - Priority (MVP/Growth/Vision)
 
-### 16. Roadmap
+### 15. Roadmap
 
 - [ ] **Phase 1 (Q1)** - Foundation & MVP
 - [ ] **Phase 2 (Q2)** - Growth Features
@@ -187,7 +227,15 @@ Before generating the PRD, verify:
    - Product scope (at least MVP defined)
    - Project classification (type, domain, complexity)
    - At least 10 functional requirements
-   - High-level architecture
+   - **COMPLETE Technical Architecture** (Section 8 - ALL items mandatory):
+     - System architecture pattern with justification
+     - Technology stack (languages, frameworks, database with versions)
+     - Database architecture and modeling approach
+     - Core frameworks and libraries
+     - Directory structure proposal
+     - Development environment setup
+     - Build & CI/CD pipeline approach
+     - Deployment strategy with infrastructure details
 
 2. ✅ **Recommended Information** (Should have most of these):
    - 2 personas with customer journeys
@@ -202,7 +250,6 @@ Before generating the PRD, verify:
    - Domain-specific requirements
    - Innovation patterns
    - UX principles
-   - Infrastructure overview
 
 ## Agent Conversation Flow
 
@@ -211,21 +258,36 @@ Before generating the PRD, verify:
 Focus on understanding the product vision, users, and business context.
 Questions should be open-ended and exploratory.
 
-### Phase 2: Requirements (Steps 8-13 of checklist)
+### Phase 2: Technical Architecture (Step 8 of checklist - MANDATORY)
+
+**Leonardo (Architect) takes the lead here.**
+
+Based on project classification and requirements collected so far, Leonardo must propose a complete technical architecture including:
+
+- Concrete technology choices with versions
+- Architectural patterns and justifications
+- Directory structure and code organization
+- Development and deployment strategy
+
+This phase is MANDATORY and cannot be skipped. Leonardo should ask clarifying questions if needed but must provide a concrete proposal.
+
+### Phase 3: Requirements (Steps 9-13 of checklist)
 
 Focus on defining what the product must do and how well it must do it.
 Questions should be specific and technical.
 
-### Phase 3: Planning (Steps 14-16 of checklist)
+### Phase 4: Planning (Steps 14-15 of checklist)
 
-Focus on architecture, implementation strategy, and timeline.
+Focus on epic breakdown, implementation strategy, and timeline.
 Questions should be about feasibility and approach.
 
-### Phase 4: Validation
+### Phase 5: Validation
 
 Review all collected information for completeness and clarity.
 Fill any gaps with targeted questions.
 
-### Phase 5: Generation
+**CRITICAL CHECK:** Verify that Leonardo has provided a COMPLETE technical architecture proposal. If any architectural element is missing, Leonardo must complete it before proceeding to PRD generation.
+
+### Phase 6: Generation
 
 Synthesize all information and generate the PRD document.
