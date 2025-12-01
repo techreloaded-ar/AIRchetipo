@@ -40,18 +40,18 @@
   <action>Present the PRD information structure that will be collected</action>
 
   <format>
-    🎉 PARTY MODE ATTIVATO - CREAZIONE PRD! 🎉
+    🎉 PARTY MODE ACTIVATED - PRD CREATION 🎉
 
-    Gli agenti AIRchetipo collaboreranno per raccogliere tutte le informazioni necessarie
-    a creare un Product Requirements Document completo.
+    AIRchetipo agents will collaborate to gather every piece of information required
+    to produce a comprehensive Product Requirements Document.
 
-    **Agenti Partecipanti:**
+    **Participating Agents:**
     [For each agent in roster:]
     - [Icon] [Agent Name] ([Title]): [Role from merged data]
 
-    [Total count] agenti pronti a collaborare!
+    [Total count] agents stand ready to contribute!
 
-    **Struttura PRD che creeremo insieme:**
+    **PRD Structure We Will Build Together:**
 
     1. 🎯 Vision & Strategic Objectives
     2. 💼 Business Model
@@ -65,10 +65,10 @@
     10. 📋 Epic Breakdown
     11. 🗺️ Roadmap
 
-    Gli agenti ti faranno domande per raccogliere tutte queste informazioni.
-    Quando avremo tutto il necessario, genereremo automaticamente il tuo PRD completo!
+    Agents will ask focused questions to gather each section above.
+    Once we have everything we need, we will automatically generate your complete PRD!
 
-    **Iniziamo! Parlaci del prodotto che vuoi creare...**
+    **Let's begin! Tell us about the product you want to create...**
 
   </format>
 
@@ -271,11 +271,11 @@
   <action>Announce PRD generation with enthusiasm</action>
 
   <format>
-    🎊 **INFORMAZIONI COMPLETE!** 🎊
+    🎊 **ALL REQUIRED INFORMATION COLLECTED!** 🎊
 
-    Abbiamo raccolto tutte le informazioni necessarie per creare il tuo PRD!
+    We gathered every detail needed to create your PRD.
 
-    Gli agenti stanno ora sintetizzando tutto in un documento strutturato...
+    The agents are now synthesizing the conversation into a structured document...
 
   </format>
 
@@ -526,59 +526,108 @@
 <action>Use {document_output_language} for all document content</action>
 </step>
 
-<step n="5" goal="Present PRD and Exit Party Mode">
-  <action>Have 2-3 agents celebrate the completion with characteristic responses</action>
-  <action>Present a menu with possible next steps and ask the user to choose before concluding</action>
-  <action>Option 1: propose the creation of a complete backlog (backlog.md) with epics, user stories, acceptance criteria, test scenarios, and technical notes via `workflow create-epics-and-stories`</action>
-  <action>Option 2: Complete the inception and exit from the party mode</action>
-  <action>Descrivi l'output atteso per ogni opzione e attendi esplicitamente che l'utente risponda con la preferenza desiderata</action>
+<step n="5" goal="Transform the PRD into a complete product backlog">
+  <critical>Continue immediately after PRD generation and follow this backlog procedure without skipping any step.</critical>
+  <critical>This backlog phase transforms strategic functional requirements into bite-sized stories for development agents.</critical>
+  <critical>Every story must be completable by a single dev agent in one focused session.</critical>
+  <critical>This is a living document that evolves through later UX and Architecture workflows.</critical>
+  <critical>Communicate all responses in {communication_language} and generate backlog content in {document_output_language}.</critical>
+  <critical>Write to {{backlog_output_file}} continuously as you work, never waiting until the end.</critical>
+  <critical>Input documents mirror the dedicated backlog workflow: the PRD is mandatory, domain and product briefs are optional but should be loaded when available.</critical>
+
+  <action>Inform {user_name} that backlog creation has begun and reference {{default_output_file}} as the source of truth.</action>
+
+  <substep n="5a" goal="Load PRD and extract requirements">
+    <action>Load PRD.md (required) and attempt to load domain-brief.md and product-brief.md if present, supporting both whole and sharded documents.</action>
+    <action>Emphasize that PRD functional requirements (FR1, FR2, FR3...) are flat strategic capabilities that describe WHAT, not HOW.</action>
+    <action>Explain that this backlog step must map each FR to epics and stories, add implementation details, and enrich acceptance criteria.</action>
+    <action>Extract from the PRD: all functional requirements, non-functional requirements, domain considerations, project type and complexity, MVP/Growth/Vision scope, technical constraints, user types, and success criteria.</action>
+    <action>Produce a complete FR inventory list to ensure coverage (FR1: [description] ... FRN: [description]).</action>
+    <template-output>fr_inventory</template-output>
+  </substep>
+
+  <substep n="5b" goal="Propose epic structure from natural groupings">
+    <action>Identify organic epic boundaries by clustering related capabilities, journeys, business goals, compliance demands, and technical systems.</action>
+    <action>Name epics based on user or business value (e.g., "User Onboarding", "Content Discovery", "Compliance Framework"). Avoid technical-layer names.</action>
+    <action>Ensure each epic delivers independent value, contains 3-8 related capabilities, and can be delivered cohesively.</action>
+    <action>For greenfield projects, make Epic 1 a foundation epic covering setup, infrastructure, and deployment pipelines.</action>
+    <action>Map every FR from the inventory to at least one epic and highlight sequencing rationale.</action>
+    <template-output>epics_summary</template-output>
+    <template-output>fr_coverage_map</template-output>
+  </substep>
+
+  <substep n="5c" goal="Decompose each epic into bite-sized stories" repeat="for-each-epic">
+    <action>Remind everyone of the altitude shift: PRD FRs describe strategic outcomes, while stories in this step describe tactical implementation details.</action>
+    <action>For each epic, break work into small, vertically sliced stories with full UI, validation, performance, accessibility, and error-handling details.</action>
+    <action>Include implementation hints (libraries, APIs, data models), performance targets, edge cases, validation rules, error states, and accessibility criteria.</action>
+    <action>Epic 1 (Foundation) MUST start with project setup and environment initialization so that all later stories have a platform to build upon.</action>
+    <action>Each story follows this pattern:
+      As a [user type],
+      I want [capability],
+      So that [value/benefit].</action>
+    <action>Acceptance criteria must use BDD syntax (Given/When/Then) with at least two detailed criteria, preferably three.</action>
+    <action>Document prerequisites (only backward references), technical notes, dependencies, and explicit test scenarios including edge cases and error handling.</action>
+    <template-output>epic*title*{{N}}</template-output>
+    <template-output>epic*goal*{{N}}</template-output>
+    <action>For each story M in epic {{N}}, generate story content (user story, acceptance criteria, test scenarios, dependencies, technical notes).</action>
+    <template-output>story-title-{{N}}-{{M}}</template-output>
+  </substep>
+
+  <substep n="5d" goal="Review epic breakdown and validate coverage">
+    <action>Build an FR coverage matrix showing each FR mapped to its corresponding epic(s) and story(ies).</action>
+    <action>Confirm that every FR from the inventory is covered, that stories remain vertically sliced, and that sequencing has no forward dependencies.</action>
+    <action>Ensure acceptance criteria are testable, MVP scope is prioritized, and domain or compliance requirements are properly distributed.</action>
+    <action>Record that this backlog is the initial version and will be updated by UX and Architecture workflows before implementation.</action>
+    <template-output>epic_breakdown_summary</template-output>
+    <template-output>fr_coverage_matrix</template-output>
+  </substep>
+
+  <action>Summarize the backlog, highlight MVP-first ordering, and capture key insights that guide future UX and Architecture enrichment.</action>
+  <action>Count total epics and total stories for reporting.</action>
+  <template-output>backlog_summary</template-output>
+  <template-output>epic_count</template-output>
+  <template-output>story_count</template-output>
+  <template-output>backlog_final_summary</template-output>
+
+  <action>Apply backlog template: {{backlog_template}}</action>
+  <action>Write complete backlog to: {{backlog_output_file}}</action>
+  <action>Ensure all backlog template variables are populated and the document remains in {document_output_language}</action>
+</step>
+
+<step n="6" goal="Celebrate documentation and exit Party Mode">
+  <action>Have 2-3 agents celebrate completion with characteristic responses that highlight both the PRD and the backlog.</action>
+  <action>Summarize the generated artifacts and suggest logical follow-up workflows (e.g., architecture deep dive) without forcing the user to choose.</action>
 
   <format>
-    ✅ **PRD COMPLETO!** ✅
+    ✅ **PRD AND PRODUCT BACKLOG COMPLETE!** ✅
 
-    **[Icon] [Product Manager]:** [Enthusiastic acknowledgment of completed PRD]
+    **[Icon] [Product Manager]:** [Enthusiastic acknowledgment of the discovery and backlog work]
 
-    **[Icon] [Architect]:** [Technical validation comment]
+    **[Icon] [Architect]:** [Technical validation that scope and dependencies are ready for implementation]
 
-    **[Icon] [Strategist]:** [Strategic perspective on next steps]
-
-    ---
-
-    📄 **Il tuo PRD è stato creato con successo!**
-
-    **File generato:** {{default_output_file}}
-
-    **Contenuto del PRD:**
-    - ✅ Vision & Strategic Objectives
-    - ✅ Business Model
-    - ✅ User Personas & Customer Journeys
-    - ✅ Success Criteria
-    - ✅ Product Scope (MVP, Growth, Vision)
-    - ✅ Project Classification
-    - ✅ Functional Requirements
-    - ✅ Non-Functional Requirements
-    - ✅ High-Level Architecture
-    - ✅ Epic Breakdown with User Stories
-    - ✅ Roadmap
-
-    **Menù post-PRD (seleziona un'opzione):**
-
-    1. 📋 **Crea Product Backlog Completo**
-       - Output: backlog.md con epiche, user stories, acceptance criteria, test scenarios (edge cases + error handling), dipendenze e note tecniche
-       - Le stories sono ordinate per priorità (MVP first)
-       - Esegui: `workflow create-epics-and-stories`
-
-    2. 🏛️ **Crea Documento di Architettura Tecnica Completo**
-       - Output: architettura collaborativa con decisioni tecniche, stack e linee guida di implementazione
-       - Esegui: `workflow architecture`
-
-    Rispondi indicandomi 1 o 2 (puoi anche chiedere altro) e ti guiderò immediatamente nel percorso scelto.
+    **[Icon] [Strategist]:** [Strategic framing of how the backlog accelerates delivery]
 
     ---
 
-    🎊 **Grazie per questa fantastica sessione di discovery collaborativa!**
+    **Generated Files:**
+    - PRD: {{default_output_file}}
+    - Backlog: {{backlog_output_file}}
 
-    Il tuo prodotto - {product_value_summary} - ha ora una solida base documentale.
+    **PRD Includes:**
+    - Vision & Strategic Objectives, Business Model, Personas & Journeys, Success Criteria, Product Scope (MVP/Growth/Vision), Project Classification, Functional & Non-Functional Requirements, Technical Architecture, Epic Breakdown, Roadmap.
+
+    **Backlog Includes:**
+    - Epic proposals mapped to every FR.
+    - Bite-sized user stories with BDD acceptance criteria, test scenarios, dependencies, and technical notes.
+    - FR coverage matrix plus backlog summary statistics.
+
+    Next logical steps: run the architecture-focused workflow if deeper technical decisions are needed, or move directly into implementation planning with autonomous agents.
+
+    ---
+
+    🎊 **Thank you for an outstanding collaborative discovery!**
+
+    Your product {product_value_summary} now has both a comprehensive PRD and an actionable backlog.
 
   </format>
 

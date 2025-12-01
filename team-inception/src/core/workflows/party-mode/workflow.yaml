@@ -18,9 +18,11 @@ communication_language: "{config_source}:communication_language"
 document_output_language: "{config_source}:document_output_language"
 date: system-generated
 
-# Template for PRD generation
+# Templates for document generation
 prd_template: "{project-root}/{air_folder}/core/workflows/party-mode/prd-template.md"
 default_output_file: "{output_folder}/PRD.md"
+backlog_template: "{project-root}/{air_folder}/core/workflows/party-mode/create-epics-and-stories/requirements-template.md"
+backlog_output_file: "{output_folder}/requirements.md"
 
 # Instructions
 instructions: "{project-root}/{air_folder}/core/workflows/party-mode/instructions.md"
@@ -46,9 +48,11 @@ web_bundle:
   prd_checklist: "air/core/workflows/party-mode/prd-checklist.md"
   project_types: "air/core/workflows/party-mode/project-types.csv"
   domain_complexity: "air/core/workflows/party-mode/domain-complexity.csv"
+  backlog_template: "air/core/workflows/party-mode/requirements-template.md"
   web_bundle_files:
     - "{air_folder}/core/workflows/party-mode/instructions.md"
     - "{air_folder}/core/workflows/party-mode/prd-template.md"
     - "{air_folder}/core/workflows/party-mode/prd-checklist.md"
     - "{air_folder}/core/workflows/party-mode/project-types.csv"
     - "{air_folder}/core/workflows/party-mode/domain-complexity.csv"
+    - "{air_folder}/core/workflows/party-mode/requirements-template.md"
