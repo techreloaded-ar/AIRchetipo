@@ -17,6 +17,9 @@ This document provides the complete product backlog for {{project_name}}, with t
 - Total Epics: {{epic_count}}
 - Total User Stories: {{story_count}}
 
+> **Completion Rule:** Every epic and story must be fully detailed—no placeholders, "TBD" text, or one-line acceptance criteria.
+> **Symmetry Requirement:** The last epic in the backlog must have the same level of detail (stories, acceptance criteria, test scenarios, notes) as the first.
+
 ---
 
 ## Functional Requirements Inventory
@@ -57,6 +60,8 @@ So that {{value_benefit_N_M}}.
 
 **Acceptance Criteria (complete at least two; three recommended):**
 
+_Always cover happy path, validation failure, and edge/negative behavior._
+
 **Criterion 1**
 - **Given** {{precondition_1_N_M}}
 - **When** {{action_1_N_M}}
@@ -74,11 +79,17 @@ So that {{value_benefit_N_M}}.
 
 **Test Scenarios:**
 
+_List both positive flow and at least one edge/negative scenario with measurable outcomes._
+
 {{test_scenarios_N_M}}
 
 **Dependencies:** {{dependencies_N_M}}
 
+_Reference previous stories explicitly (e.g., "Story {{N}}.1")—do not list future work._
+
 **Technical Notes:** {{technical_notes_N_M}}
+
+_Call out validations, performance targets, accessibility, analytics, and integration points that developers must respect._
 
 ---
 

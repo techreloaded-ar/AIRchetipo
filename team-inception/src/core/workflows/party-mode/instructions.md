@@ -558,18 +558,31 @@
 
   <substep n="5c" goal="Decompose each epic into bite-sized stories" repeat="for-each-epic">
     <action>Remind everyone of the altitude shift: PRD FRs describe strategic outcomes, while stories in this step describe tactical implementation details.</action>
-    <action>For each epic, break work into small, vertically sliced stories with full UI, validation, performance, accessibility, and error-handling details.</action>
-    <action>Include implementation hints (libraries, APIs, data models), performance targets, edge cases, validation rules, error states, and accessibility criteria.</action>
-    <action>Epic 1 (Foundation) MUST start with project setup and environment initialization so that all later stories have a platform to build upon.</action>
+    <action>Each epic MUST be decomposed story-by-story using a 3-agent relay (Product Manager → UX Designer → Strategist/Architect). This sequence is mandatory for EVERY story from Epic 1 Story 1.1 to the final story of the backlog—no skipping, even if information feels repetitive.</action>
+    <action>For each epic, break work into small, vertically sliced stories with full UI, validation, performance, accessibility, and error-handling details. Epic 1 (Foundation) MUST start with project setup and environment initialization so that all later stories have a platform to build upon.</action>
     <action>Each story follows this pattern:
       As a [user type],
       I want [capability],
       So that [value/benefit].</action>
-    <action>Acceptance criteria must use BDD syntax (Given/When/Then) with at least two detailed criteria, preferably three.</action>
-    <action>Document prerequisites (only backward references), technical notes, dependencies, and explicit test scenarios including edge cases and error handling.</action>
+    <action>Execute the following phases sequentially for every story M in epic {{N}} before moving to story M+1:</action>
+    <action><strong>Phase 1 – Product Manager (Story Author):</strong>
+      - Draft the complete user story text.
+      - Produce at least 2 BDD acceptance criteria (Given/When/Then) covering happy path, validation failure, and edge/negative behavior.
+      - Define dependencies referencing only previous stories ("Story {{N}}.{{X}}") and initial technical notes (validations, data touchpoints, instrumentation needs).
+      - If any information is missing, STOP and ask {user_name} a targeted question referencing the specific story ID (e.g., "Need validation rules for Story {{N}}.{{M}}") before proceeding.</action>
+    <action><strong>Phase 2 – UX Designer (Interaction Guardian):</strong>
+      - Enrich acceptance criteria with interaction specifics, responsive breakpoints, accessibility requirements, and UX success metrics.
+      - Document explicit test scenarios listing both positive flow and at least one edge/negative scenario with measurable outcomes.
+      - Confirm prerequisites remain backward-only and that dependencies align with the user journey.
+      - If UX details are unclear, pause and request clarification from {user_name} naming the exact story.</action>
+    <action><strong>Phase 3 – Strategist/Architect (Quality Enforcer):</strong>
+      - Validate performance targets, integrations, compliance, data contracts, and telemetry/monitoring requirements inside the technical notes.
+      - Ensure the story remains vertically sliced and independently valuable.
+      - If gaps persist (e.g., missing API references, security constraints), send the story back to Phase 1 with explicit questions for {user_name} and do not continue until resolved.</action>
+    <action>Only after all three phases are complete may you finalize Story {{N}}.{{M}}. Then repeat the same three-phase sequence for Story {{N}}.{{M+1}}; never start the next story or epic without completing every phase for the current one.</action>
     <template-output>epic*title*{{N}}</template-output>
     <template-output>epic*goal*{{N}}</template-output>
-    <action>For each story M in epic {{N}}, generate story content (user story, acceptance criteria, test scenarios, dependencies, technical notes).</action>
+    <action>For each story M in epic {{N}}, generate story content (user story, acceptance criteria, test scenarios, dependencies, technical notes) based on the completed phases.</action>
     <template-output>story-title-{{N}}-{{M}}</template-output>
   </substep>
 
@@ -577,6 +590,8 @@
     <action>Build an FR coverage matrix showing each FR mapped to its corresponding epic(s) and story(ies).</action>
     <action>Confirm that every FR from the inventory is covered, that stories remain vertically sliced, and that sequencing has no forward dependencies.</action>
     <action>Ensure acceptance criteria are testable, MVP scope is prioritized, and domain or compliance requirements are properly distributed.</action>
+    <action><strong>Quality Gate – Symmetry Check:</strong> Compare the last epic and its stories to Epic 1. If ANY story lacks the 3-agent relay outputs (3+ BDD criteria, explicit test scenarios, dependencies, instrumentation-rich technical notes), immediately return to Substep 5c for that specific story and repeat the phases until the depth matches.</action>
+    <action>Document any follow-up questions that were asked during this gate so {user_name} sees how gaps were resolved.</action>
     <action>Record that this backlog is the initial version and will be updated by UX and Architecture workflows before implementation.</action>
     <template-output>epic_breakdown_summary</template-output>
     <template-output>fr_coverage_matrix</template-output>
