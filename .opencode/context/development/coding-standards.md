@@ -1,42 +1,50 @@
 # Coding Standards
 
-Questo file definisce gli standard di sviluppo universali per l'implementazione di user stories. Gli standard sono project-agnostic e si applicano a qualsiasi linguaggio o framework.
+This file defines the development standards. The standards are project-agnostic and apply to any language or framework.
 
 ---
+
+## Behavioral Guidelines
+
+- When you find discrepancies between testing and implementation, stop and always ask me which approach I prefer (modify testing vs. implementation) before proceeding.
+- Implement only what is requested, without adding extra features.
+- Always avoid testing and implementation at the same time. If you are modifying project files, do not modify test files, and vice versa.
+- Before modifying any files (test or implementation), always present the available options and wait for my approval.
+
 
 ## 1. Code Quality Standards
 
 ### Clean Code Principles
 
-**Nomenclatura:**
-- Nomi significativi e auto-esplicativi per variabili, funzioni, classi
-- Evitare abbreviazioni criptiche (usa `userRepository` non `usrRepo`)
-- Nomi di funzioni devono essere verbi (`getUserById`, `calculateTotal`)
-- Nomi di classi devono essere sostantivi (`User`, `OrderService`)
+**Naming:**
+- Use meaningful and self-explanatory names for variables, functions, and classes
+- Avoid cryptic abbreviations (use `userRepository`, not `usrRepo`)
+- Function names must be verbs (`getUserById`, `calculateTotal`)
+- Class names must be nouns (`User`, `OrderService`)
 
-**Funzioni:**
-- Funzioni brevi: massimo 20-30 righe
-- Una responsabilità per funzione (Single Responsibility)
-- Massimo 3-4 parametri per funzione
-- Evitare side effects nascosti
+**Functions:**
+- Keep functions short: maximum 20-30 lines
+- One responsibility per function (Single Responsibility)
+- Maximum 3-4 parameters per function
+- Avoid hidden side effects
 
-**Complessità:**
-- Evitare annidamenti profondi (max 3 livelli di if/for)
-- Preferire early returns per ridurre complessità
-- Estrarre logica complessa in funzioni separate
+**Complexity:**
+- Avoid deep nesting (max 3 levels of if/for)
+- Prefer early returns to reduce complexity
+- Extract complex logic into separate functions
 
 **DRY (Don't Repeat Yourself):**
-- No duplicazione di codice
-- Estrarre logica ripetuta in funzioni/utility
-- Riutilizzare componenti esistenti quando possibile
+- Do not duplicate code
+- Extract repeated logic into helper functions/utilities
+- Reuse existing components whenever possible
 
-### SOLID Principles (riferimento)
+### SOLID Principles (reference)
 
-- **S**ingle Responsibility: Una classe/funzione = una responsabilità
-- **O**pen/Closed: Aperto all'estensione, chiuso alla modifica
-- **L**iskov Substitution: Le sottoclassi devono sostituire le classi base
-- **I**nterface Segregation: Interfacce specifiche, non monolitiche
-- **D**ependency Inversion: Dipendere da astrazioni, non implementazioni concrete
+- **S**ingle Responsibility: One class/function = one responsibility
+- **O**pen/Closed: Open for extension, closed for modification
+- **L**iskov Substitution: Subclasses must substitute their base classes
+- **I**nterface Segregation: Prefer specific interfaces, not monolithic ones
+- **D**ependency Inversion: Depend on abstractions, not concrete implementations
 
 ---
 
@@ -44,17 +52,17 @@ Questo file definisce gli standard di sviluppo universali per l'implementazione 
 
 ### Test Structure (AAA Pattern)
 
-Ogni test deve seguire la struttura **Arrange-Act-Assert**:
+Every test must follow the **Arrange-Act-Assert** structure:
 
 ```
-// Arrange - Setup del contesto
+// Arrange - Set up the context
 const user = createTestUser({ role: 'admin' });
 const repository = new UserRepository();
 
-// Act - Esecuzione dell'azione da testare
+// Act - Execute the action under test
 const result = await repository.findById(user.id);
 
-// Assert - Verifica del risultato
+// Assert - Verify the result
 expect(result).toBeDefined();
 expect(result.id).toBe(user.id);
 expect(result.role).toBe('admin');
@@ -62,23 +70,19 @@ expect(result.role).toBe('admin');
 
 ### Coverage Expectations
 
-- **Unit tests**: Testare singole funzioni/metodi in isolamento
-- **Integration tests**: Testare interazioni tra componenti
-- **E2E tests**: Testare flussi completi utente
+**Priority:**
+- Cover all story acceptance criteria written in GHERKIN
+- Test the happy path (primary scenario)
+- Test error handling (input validation, expected errors)
+- Test edge cases (boundary conditions, limit values)
 
-**Priorità:**
-- Coprire tutti gli acceptance criteria GHERKIN della story
-- Testare happy path (scenario principale)
-- Testare error handling (validazione input, errori previsti)
-- Testare edge cases (boundary conditions, valori limite)
-
-**Target coverage:** Minimo 80% per nuovo codice (quando specificato dal progetto)
+**Target coverage:** Minimum 80% for code describing business logic.
 
 ### Test Naming Conventions
 
 **Pattern:** `should_ExpectedBehavior_When_Condition`
 
-Esempi:
+Examples:
 - `should_ReturnUser_When_ValidIdProvided`
 - `should_ThrowError_When_UserNotFound`
 - `should_RejectInvalidEmail_When_CreatingUser`
@@ -93,127 +97,52 @@ Esempi:
 
 ### Conventional Commits
 
-Seguire lo standard [Conventional Commits](https://www.conventionalcommits.org/):
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) standard:
 
 ```
 <type>(<scope>): TK-XXX - brief description
 
 - Implementation details (1-3 bullet points)
-- Files: list of main files changed
-- Tests: ✅ passing / ❌ failing (if applicable)
-
-🤖 Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 ### Commit Types
 
-- **feat**: Nuova funzionalità (la maggior parte dei task)
+- **feat**: New feature (most tasks)
 - **fix**: Bug fix
-- **refactor**: Ristrutturazione codice senza cambiare funzionalità
-- **test**: Aggiunta o modifica di test
-- **docs**: Modifiche alla documentazione
-- **chore**: Task di manutenzione (build, config, dependencies)
-- **perf**: Miglioramenti performance
-- **style**: Formattazione codice (whitespace, formatting, no logic change)
-
-### Scope
-
-Lo scope è la user story di riferimento (es: `US-005`, `US-012`)
-
-### Esempi Completi
-
-**Feature implementation:**
-```
-feat(US-005): TK-012 - Implement ISBN cataloging API endpoint
-
-- Created POST /api/books/isbn endpoint with OpenLibrary integration
-- Added validation for ISBN-10 and ISBN-13 formats
-- Implemented error handling for API failures
-- Files: src/books/books.controller.ts, src/books/isbn.service.ts, src/books/dto/isbn.dto.ts
-- Tests: ✅ passing (12 tests, 4 scenarios)
-
-🤖 Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-**Bug fix:**
-```
-fix(US-008): TK-025 - Fix date validation in book metadata form
-
-- Corrected regex pattern for ISO date format
-- Added edge case handling for leap years
-- Files: src/books/validators/date.validator.ts
-- Tests: ✅ passing (8 tests)
-
-🤖 Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-**Refactoring:**
-```
-refactor(US-003): TK-018 - Extract IP validation logic to utility
-
-- Moved IP whitelist validation from controller to utility
-- Improved testability and reusability
-- Files: src/auth/guards/ip.guard.ts, src/utils/ip-validator.util.ts
-- Tests: ✅ passing (6 tests)
-
-🤖 Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
----
+- **refactor**: Code restructuring without functionality changes
+- **test**: Adding or modifying tests
+- **docs**: Documentation changes
+- **chore**: Maintenance tasks (build, config, dependencies)
+- **perf**: Performance improvements
+- **style**: Code formatting (whitespace, formatting, no logic change)
 
 ## 4. Documentation Standards
 
-### Quando Aggiungere Commenti
+### When to Add Comments
 
-**Aggiungere commenti quando:**
-- Logica non ovvia o algoritmi complessi
-- Workaround per bug di librerie esterne
-- Decisioni architetturali non evidenti dal codice
-- Regex complesse o formule matematiche
-- Vincoli di business non ovvi
+**Add comments when:**
+- Logic is not obvious or algorithms are complex
+- Workarounds are needed for external library bugs
+- Architectural decisions are not evident from the code
+- Regexes or mathematical formulas are complex
+- Business constraints are not obvious
 
-**NON aggiungere commenti quando:**
-- Il codice è auto-esplicativo con buoni nomi
-- Si ripete semplicemente cosa fa il codice (ridondante)
-- Si può riscrivere il codice per renderlo più chiaro
+**DO NOT add comments when:**
+- Code is self-explanatory thanks to good naming
+- The comment merely restates what the code does (redundant)
+- The code can be rewritten to make it clearer
 
-**Esempio buono:**
+**Good example:**
 ```typescript
 // Workaround: OpenLibrary API sometimes returns 503 under load.
 // Retry with exponential backoff (max 3 attempts)
 const book = await retryWithBackoff(() => openLibraryApi.fetchByISBN(isbn), 3);
 ```
 
-**Esempio cattivo (non fare):**
+**Bad example (do not do this):**
 ```typescript
 // Increment counter by 1
 counter++;
-```
-
-### Dev Notes Format
-
-Dopo ogni task completato, aggiungere una entry nella sezione **Dev Notes** del file story:
-
-```markdown
-### TK-XXX Implementation (YYYY-MM-DD)
-
-**What was done:**
-- Breve descrizione (1-3 punti) dell'implementazione
-
-**Files changed:**
-- path/to/file1.ts (created/modified/deleted)
-- path/to/file2.ts (modified)
-
-**Tests:** ✅ All tests passing / ❌ Tests failing (with details)
-
-**Notes:** (opzionale)
-- Decisioni tecniche importanti
-- Problemi risolti
-- Miglioramenti futuri suggeriti
 ```
 
 ---
@@ -222,11 +151,11 @@ Dopo ogni task completato, aggiungere una entry nella sezione **Dev Notes** del 
 
 ### Graceful Degradation
 
-- Gestire sempre gli errori prevedibili
-- Fornire fallback quando possibile
-- Non lasciare l'applicazione in stato inconsistente
+- Always handle predictable errors
+- Provide fallbacks whenever possible
+- Do not leave the application in an inconsistent state
 
-**Esempio:**
+**Example:**
 ```typescript
 try {
   const bookData = await externalApi.fetchBookByISBN(isbn);
@@ -247,86 +176,39 @@ try {
 
 ### User-Friendly Error Messages
 
-- Messaggi chiari e comprensibili per l'utente finale
-- Evitare stack traces o dettagli tecnici nell'UI
-- Includere suggerimenti su come risolvere (quando possibile)
+- Provide clear, understandable messages for end users
+- Avoid stack traces or technical details in the UI
+- Include hints on how to resolve the issue whenever possible
 
-**Buono:**
+**Good:**
 ```
-"Impossibile trovare il libro. Verifica che l'ISBN sia corretto (formato: 978-0-123456-78-9)."
+"Unable to find the book. Verify the ISBN is correct (format: 978-0-123456-78-9)."
 ```
 
-**Cattivo:**
+**Bad:**
 ```
 "Error: ECONNREFUSED 127.0.0.1:3000"
 ```
 
 ### Logging Practices
 
-**Livelli di log:**
-- **ERROR**: Errori che richiedono attenzione immediata
-- **WARN**: Situazioni anomale ma gestite
-- **INFO**: Eventi importanti (startup, config changes, major operations)
-- **DEBUG**: Informazioni dettagliate per debugging
+**Log levels:**
+- **ERROR**: Errors requiring immediate attention
+- **WARN**: Anomalies that are handled
+- **INFO**: Important events (startup, config changes, major operations)
+- **DEBUG**: Detailed information for debugging
 
-**Cosa loggare:**
-- Errori con context (user ID, request ID, operation)
-- Operazioni critiche (login, purchase, data deletion)
-- Chiamate API esterne (request/response)
-- Performance metrics per operazioni lente
+**What to log:**
+- Errors with context (user ID, request ID, operation)
+- Critical operations (login, purchase, data deletion)
+- External API calls (request/response)
+- Performance metrics for slow operations
 
-**Cosa NON loggare:**
-- Password o token di autenticazione
-- Dati sensibili (numeri carta di credito, dati sanitari)
-- PII (Personally Identifiable Information) non necessaria
-
----
-
-## 6. Implementation Workflow
-
-Quando implementi un task, segui questo workflow:
-
-1. **Leggi Architecture Notes** della story per capire componenti e pattern
-2. **Leggi Acceptance Criteria** per capire comportamento atteso
-3. **Identifica file da creare/modificare** basandoti su architecture
-4. **Implementa in piccoli incrementi** testabili
-5. **Scrivi/aggiorna test** per coprire acceptance criteria
-6. **Esegui test** e verifica che passino
-7. **Commit** con messaggio conventional commits
-8. **Aggiorna Dev Notes** nel file story
+**What NOT to log:**
+- Passwords or authentication tokens
+- Sensitive data (credit card numbers, medical data)
+- Unnecessary PII (Personally Identifiable Information)
 
 ---
 
-## 7. Project-Specific Context
-
-Questo file fornisce standard universali. Per dettagli specifici del progetto (framework, librerie, architettura, API), fai riferimento al file **`docs/prd.md`** che viene iniettato nel contesto.
-
-Il PRD contiene:
-- Stack tecnologico (frontend/backend/database)
-- Struttura delle directory
-- Pattern architetturali specifici
-- Librerie e dipendenze utilizzate
-- Convenzioni specifiche del progetto
-
-**Quando c'è conflitto tra questo file e il PRD, il PRD ha priorità** in quanto contiene le specifiche del progetto corrente.
-
----
-
-## 8. Quality Checklist
-
-Prima di marcare un task come completato, verifica:
-
-- [ ] Il codice segue i clean code principles
-- [ ] I nomi di variabili/funzioni sono significativi
-- [ ] Non c'è duplicazione di codice (DRY)
-- [ ] Gli acceptance criteria GHERKIN sono coperti da test
-- [ ] I test passano (happy path + error cases + edge cases)
-- [ ] Gli errori sono gestiti gracefully
-- [ ] I messaggi di errore sono user-friendly
-- [ ] Il commit segue conventional commits format
-- [ ] Le Dev Notes sono aggiornate
-- [ ] Non ci sono warning del linter/compiler
-
----
-
-**Nota finale:** Questi standard sono linee guida, non regole rigide. Usa il buon senso e adatta quando necessario per il contesto specifico del task. L'obiettivo è codice pulito, manutenibile e testabile.
+**Final note:** These standards are guidelines, not rigid rules. Use good judgment and adapt them to the specific task context. The goal is clean, maintainable, and testable code.
