@@ -73,8 +73,34 @@ Test command:
   - The files to test are those with pending changes (modified, staged, or untracked).
   - Tests should cover the changes visible in these pending files.
 
-#### 2. Decide Whether New Tests Are Needed
-- Compare the identified scope (acceptance criteria if available, or code changes) with the current automated test coverage.
+#### 2. Read User Story Content and Technical Tasks
+
+**If a user story was specified as argument ($ARGUMENTS):**
+- Open `docs/backlog.md` and locate the story file path for the story described in $ARGUMENTS.
+- Open the corresponding story file `docs/stories/US-XXX-slug.md`.
+- Read the complete story content:
+  - **User Story** section: understand the user's goal and value proposition
+  - **Acceptance Criteria** section: these are the behaviors that MUST be validated by tests
+  - **Tasks** section: review ALL technical tasks to understand what was implemented
+- Identify test-related tasks by looking for keywords:
+  - "test" (unit tests, integration tests, e2e tests)
+  - "Jest", "Supertest", "Playwright"
+  - "Add tests", "Implement tests", "Write tests"
+  - Any task in the "Testing" category (typically TK-XXX tasks that mention testing frameworks)
+- Store the list of test-related task IDs (e.g., TK-005, TK-006, TK-007) for later marking.
+- **Use the Tasks section as context**: each completed task indicates functionality that needs test coverage.
+
+**If no argument was provided but current branch matches a story branch:**
+- Extract the story ID from the branch name (e.g., `feature/US-005` → `US-005`).
+- Open `docs/backlog.md` and find the corresponding story file path.
+- Follow the same process as above to read story content and identify test tasks.
+
+**If neither condition is met:**
+- Skip this step as there's no associated user story to reference.
+- Rely solely on code diff analysis to understand what needs testing.
+
+#### 3. Decide Whether New Tests Are Needed
+- Compare the identified scope (acceptance criteria if available, technical tasks or code changes) with the current automated test coverage.
 - If every criterion is already validated by existing tests and no regressions are possible, document the rationale, inform stakeholders that no new tests are required, and move directly to Phase 4 (Verification Loop).
 - Otherwise, proceed with the remaining phases to design and implement the necessary tests.
 
@@ -88,12 +114,14 @@ Test command:
 #### 5. Identify Test Surfaces
 - Use `git status` and focused diffs to enumerate the files touched by the @developer-agent so you know which components require validation.
 - Map each acceptance criterion to specific test types, files, or frameworks that must be updated.
+- Cross-reference with the technical tasks from step 2 to ensure all implemented functionality is covered.
 - Plan whether you will extend existing specs or introduce new test files, preferring to augment current suites when practical.
 
 ### Phase 3: Test Authoring
 
 #### 6. Design Test Cases
 - For every acceptance criterion, outline at least one positive and one negative path, plus edge cases that correspond to risky inputs observed in the diff.
+- Use the technical tasks as a guide to understand which components were modified and need testing.
 - Ensure tests clearly reflect user-facing behaviour rather than implementation details whenever possible.
 
 #### 7. Implement or Update Tests
@@ -116,33 +144,14 @@ Test command:
 
 ### Phase 5: Finalization
 
-#### 11. Read User Story and Identify Test Tasks
-**If a user story was specified as argument ($ARGUMENTS):**
-- Open `docs/backlog.md` and locate the story file path for the story described in $ARGUMENTS.
-- Open the corresponding story file `docs/stories/US-XXX-slug.md`.
-- Read the **Tasks** section and identify all test-related tasks by looking for keywords like:
-  - "test" (unit tests, integration tests, e2e tests)
-  - "Jest", "Supertest", "Playwright"
-  - "Add tests", "Implement tests", "Write tests"
-  - Any task in the "Testing" category (typically TK-XXX tasks that mention testing frameworks or testing activities)
-- Store the list of test-related task IDs (e.g., TK-005, TK-006, TK-007) for later marking.
-
-**If no argument was provided but current branch matches a story branch:**
-- Extract the story ID from the branch name (e.g., `feature/US-005` → `US-005`).
-- Open `docs/backlog.md` and find the corresponding story file path.
-- Follow the same process as above to identify test-related tasks.
-
-**If neither condition is met:**
-- Skip this step as there's no associated user story to update.
-
-#### 12. Confirm Completion
+#### 11. Confirm Completion
 - When the entire automated suite passes, record the results along with any notes about skipped or unnecessary tests.
 - Explicitly state that acceptance criteria are covered and reference the evidence (test files, command output) so reviewers can verify quickly.
 
-#### 13. Mark Test Tasks as Completed
-**If test-related tasks were identified in step 11:**
+#### 12. Mark Test Tasks as Completed
+**If test-related tasks were identified in Phase 1 (step 2):**
 - Open the story file `docs/stories/US-XXX-slug.md`.
-- For each test-related task ID identified in step 11:
+- For each test-related task ID identified in step 2:
   - Locate the task line in the **Tasks** section.
   - Change the checkbox from `- [ ] TK-XXX:` or `- [~] TK-XXX:` to `- [x] TK-XXX:`.
   - Add completion timestamp: `✅ YYYY-MM-DD` (use current date).
@@ -153,11 +162,12 @@ Test command:
 **If no test-related tasks were found:**
 - Inform the user that no test tasks were identified in the story to mark as completed.
 
-#### 14. Update Backlog Status
-Ask the user to confirm the completion of the story. 
-If the user confirms the completion, mark the story as completed by updating the story front matter (`Status: TODO/IN PROGRESS → DONE`) and the backlog entry (`- [ ]` → `- [x]`) with a single write per file.
+#### 13. Update Backlog Status
 
-#### 15. Commit and Handover
+**ALWAYS** Ask the user to confirm the completion of the story. 
+If the user confirms the completion, mark the story as completed by updating the story front matter (`Status: PLANNED/IN PROGRESS → DONE`) and the backlog entry (`- [ ]` → `- [x]`) with a single write per file.
+
+#### 14. Commit and Handover
 - Stage the test files, documentation, supporting fixtures, and the updated story file (if test tasks were marked).
 - Craft a commit message describing which acceptance criteria are now enforced and which test tasks were completed.
 - Share the commit hash and testing summary with the user, then mark the command as complete.

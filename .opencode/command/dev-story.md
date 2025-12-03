@@ -50,6 +50,22 @@ agent: developer-agent
   - Wait for user confirmation
 - Ensure story has at least one task in Tasks section
 
+#### 2.5. Update Story Status to IN PROGRESS
+
+**If story status is PLANNED, perform the following actions automatically, no confirmation needed:**
+- Open `docs/stories/US-XXX-slug.md`
+- Update the frontmatter field `Status: PLANNED` → `Status: IN PROGRESS`
+- Save the file
+- Open `docs/backlog.md`
+- Locate the story entry (search for `US-XXX`)
+- Change checkbox from `- [P] [US-XXX]` to `- [~] [US-XXX]`
+- Save the file
+- Report to user: `📝 Story US-XXX status updated to IN PROGRESS (story file + backlog)`
+
+**If story status is already IN PROGRESS:**
+- Skip this step (story was already started)
+- Continue normally
+
 #### 3. Set the execution mode
 
 Always ask how to proceed before starting implementation:
@@ -88,7 +104,12 @@ Choice (default 1):
 
 #### Step 1: Mark the task as "in progress" and announce it
 
-- Track the status locally (`taskProgress[TK-XXX] = "in-progress"`) without editing the markdown yet.
+- Track the status locally (`taskProgress[TK-XXX] = "in-progress"`).
+- **Update the markdown file** to reflect in-progress status:
+  - Open `docs/stories/US-XXX-slug.md`
+  - Locate the task line in the **Tasks** section
+  - Change checkbox from `- [ ] TK-XXX:` to `- [~] TK-XXX:` (tilde indicates in-progress)
+  - Save the file
 - Tell the user: `🔨 Starting TK-XXX · [short description]`.
 - **IMPORTANT:** In YOLO mode Immediately proceed to Step 2 (Analysis) without waiting for user confirmation. The announcement is informational only.
 - In Step-by-step mode, the pause happens AFTER task completion (Phase 4), not before starting.
@@ -137,7 +158,7 @@ Choice (default 1):
 
 1. Set `taskProgress[TK-XXX] = "done"` and prepare every markdown update in memory (checkbox + Dev Notes).
 2. Write the story file once applying:
-   - `- [ ]` → `- [x] TK-XXX: ... ✅ YYYY-MM-DD` (current date).
+   - `- [~]` → `- [x] TK-XXX: ... ✅ YYYY-MM-DD` (current date).
    - If `## Dev Notes` only has the placeholder, replace it with a real section; otherwise append:
 
      ```markdown
@@ -165,7 +186,18 @@ Choice (default 1):
 
 #### Actions
 
-1. Provide a closing summary:
+1. **Update Story Status to DONE:**
+   - Open `docs/stories/US-XXX-slug.md`
+   - Update the frontmatter field `Status: IN PROGRESS` → `Status: DONE`
+   - Save the file
+   - Open `docs/backlog.md`
+   - Locate the story entry (search for `US-XXX`)
+   - Change checkbox from `- [~] [US-XXX]` to `- [x] [US-XXX]`
+   - Add completion timestamp at the end of the line: `✅ YYYY-MM-DD`
+   - Save the file
+   - Report to user: `✅ Story US-XXX status updated to DONE (story file + backlog)`
+
+2. Provide a closing summary:
 
    ```text
    🎉 Story US-XXX completed!
@@ -174,8 +206,8 @@ Choice (default 1):
    📌 Next steps: Run tests with `/write-tests US-XXX` or write acceptance tests
    ```
 
-2. All changes have been committed incrementally (one commit per task).
-3. The feature branch is ready for review or merging.
+3. All changes have been committed incrementally (one commit per task).
+4. The feature branch is ready for review or merging.
 
 ---
 
