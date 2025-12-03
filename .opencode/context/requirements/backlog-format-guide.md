@@ -175,7 +175,7 @@ architect-agent: Genera task via /plan
     ↓
 [P] PLANNED (task pronti, implementabile)
     ↓
-developer-agent: Inizia implementazione via /implement-story
+developer-agent: Inizia implementazione via /dev-story
     ↓
 [~] IN PROGRESS (sviluppa task)
     ↓
@@ -188,7 +188,7 @@ Qualsiasi stato → [!] BLOCKED (se errori/dipendenze bloccano progresso)
 
 **Transizioni di stato:**
 - TODO → PLANNED: architect-agent genera sezione Tasks via `/plan`
-- PLANNED → IN PROGRESS: developer-agent inizia primo task via `/implement-story`
+- PLANNED → IN PROGRESS: developer-agent inizia primo task via `/dev-story`
 - IN PROGRESS → DONE: developer-agent completa ultimo task
 - Qualsiasi → BLOCKED: Errori o dipendenze impediscono progresso
 - BLOCKED → stato precedente: Issue risolto, ripresa lavoro

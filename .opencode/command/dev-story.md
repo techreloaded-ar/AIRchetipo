@@ -1,5 +1,5 @@
 ---
-name: implement-story
+name: dev-story
 agent: developer-agent
 ---
 
@@ -232,7 +232,7 @@ Please specify which story to implement.
 🎉 No TODO stories found in backlog. All done!
 
 If you need to implement a specific story, specify its ID:
-/implement-story US-XXX
+/dev-story US-XXX
 ```
 
 #### 3. Story Has No Tasks
@@ -248,7 +248,7 @@ You can edit: docs/stories/US-XXX-slug.md
 ❌ Git operation failed: <error message>
 
 Please resolve this manually and then:
-- Continue: /implement-story US-XXX (will resume from where it stopped)
+- Continue: /dev-story US-XXX (will resume from where it stopped)
 - Or fix the git issue and retry
 ```
 

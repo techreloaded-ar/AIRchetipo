@@ -1,5 +1,5 @@
 ---
-name: plan
+name: plan-story
 agent: architect-agent
 ---
 

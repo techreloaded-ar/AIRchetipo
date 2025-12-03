@@ -238,7 +238,7 @@ Questo cambio di stato segnala che la storia è ora pronta per lo sviluppo.
 
 Next steps:
 1. Rivedi i task nel file story: docs/stories/US-XXX-slug.md
-2. Esegui `/implement-story US-XXX` per iniziare lo sviluppo
+2. Esegui `/dev-story US-XXX` per iniziare lo sviluppo
 ```
 
 **If regenerating:**
