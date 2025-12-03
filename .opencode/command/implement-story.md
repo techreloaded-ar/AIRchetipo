@@ -62,7 +62,7 @@ Choice (default 1):
 
 **CRITICAL:** Execute Steps 1-3 continuously without pausing for user input. The only pause points are:
 
-- In Step-by-step mode: after Phase 5 (test outcome), ask before moving to next task
+- In Step-by-step mode: after task completion, ask before moving to next task
 - When you need clarification or encounter a blocker
 - When explicitly asking for approval (e.g., git operations, out-of-scope changes)
 
@@ -71,7 +71,7 @@ Choice (default 1):
 - Track the status locally (`taskProgress[TK-XXX] = "in-progress"`) without editing the markdown yet.
 - Tell the user: `🔨 Starting TK-XXX · [short description]`.
 - **IMPORTANT:** In YOLO mode Immediately proceed to Step 2 (Analysis) without waiting for user confirmation. The announcement is informational only.
-- In Step-by-step mode, the pause happens AFTER task completion (Phase 5), not before starting.
+- In Step-by-step mode, the pause happens AFTER task completion (Phase 4), not before starting.
 
 #### Step 2: Analyze the task requirements
 
@@ -108,27 +108,7 @@ Choice (default 1):
 
 ---
 
-### Phase 4: Testing
-
-#### Step 1: Decide whether to involve the tester
-
-1. Present a recap: story, completed tasks, touched files, intended test command.
-2. Mention whether a commit was created. If not, append the stored `pendingChangesSummary` (status + diff stat) so the tester sees local changes.
-3. Ask: "Should I call @tester-agent to generate/update the tests? (y/n)".
-4. If yes:
-   - Build a detailed prompt for `/write-tests` that includes story title, relevant acceptance criteria, modified files, any utilities to mock, and—when no commit exists—the `pendingChangesSummary` so the tester knows what is pending.
-   - Run `/write-tests "...context..."` and wait for it to finish.
-5. If no, note that tests will be provided by the user or are already up to date.
-
-#### Step 2: Run the test suite
-
-- Identify the correct command (from package.json or the docs). If unclear, ask the tester.
-- Execute the tests and keep a concise output plus the full log path (if long).
-- When multiple suites exist, start from the one closest to the changes and broaden coverage only if required.
-
-### Phase 5: Test Outcome Handling
-
-#### Case A: Tests PASS ✅
+### Phase 4: Task Completion
 
 **Actions:**
 
@@ -150,52 +130,13 @@ Choice (default 1):
    ```text
    ✅ TK-XXX completed
    📁 Files touched: file1.ts, file2.ts
-   🧪 Tests: command XYZ → PASS
    ```
 
 4. In Step-by-step mode ask if you should continue; otherwise move on automatically.
 
 ---
 
-#### Case B: Tests FAIL ❌ (first attempt)
-
-**Actions:**
-
-1. Keep `taskProgress[TK-XXX] = "in-progress"` (do not update the story file until a decision is made).
-2. Record a Dev Notes block (single write) containing:
-
-   ```markdown
-   ### TK-XXX · YYYY-MM-DD
-
-   **Status:** ❌ Tests failing
-   **Implemented:**
-   - Summary from `localTaskNotes`
-   **Files:**
-   - path/to/file1.ext (created/modified)
-   **Test output (excerpt):**
-   [main error details]
-   ```
-
-3. Summarize for the user:
-
-   ```text
-   ❌ TK-XXX: tests failing (command XYZ)
-   Error: [short description]
-
-   How should we proceed?
-   1. Try another approach (describe it)
-   2. User will handle it / mark for review
-   3. Mark the task as ⚠️ blocked
-   ```
-
-4. Apply the chosen path:
-   - **1. New attempt:** collect the additional guidance, implement it, rerun the tests.
-   - **2. Manual fix:** leave the task as in-progress and explain how to resume later.
-   - **3. Blocked:** update the story file with `- [!] TK-XXX: ... ⚠️ Blocked - reason` and log it in Dev Notes.
-
----
-
-### Phase 6: Story Completion
+### Phase 5: Story Completion
 
 **Trigger:** All entries in `taskProgress` are `done`.
 
@@ -247,21 +188,7 @@ Please add tasks to the story before implementing.
 You can edit: docs/stories/US-XXX-slug.md
 ```
 
-#### 4. Test Framework Not Detected
-```
-⚠️ I couldn't auto-detect the test command for this project.
-
-Searched in:
-- package.json, pom.xml, build.gradle, Cargo.toml, go.mod, etc.
-- README.md, CONTRIBUTING.md, Makefile
-
-Please specify how to run tests:
-Examples: "npm test", "pytest", "gradle test", "make test"
-
-Test command:
-```
-
-#### 5. Git Operation Failed
+#### 4. Git Operation Failed
 ```
 ❌ Git operation failed: <error message>
 
@@ -270,7 +197,7 @@ Please resolve this manually and then:
 - Or fix the git issue and retry
 ```
 
-#### 6. Branch Already Exists
+#### 5. Branch Already Exists
 ```
 ⚠️ Branch feature/US-XXX-slug already exists
 
@@ -281,7 +208,7 @@ Options:
 Your choice:
 ```
 
-#### 7. File Write Error
+#### 6. File Write Error
 ```
 ❌ Couldn't update file <path>: <error>
 
