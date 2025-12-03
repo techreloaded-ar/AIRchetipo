@@ -27,6 +27,17 @@
 - Introduzione e decisione dei case study
 - Introduzione al Custom GPT AIRchetipo
 
+Possibili case study:
+
+>  **Mappa Scambio Libri**\
+Mettere in contatto lettori che vogliono scambiare libri usati, non venderli  
+
+> **Pet Sitter Finder**\
+Trovare un pet sitter affidabile e ben recensito vicino a casa per una data specifica  
+
+> **Delivery farmaci a domicilio**\
+Ricevere in poco tempo i farmaci desiderati senza muoversi di casa  
+
 ---
 
 ### 💡 10:30 - 11:30 | Inception
@@ -70,7 +81,7 @@ Leggi il PRD e i requirements  dentro /docs, quindi crea un context 'tech-stack'
 
 ---
 
-## 13:00 - 14:30 | ☕ Pausa Pranzo
+## 13:00 - 14:00 | ☕ Pausa Pranzo
 
 **Durata:** 60 minuti
 

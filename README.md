@@ -53,15 +53,12 @@ scaricherà e lo installerà automaticamente.
 ### 3.1. Installazione
 
 Apri il file di configurazione globale di OpenCode (solitamente
-`~/.config/opencode/opencode.json`  e segui le istruzioni fornite sulla [documentazione ufficiale](https://github.com/numman-ali/opencode-openai-codex-auth?tab=readme-ov-file#installation).
+`~/.config/opencode/opencode.json`)  e copia al suo interno il contenuto del file [`full-opencode.json`](https://github.com/numman-ali/opencode-openai-codex-auth/blob/main/config/full-opencode.json) proveniente dal repository del plugin.
 
 
 Al primo avvio, OpenCode scaricherà e installerà automaticamente il
 plugin.
 
-**Nota:** Se desideri abilitare tutte le varianti di ragionamento (Low,
-Medium, High) per Codex, consulta la sezione "Recommended: Full
-Configuration" nel README ufficiale del plugin.
 
 ### 3.2. Autenticazione (Login OAuth)
 
@@ -87,37 +84,7 @@ Esegui `Ctrl + X, M` per aprire il menù di selezione del modello
 Scegli l'opzione **"OpenAI GPT 5.1 Codex Medium (OAuth)"**.
 
 
-
-## 4. 🗃️ Inizializzazione del Repository Git
-
-Per iniziare il controllo versione del tuo progetto:
-
-### 4.1. Crea e Inizializza il Progetto
-
-Apri il terminale, crea la cartella di progetto e inizializza Git:
-
-```bash
-    # Crea e vai alla cartella di progetto
-    mkdir IlMioProgetto
-    cd IlMioProgetto
-
-    # Inizializza un repository Git locale
-    git init
-```
-
-### 4.2. (Opzionale) - Configurazione del Repository Remoto
-
-Per collegare il progetto a un repository remoto (es. su GitHub):
-
-```bash
-    # Collega il repository locale a quello remoto (sostituisci l'URL)
-    git remote add origin <URL_DEL_TUO_REPO>
-
-    # Rinomina il branch principale
-    git branch -M main
-```
-
-## 5. ▶️ Comandi per Iniziare a Sviluppare
+## 4. ▶️ Comandi per Iniziare a Sviluppare
 
 Per aprire il progetto e iniziare a lavorare con OpenCode
 
