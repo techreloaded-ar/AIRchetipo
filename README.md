@@ -55,6 +55,20 @@ scaricherà e lo installerà automaticamente.
 Apri il file di configurazione globale di OpenCode (solitamente
 `~/.config/opencode/opencode.json`)  e copia al suo interno il contenuto del file [`full-opencode.json`](https://github.com/numman-ali/opencode-openai-codex-auth/blob/main/config/full-opencode.json) proveniente dal repository del plugin.
 
+Aggiungi questa chiave di configurazione nel file `~/.config/opencode/opencode.json`
+
+```json
+
+"mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}
+
+```
+
 
 Al primo avvio, OpenCode scaricherà e installerà automaticamente il
 plugin.
