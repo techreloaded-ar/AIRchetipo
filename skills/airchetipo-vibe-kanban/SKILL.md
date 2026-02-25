@@ -200,6 +200,14 @@ Assign a priority to every story using these criteria:
 
 Emanuele validates story ordering within each epic for technical dependency sequencing (e.g., "create entity" must come before "edit entity").
 
+**Blocking dependency tracking:** For every pair of stories where one must be completed before the other can start, Emanuele records a blocking dependency internally using this format:
+
+```
+US-XXX blocks US-YYY — [one-line reason]
+```
+
+Only direct, hard dependencies qualify as blocking (i.e., the dependent story literally cannot be implemented without the blocker being done first). Loose ordering preferences do not qualify.
+
 The final ordered list to be created on Vibe Kanban must follow this sequence:
 1. All HIGH priority stories, ordered by epic and dependency
 2. All MEDIUM priority stories, ordered by epic and dependency
@@ -230,7 +238,33 @@ Show progress to the user during creation:
   ✅ US-00N: [title] (LOW)
 ```
 
-After all tasks are created, output the final summary:
+---
+
+### PHASE 5.2 — Relationship Creation on Vibe Kanban
+
+**Main agent:** Emanuele 🔎
+
+After all issues have been created, use the blocking dependencies recorded in Phase 4 to create relationships between issues using `vibe_kanban_create_issue_relationship` with `relationship_type: "blocking"`.
+
+**Rules:**
+- Only create `blocking` relationships — do not create `related` or `has_duplicate` relationships
+- Use the Vibe Kanban issue IDs returned by `vibe_kanban_create_issue` during Phase 5.1 — never guess or hardcode IDs
+- If a blocking dependency involves a story that was split in Phase 3, apply the relationship to the most appropriate sub-story (typically the first sub-story of the blocker and the first sub-story of the dependent)
+- Skip any dependency where either issue was not successfully created
+
+Show progress to the user during relationship creation:
+
+```
+🔗 Creating blocking relationships...
+
+  ✅ US-001 → blocks → US-003: [one-line reason]
+  ✅ US-002 → blocks → US-005: [one-line reason]
+  ...
+
+  (No blocking relationships identified.)   ← use this line if there are none
+```
+
+After all relationships are created, output the final summary:
 
 ```
 ✅ Backlog created on Vibe Kanban!
@@ -244,6 +278,7 @@ After all tasks are created, output the final summary:
 - HIGH priority: N stories
 - MEDIUM priority: N stories
 - LOW priority: N stories
+- Blocking relationships created: N
 
 All tasks have been created in priority order. Happy building! 🚀
 ```
@@ -260,6 +295,7 @@ Before creating any task, Emanuele runs an internal checklist:
 - [ ] No story has more than 4 acceptance criteria
 - [ ] Acceptance criteria describe behavior, not implementation
 - [ ] HIGH priority stories are created before MEDIUM and LOW
+- [ ] Blocking relationships created for all hard dependencies identified in Phase 4
 - [ ] No duplicate stories
 
 ---
