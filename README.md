@@ -1,113 +1,68 @@
-# 🚀 Guida alla Configurazione dell'Ambiente di Sviluppo
+# AIRchetipo
 
-Questa guida illustra i passaggi necessari per configurare l'ambiente di
-sviluppo, installare le dipendenze essenziali e configurare l'IDE
-OpenCode con il plugin di autenticazione OpenAI.
+AIRchetipo è un set di skill per AI coding agent che supportano il processo di ideazione, analisi e pianificazione di un progetto software.
 
-## 1. 🌳 Scaffolding
+### Skill incluse
 
-Apri un terminale e posizionati nella cartella in cui desideri creare il progetto.
+- **airchetipo-inception** — Facilitazione interattiva per la definizione del prodotto e generazione del PRD
+- **airchetipo-backlog** — Generazione del backlog a partire dal PRD
+- **airchetipo-vibe-kanban** — Gestione issue su Vibe Kanban a partire dal backlog
 
-(es. `C:\users\nome_utente\repo`)
+### Tool supportati
 
-Lancia il comando per creare il progetto:
+- Claude Code
+- Codex
+- Gemini CLI
+- OpenCode
+- GitHub Copilot
 
-Su Windows
+---
 
-```ps
+## Installazione
 
-$Project = "<Nome Progetto>"; curl.exe -sL "https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo_dist/refs/heads/main/install_airchetipo.ps1" -o install.ps1 `
-&& powershell -ExecutionPolicy Bypass -File .\install.ps1 --Project $Project `
-&& Remove-Item install.ps1
+### Prerequisiti
 
-```
+- **macOS**: `curl` e `unzip` (presenti di default)
+- **Windows**: PowerShell 5.1+
 
-Su Mac
+### macOS / Linux
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo_dist/refs/heads/main/install_airchetipo.sh | bash -s -- <Nome Progetto>
-```
-
-
-## 2. 📝 Installazione di OpenCode
-
-
-### Installazione
-
-Scarica e installa la versione adatta al tuo sistema operativo (macOS o
-Windows) dal [sito ufficiale di OpenCode](https://opencode.ai/docs/#install).
-
-### Avvio
-
-Per avviare l'applicazione da qualsiasi posizione nel terminale:
+Apri il terminale, posizionati nella directory del tuo progetto e lancia:
 
 ```bash
-opencode
+cd /percorso/del/tuo/progetto
+curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo/main/install.sh | bash
 ```
 
-## 3. 🔑 Configurazione di OpenCode con Plugin OpenAI OAuth
+L'installer scarica le skill da GitHub e mostra un menu interattivo per selezionare i tool su cui installarle.
 
-L'installazione del plugin avviene tramite la configurazione, e l'IDE lo
-scaricherà e lo installerà automaticamente.
+### Windows
 
-### 3.1. Installazione
+Apri PowerShell, posizionati nella directory del tuo progetto e lancia:
 
-Apri il file di configurazione globale di OpenCode (solitamente
-`~/.config/opencode/opencode.json`)  e copia al suo interno il contenuto del file [`full-opencode.json`](https://github.com/numman-ali/opencode-openai-codex-auth/blob/main/config/full-opencode.json) proveniente dal repository del plugin.
-
-Aggiungi questa chiave di configurazione nel file `~/.config/opencode/opencode.json`
-
-```json
-
-"mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp"
-    }
-  }
-}
-
+```powershell
+cd C:\percorso\del\tuo\progetto
+irm https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo/main/install.ps1 | iex
 ```
 
+### Opzioni aggiuntive
 
-Al primo avvio, OpenCode scaricherà e installerà automaticamente il
-plugin.
-
-
-### 3.2. Autenticazione (Login OAuth)
-
-Esegui questo comando nel tuo terminale per avviare la procedura di
-autenticazione OAuth:
+Se hai clonato il repository puoi eseguire lo script in locale:
 
 ```bash
-opencode auth login
+# macOS / Linux
+./install.sh --local
+
+# Windows
+.\install.ps1 -Local
 ```
 
-Seleziona **OpenAI** quando richiesto.
-
-Verrà aperto automaticamente il tuo browser predefinito per il flusso di
-autenticazione. Segui le istruzioni per autorizzare l'accesso.
-
-Dopo l'autenticazione, il plugin sarà operativo e connesso al tuo
-account OpenAI.
-
-### 3.3. Selezione del Modello
-
-Esegui `Ctrl + X, M` per aprire il menù di selezione del modello
-
-Scegli l'opzione **"OpenAI GPT 5.1 Codex Medium (OAuth)"**.
-
-
-## 4. ▶️ Comandi per Iniziare a Sviluppare
-
-Per aprire il progetto e iniziare a lavorare con OpenCode
+Per rimuovere le skill installate:
 
 ```bash
-    # Apri la cartella di progetto in un terminale e lancia
-    opencode 
+# macOS / Linux
+./install.sh --cleanup
+
+# Windows
+.\install.ps1 -Cleanup
 ```
-
-
-Link CustomGTP:
-
-> https://chatgpt.com/g/g-692479242b188191a651f1b747d4c71b-airchetipo
