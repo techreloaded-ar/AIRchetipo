@@ -31,6 +31,9 @@ Thumbs.db
 .air*/.cursor/
 
 # AI assistant files
+.agents/ 
+.github/
+.opencode/
 CLAUDE.md
 .ai/*
 cursor
