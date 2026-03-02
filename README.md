@@ -30,7 +30,6 @@ AIRchetipo è un set di skill per AI coding agent che supportano il processo di 
 Apri il terminale, posizionati nella directory del tuo progetto e lancia:
 
 ```bash
-cd /percorso/del/tuo/progetto
 curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo/main/install.sh | bash
 ```
 
@@ -41,28 +40,6 @@ L'installer scarica le skill da GitHub e mostra un menu interattivo per selezion
 Apri PowerShell, posizionati nella directory del tuo progetto e lancia:
 
 ```powershell
-cd C:\percorso\del\tuo\progetto
 irm https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo/main/install.ps1 | iex
 ```
 
-### Opzioni aggiuntive
-
-Se hai clonato il repository puoi eseguire lo script in locale:
-
-```bash
-# macOS / Linux
-./install.sh --local
-
-# Windows
-.\install.ps1 -Local
-```
-
-Per rimuovere le skill installate:
-
-```bash
-# macOS / Linux
-./install.sh --cleanup
-
-# Windows
-.\install.ps1 -Cleanup
-```
