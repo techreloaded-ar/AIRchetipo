@@ -11,7 +11,7 @@ set -euo pipefail
 # ──────────────────────────────────────────────────────────────────────────────
 
 REPO_ZIP="https://github.com/techreloaded-ar/AIRchetipo/archive/refs/heads/main.zip"
-SKILL_NAMES=("airchetipo-backlog" "airchetipo-figma-make" "airchetipo-inception" "airchetipo-vibe-kanban")
+SKILL_NAMES=("airchetipo-backlog" "airchetipo-figma-make" "airchetipo-implement" "airchetipo-inception" "airchetipo-plan" "airchetipo-vibe-kanban")
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 show_help() {
@@ -30,7 +30,9 @@ Flags:
 Skills installed:
   airchetipo-backlog
   airchetipo-figma-make
+  airchetipo-implement
   airchetipo-inception
+  airchetipo-plan
   airchetipo-vibe-kanban
 
 Supported tools:

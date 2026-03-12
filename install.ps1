@@ -16,7 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $RepoZip    = "https://github.com/techreloaded-ar/AIRchetipo/archive/refs/heads/main.zip"
-$SkillNames = @("airchetipo-backlog", "airchetipo-figma-make", "airchetipo-inception", "airchetipo-vibe-kanban")
+$SkillNames = @("airchetipo-backlog", "airchetipo-figma-make", "airchetipo-implement", "airchetipo-inception", "airchetipo-plan", "airchetipo-vibe-kanban")
 
 # ─── Tool definitions ─────────────────────────────────────────────────────────
 $Tools = @(
@@ -204,7 +204,9 @@ Flags:
 Skills installed:
   airchetipo-backlog
   airchetipo-figma-make
+  airchetipo-implement
   airchetipo-inception
+  airchetipo-plan
   airchetipo-vibe-kanban
 
 Supported tools:
