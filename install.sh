@@ -264,7 +264,7 @@ main() {
     printf "${GREEN}${BOLD}  Done!${RESET} Cleaned up %d tool(s).\n" "${#SELECTED_TOOLS[@]}"
     echo ""
     printf "${DIM}  Press Enter to exit...${RESET}"
-    read -r
+    read -r < /dev/tty
     return
   fi
 
@@ -344,7 +344,7 @@ main() {
   printf "${GREEN}${BOLD}  Done!${RESET} Installed %d skill(s) for %d tool(s).\n" "${#SKILL_NAMES[@]}" "${#SELECTED_TOOLS[@]}"
   echo ""
   printf "${DIM}  Press Enter to exit...${RESET}"
-  read -r
+  read -r < /dev/tty
 }
 
 main "$@"
