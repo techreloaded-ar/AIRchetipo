@@ -100,7 +100,7 @@ Feel free to skip any you'd rather decide later — I'll make a reasonable assum
 Group related functional requirements into **epics**. Each epic represents a coherent capability area.
 
 Rules:
-- Minimum 2, maximum 8 epics per product
+- Minimum 2 epics per product
 - Each epic must map to at least one FR from the PRD
 - MVP epics are identified first, then Growth, then Vision
 - Assign sequential IDs: EP-001, EP-002, ...
@@ -115,10 +115,34 @@ Validate that the epic list covers the MVP scope and flag any gaps internally be
 
 For each epic, generate user stories following the template below. Each story must:
 
-- Be traceable to at least one FR or persona goal from the PRD
-- Be independently deliverable (respects INVEST principles)
-- Have 2-4 acceptance criteria (no more)
+- Pass the **INVEST Validation** checklist (see below)
+- Have just enough acceptance criteria (2-5 is a good rule of thumb)
 - Not include implementation details
+
+**INVEST Validation — for every story, Emanuele verifies internally:**
+
+- **Independent**: the story is not technically coupled with others. If there is a functional dependency (e.g., "create" before "edit"), the dependent story must still be self-sufficient once the precondition is met
+- **Negotiable**: describes an outcome, not a technical solution. The "I want" field does not contain technology or component names
+- **Valuable**: produces a visible and verifiable increment, even if small. The value does not necessarily correspond to a FR from the PRD: a setup story that produces an empty but launchable app is already a value increment because it lays the foundation for subsequent stories and is demonstrable. The criterion is: "after this story, something new is visible or usable that wasn't there before"
+- **Estimable**: scope is clear enough to estimate with confidence
+- **Small**: 1-5pt (stories at 8pt must be split)
+- **Testable**: every AC has a binary pass/fail result
+
+**Vertical Slicing**
+
+Stories must not be "horizontal" (only DB, only UI, only API without a consumer). Each story should cut across the architectural layers necessary to produce an end-to-end functionality.
+
+**Exception:** foundational stories (e.g., project setup, empty but launchable app) are acceptable as the first increment of an epic because they produce a visible and demonstrable result that enables subsequent stories.
+
+When a story is too large for a single vertical slice, apply the **SPIDR** splitting patterns:
+- **Path**: split by user flows (happy path first, errors after)
+- **Interface**: split by channel/device
+- **Data**: split by data subset
+- **Rules**: split by business rules (base case first, complex rules later)
+
+**Demonstrable Incrementality**
+
+Within each epic, stories must be ordered so that each one adds visible value over the previous one. Emanuele applies the **"Demo Test"**: *"Can I do a 5 min demo showing what this story adds?"* — if not, the story must be reformulated.
 
 **Story template:**
 
@@ -132,11 +156,16 @@ As [persona name or role from PRD],
 I want [specific action or capability],
 so that [concrete benefit tied to a goal from the PRD].
 
+**Demonstrates**
+After implementing this story, the user can: [sentence describing the visible increment]
+
 **Acceptance Criteria**
 - [ ] [Primary happy path — the main expected behavior]
 - [ ] [Validation/error case — what happens when input is wrong or preconditions fail]
 - [ ] [Edge case — boundary condition relevant to this story]
 ```
+
+**Acceptance Criteria scoping rule:** every AC must be satisfiable with the sole implementation of THIS story. Forbidden: references to future stories, "prepare for..." formulations, criteria that implicitly require subsequent stories. If a criterion violates this rule, it belongs to a different story and must be moved.
 
 **Story points scale:**
 - **1pt** — trivial (UI label, simple config)
@@ -158,13 +187,16 @@ Assign a priority to every story using these criteria:
 
 | Priority | Criteria |
 |---|---|
-| **HIGH** | MVP scope + blocks other stories + directly tied to core persona goal |
+| **HIGH** | MVP scope + blocks other stories + directly tied to core persona goal + enables the first demonstrable increment of its epic |
 | **MEDIUM** | MVP scope but not blocking + or Growth feature with strategic value |
 | **LOW** | Nice-to-have + Vision feature + low user impact |
 
-Internally determine the prioritization rationale and write a brief summary (3-5 bullet points) to be included in the backlog under "Prioritization Notes". This section must be written in plain text with no agent names or emoji prefixes — just the bullet points explaining the priority decisions.
+Internally determine the prioritization rationale and write a brief summary (up to 5 bullet points for complex stories) to be included in the backlog under "Prioritization Notes". This section must be written in plain text with no agent names or emoji prefixes — just the bullet points explaining the priority decisions.
 
-Emanuele validates story ordering within each epic for technical dependency sequencing (e.g., "create entity" must come before "edit entity").
+Emanuele validates story ordering within each epic with three checks:
+1. **Dependency check**: technical preconditions are respected (e.g., "create entity" must come before "edit entity")
+2. **Increment check**: each story adds demonstrable value on top of the previous one
+3. **Standalone check**: each story works without the subsequent ones (it may be "incomplete" relative to the final vision, but "complete" relative to its own scope)
 
 ---
 
@@ -219,15 +251,21 @@ Generate `docs/BACKLOG.md` following **exactly** this structure:
 
 **Epic:** EP-001 | **Priority:** HIGH | **Story Points:** 3
 
-**Story**  
-As [persona],  
-I want [action],  
+**Story**
+As [persona],
+I want [action],
 so that [benefit].
 
-**Acceptance Criteria**  
-- [ ] [Happy path]  
-- [ ] [Error/validation case]  
-- [ ] [Edge case]
+**Demonstrates**
+After implementing this story, the user can: [sentence describing the visible increment]
+
+**Acceptance Criteria**
+- [ ] [Happy path #1] 
+- [... other happy paths, ONLY if applicable ...]
+- [ ] [Error/validation case #1]
+- [... other Error/validation cases, ONLY if applicable ...]
+- [ ] [Edge cases]
+- [... other Edge cases, ONLY if applicable ...]
 
 ---
 
@@ -277,13 +315,15 @@ After saving the file, output this summary:
 
 Before writing the output, Emanuele runs an internal checklist:
 
-- [ ] Every story has a clear persona (not just "user")
-- [ ] Every story is traceable to a FR or persona goal in the PRD
+- [ ] Every story is traceable to a FR or is a foundational increment that enables subsequent stories
 - [ ] No story estimated at 8pt or more (must be split)
-- [ ] No story has more than 4 acceptance criteria
 - [ ] Acceptance criteria describe behavior, not implementation
 - [ ] HIGH priority stories come first within each epic
 - [ ] No duplicate stories
+- [ ] Every story is a vertical slice or a demonstrable foundational story (no single-layer story without a visible result)
+- [ ] Within each epic, stories are ordered by incrementality (story N+1 adds visible value on top of story N)
+- [ ] Every AC is verifiable with the sole implementation of its story
+- [ ] No circular dependencies between stories
 
 ---
 
@@ -309,3 +349,12 @@ Before writing the output, Emanuele runs an internal checklist:
 **Story is too large (8pt+):**
 - Emanuele splits it into 2-3 sub-stories automatically
 - Original story is replaced; no 8pt stories appear in the final backlog
+
+**Story not vertically splittable (pure technical requirement):**
+- If it is foundational and demonstrable (e.g., project setup, empty but launchable app), it is acceptable as-is — the value is enabling subsequent stories
+- Otherwise, merge it with the smallest user story that makes it demonstrable
+- If the merge exceeds 5pt, apply SPIDR split by Path
+
+**Circular dependencies between stories:**
+- Merge the involved stories into a single one
+- Re-apply SPIDR split to obtain independent and vertical stories
