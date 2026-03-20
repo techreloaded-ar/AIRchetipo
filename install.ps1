@@ -1,5 +1,5 @@
 # ─── AIRchetipo Installer ─────────────────────────────────────────────────────
-# Installs AIRchetipo skills for Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
+# Installs AIRchetipo skills + config for Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
 # Usage: irm https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo/main/install.ps1 | iex
 #        .\install.ps1 [-Local] [-Cleanup] [-Help]
 #   -Local    Installs from local .\skills\ folder instead of GitHub
@@ -16,7 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $RepoZip    = "https://github.com/techreloaded-ar/AIRchetipo/archive/refs/heads/main.zip"
-$SkillNames = @("airchetipo-backlog", "airchetipo-design", "airchetipo-figma-make", "airchetipo-implement", "airchetipo-inception", "airchetipo-plan", "airchetipo-vibe-kanban")
+$SkillNames = @("airchetipo-backlog", "airchetipo-design", "airchetipo-implement", "airchetipo-inception", "airchetipo-plan")
 
 # ─── Tool definitions ─────────────────────────────────────────────────────────
 $Tools = @(
@@ -184,6 +184,136 @@ function Show-FallbackMenu {
   return $result
 }
 
+# ─── Backend selection (radio-button, single choice) ─────────────────────────
+$BackendOptions      = @("file", "github")
+$BackendDescriptions = @("backlog e planning come file Markdown locali", "backlog e planning su GitHub Projects v2 — richiede GitHub CLI")
+
+function Show-BackendMenu {
+  $cursor = 0
+  $optCount = $BackendOptions.Count
+
+  $isInteractive = $true
+  try {
+    [Console]::CursorVisible = $false
+  } catch {
+    $isInteractive = $false
+  }
+
+  if (-not $isInteractive) {
+    return Show-FallbackBackend
+  }
+
+  try {
+    # Initial draw
+    for ($i = 0; $i -lt $optCount; $i++) {
+      $radio  = if ($i -eq $cursor) { "(x)" } else { "( )" }
+      $prefix = if ($i -eq $cursor) { ">" } else { " " }
+
+      if ($i -eq $cursor) {
+        Write-Host "  $prefix $radio $($BackendOptions[$i])" -ForegroundColor Cyan -NoNewline
+      } else {
+        Write-Host "  $prefix $radio $($BackendOptions[$i])" -NoNewline
+      }
+      Write-Host "  $($BackendDescriptions[$i])" -ForegroundColor DarkGray
+    }
+    Write-Host "  Up/Down: navigate  Enter: confirm" -ForegroundColor DarkGray -NoNewline
+
+    while ($true) {
+      $key = [Console]::ReadKey($true)
+
+      switch ($key.Key) {
+        "UpArrow"   { if ($cursor -gt 0) { $cursor-- } }
+        "DownArrow" { if ($cursor -lt ($optCount - 1)) { $cursor++ } }
+        "Enter" {
+          Write-Host ""
+          [Console]::CursorVisible = $true
+          return $BackendOptions[$cursor]
+        }
+      }
+
+      # Redraw
+      [Console]::SetCursorPosition(0, [Console]::CursorTop - $optCount)
+
+      for ($i = 0; $i -lt $optCount; $i++) {
+        $radio  = if ($i -eq $cursor) { "(x)" } else { "( )" }
+        $prefix = if ($i -eq $cursor) { ">" } else { " " }
+
+        Write-Host ("`r" + (" " * [Console]::WindowWidth)) -NoNewline
+        Write-Host "`r" -NoNewline
+
+        if ($i -eq $cursor) {
+          Write-Host "  $prefix $radio $($BackendOptions[$i])" -ForegroundColor Cyan -NoNewline
+        } else {
+          Write-Host "  $prefix $radio $($BackendOptions[$i])" -NoNewline
+        }
+        Write-Host "  $($BackendDescriptions[$i])" -ForegroundColor DarkGray
+      }
+      Write-Host ("`r" + (" " * [Console]::WindowWidth)) -NoNewline
+      Write-Host "`r  Up/Down: navigate  Enter: confirm" -ForegroundColor DarkGray -NoNewline
+    }
+  } finally {
+    try { [Console]::CursorVisible = $true } catch {}
+  }
+}
+
+function Show-FallbackBackend {
+  Write-Host ""
+  for ($i = 0; $i -lt $BackendOptions.Count; $i++) {
+    Write-Host "  $($i + 1)) $($BackendOptions[$i])  ($($BackendDescriptions[$i]))"
+  }
+  Write-Host ""
+  $choice = Read-Host "Select backend [1]"
+
+  if ($choice -eq "2") {
+    return "github"
+  }
+  return "file"
+}
+
+# ─── Install config ──────────────────────────────────────────────────────────
+function Install-Config {
+  param([string]$SourceDir, [string]$Backend)
+
+  $configDir  = ".airchetipo"
+  $configFile = Join-Path $configDir "config.yaml"
+
+  # Determine source config path
+  $sourceConfig = Join-Path (Split-Path $SourceDir -Parent) ".airchetipo\config.yaml"
+  if (-not (Test-Path $sourceConfig)) {
+    Write-Host ""
+    Write-Host "  - " -ForegroundColor Yellow -NoNewline
+    Write-Host "config.yaml non trovato nella source, skip" -ForegroundColor DarkGray
+    return
+  }
+
+  # Check if config already exists
+  if (Test-Path $configFile) {
+    Write-Host ""
+    Write-Host "  ! " -ForegroundColor Yellow -NoNewline
+    Write-Host ".airchetipo\config.yaml esiste gia. Sovrascrivere? [s/N] " -NoNewline
+    $answer = Read-Host
+    if ($answer -ne "s" -and $answer -ne "S" -and $answer -ne "y" -and $answer -ne "Y") {
+      Write-Host "  Config non modificato" -ForegroundColor DarkGray
+      return
+    }
+  }
+
+  if (-not (Test-Path $configDir)) {
+    New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+  }
+  Copy-Item -Path $sourceConfig -Destination $configFile -Force
+
+  # Update backend value
+  $content = Get-Content $configFile -Raw
+  $content = $content -replace "^backend:.*", "backend: $Backend"
+  Set-Content -Path $configFile -Value $content -NoNewline
+
+  Write-Host ""
+  Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
+  Write-Host ".airchetipo\config.yaml" -ForegroundColor White -NoNewline
+  Write-Host " (backend: $Backend)" -ForegroundColor DarkGray
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 function Main {
   Write-Host ""
@@ -204,11 +334,12 @@ Flags:
 Skills installed:
   airchetipo-backlog
   airchetipo-design
-  airchetipo-figma-make
   airchetipo-implement
   airchetipo-inception
   airchetipo-plan
-  airchetipo-vibe-kanban
+
+Configuration:
+  .airchetipo\config.yaml is created with the selected backend (file or github).
 
 Supported tools:
   Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
@@ -301,12 +432,20 @@ Supported tools:
     return
   }
 
+  # Backend selection
+  Write-Host "  Select backend:" -ForegroundColor White
+  Write-Host ""
+  $selectedBackend = Show-BackendMenu
+
   # Install
   Write-Host "  Installing..." -ForegroundColor White
 
   foreach ($toolIndex in $selectedTools) {
     Install-ForTool -ToolIndex $toolIndex -SourceDir $sourceDir
   }
+
+  # Install config
+  Install-Config -SourceDir $sourceDir -Backend $selectedBackend
 
   # Summary
   Write-Host ""

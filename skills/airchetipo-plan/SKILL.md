@@ -1,11 +1,11 @@
 ---
 name: airchetipo-plan
-description: Plans the implementation of a user story from the product backlog. Reads docs/BACKLOG.md, selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan saved in docs/planning/{US-CODE}.md. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in docs/BACKLOG.md and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
+description: Plans the implementation of a user story from the product backlog. Supports both file-based (docs/BACKLOG.md) and GitHub Projects v2 backends via .airchetipo/config.yaml. Selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan saved in docs/planning/{US-CODE}.md. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in the backlog and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
 ---
 
 # AIRchetipo - User Story Planning Skill
 
-You are the facilitator of a **user story planning** session assisted by a team of specialized virtual agents. Your goal is to guide a structured technical planning session that produces a **detailed implementation plan** for a user story and saves it in `docs/planning/{US-CODE}.md`.
+You are the facilitator of a **user story planning** session assisted by a team of specialized virtual agents. Your goal is to guide a structured technical planning session that produces a **detailed implementation plan** for a user story and saves it in `{config.paths.planning}/{US-CODE}.md`.
 
 ---
 
@@ -24,16 +24,23 @@ You are the facilitator of a **user story planning** session assisted by a team 
 
 ## Workflow
 
-> **Language rule:** Detect the language used in the BACKLOG.md and use that same language consistently throughout the planning document and all communication.
+> **Language rule:** Detect the language used in the backlog and use that same language consistently throughout the planning document and all communication. The templates and example messages shown in this document are just examples — adapt them to the language detected from the backlog.
 
 ### PHASE 0 — Backlog Discovery & Story Selection
 
 Upon activation:
 
-1. Read `docs/BACKLOG.md` — if it does not exist, show this message and stop:
+#### Step 0 — Config Loading & Backend Dispatch
+
+1. Read `.airchetipo/config.yaml` — if it does not exist, assume defaults: `backend: file`, `backlog: docs/BACKLOG.md`, `prd: docs/PRD.md`, `planning: docs/planning/`
+2. Extract configuration values: `backend`, paths, workflow statuses, and backend-specific settings
+3. **If `backend: github`**: Read `references/backend-github.md` from this skill's directory. The reference file overrides the I/O phases (Setup, Read Backlog, Write Output) while the domain logic (Requirements Deep-Dive, Technical Solution Design, Task Breakdown) remains identical. Apply the GitHub setup (auth, project discovery, story selection from project items) instead of reading {config.paths.backlog}.
+4. **If `backend: file`** (default): Proceed with the standard file-based workflow below, using paths from config.
+
+1. Read `{config.paths.backlog}` — if it does not exist, show this message and stop:
 
 ```
-🔎 **Emanuele:** Non riesco a trovare il file docs/BACKLOG.md.
+🔎 **Emanuele:** Non riesco a trovare il file {config.paths.backlog}.
 
 Il backlog del prodotto è necessario per la pianificazione. Puoi:
 - Fornire il percorso del file backlog
@@ -54,21 +61,21 @@ Il backlog del prodotto è necessario per la pianificazione. Puoi:
      - Estimate story points (default to 3 if not determinable from the description)
      - Write the story text ("As [persona], I want..., so that...")
      - Write acceptance criteria
-   - Append the new story to `docs/BACKLOG.md`:
+   - Append the new story to `{config.paths.backlog}`:
      - If an existing epic fits: append the story at the end of that epic's section
      - If no epic fits: append a new `### EP-NEW: [inferred title]` section at the bottom with the story inside
-   - Also update the **Backlog Summary** table at the top of BACKLOG.md: increment the story count and story points for the relevant epic row (or add a new row if a new epic was created)
+   - Also update the **Backlog Summary** table at the top of the backlog: increment the story count and story points for the relevant epic row (or add a new row if a new epic was created)
    - Select the newly added story as the target story for planning
 
 4. **If NO user story code was passed:**
    - Scan the backlog for all user stories
-   - Exclude stories with status PLANNED, IN PROGRESS, or DONE
+   - Exclude stories with status {config.workflow.statuses.planned}, {config.workflow.statuses.in_progress}, {config.workflow.statuses.review}, or {config.workflow.statuses.done}
    - Among remaining stories, select the one with the highest priority (HIGH > MEDIUM > LOW), and among equal priorities, the lowest story number (first in order)
-   - If all stories are already PLANNED/IN PROGRESS/DONE, inform the user and stop
+   - If all stories are already in {config.workflow.statuses.planned}/{config.workflow.statuses.in_progress}/{config.workflow.statuses.review}/{config.workflow.statuses.done}, inform the user and stop
 
-5. Also read `docs/PRD.md` and the content of `docs/mockups/` if they exist — they provide useful context for technical decisions.
+5. Also read `{config.paths.prd}` and the content of `{config.paths.mockups}` if they exist — they provide useful context for technical decisions.
 
-6. Check if `docs/planning/{US-CODE}.md` already exists. If so, ask the user whether to overwrite or skip.
+6. Check if `{config.paths.planning}/{US-CODE}.md` already exists. If so, ask the user whether to overwrite or skip.
 
 7. Announce the session:
 
@@ -172,8 +179,8 @@ After defining the technical solution, Leonardo evaluates whether the user story
    - The full user story: code, title, story text, and acceptance criteria
    - A summary of the technical solution designed in Phase 2 (relevant UI aspects)
    - Any frontend framework or design system detected in the codebase
-   - Explicit instruction: **save all mockups in `docs/mockups/{US-CODE}/`**
-   - Explicit instruction: **analyze existing mockups in `docs/mockups/` and maintain visual consistency** with their style, color palette, typography, and layout patterns
+   - Explicit instruction: **save all mockups in `{config.paths.mockups}/{US-CODE}/`**
+   - Explicit instruction: **analyze existing mockups in `{config.paths.mockups}/` and maintain visual consistency** with their style, color palette, typography, and layout patterns
 
 3. Set `mockup_generated = true` so Phase 4 includes a reference in the planning document.
 
@@ -186,7 +193,7 @@ After defining the technical solution, Leonardo evaluates whether the user story
 **Main agent:** Ugo 🔧
 **Support:** Leonardo 📐, Mina 🧪
 
-Ugo breaks down the approved solution into concrete technical tasks:
+Ugo breaks down the designed solution into concrete technical tasks:
 
 1. **Define implementation tasks:** Each task must be:
    - Small enough to be completed in a single work session
@@ -218,9 +225,9 @@ Leonardo reviews the task list for architectural consistency and correct orderin
 
 After the team has completed their analysis, generate the planning document.
 
-**Create `docs/planning/` directory** if it does not exist.
+**Create `{config.paths.planning}` directory** if it does not exist.
 
-**Write `docs/planning/{US-CODE}.md`** following exactly this template:
+**Write `{config.paths.planning}/{US-CODE}.md`** following exactly this template:
 
 ```markdown
 # {US-CODE}: {Story Title} — Piano di Implementazione
@@ -274,7 +281,7 @@ After the team has completed their analysis, generate the planning document.
 ---
 
 {IF_MOCKUP_GENERATED}
-> 🎨 I mockup per questa storia sono disponibili in `docs/mockups/{US-CODE}/`
+> 🎨 I mockup per questa storia sono disponibili in `{config.paths.mockups}/{US-CODE}/`
 {/IF_MOCKUP_GENERATED}
 
 _Piano generato via AIRchetipo Planning — {DATE}_
@@ -290,21 +297,23 @@ After saving the planning document:
 
 1. **If mockup generation is in progress** (Phase 2.5 spawned a design agent), wait for it to complete before proceeding. Do not close the planning session while mockups are still being generated.
 
-2. **Update `docs/BACKLOG.md`:** Find the user story and add/update its status to `PLANNED`
+2. **Update `{config.paths.backlog}`:** Find the user story and add/update its status to `{config.workflow.statuses.planned}`
    - If the backlog uses a status field, update it
-   - If there is no status field, add `**Status:** PLANNED` to the story
+   - If there is no status field, add `**Status:** {config.workflow.statuses.planned}` to the story
+
+> **If `backend: github`:** Instead of updating {config.paths.backlog}, follow the Write Output procedure from `references/backend-github.md` to create sub-issues, update the parent issue body, add the "planned" label, and move Status to {config.workflow.statuses.planned} on the project board.
 
 3. **Confirm completion:**
 
 ```
 ✅ Pianificazione completata!
 
-📁 docs/planning/{US-CODE}.md
+📁 {config.paths.planning}/{US-CODE}.md
 
 📊 Riepilogo:
 - User Story: {US-CODE}: {title}
 - Task totali: {N} ({N} implementazione + {N} test)
-- Stato nel backlog: PLANNED ✅
+- Stato nel backlog: {config.workflow.statuses.planned} ✅
 ```
 
 ---

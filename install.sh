@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ─── AIRchetipo Installer ─────────────────────────────────────────────────────
-# Installs AIRchetipo skills for Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
+# Installs AIRchetipo skills + config for Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
 # Usage: curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/AIRchetipo/main/install.sh | bash
 #        ./install.sh [--local] [--cleanup] [--help]
 #   --local    Installs from local ./skills/ folder instead of GitHub
@@ -11,7 +11,7 @@ set -euo pipefail
 # ──────────────────────────────────────────────────────────────────────────────
 
 REPO_ZIP="https://github.com/techreloaded-ar/AIRchetipo/archive/refs/heads/main.zip"
-SKILL_NAMES=("airchetipo-backlog" "airchetipo-design" "airchetipo-figma-make" "airchetipo-implement" "airchetipo-inception" "airchetipo-plan" "airchetipo-vibe-kanban")
+SKILL_NAMES=("airchetipo-backlog" "airchetipo-design" "airchetipo-implement" "airchetipo-inception" "airchetipo-plan")
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 show_help() {
@@ -30,11 +30,12 @@ Flags:
 Skills installed:
   airchetipo-backlog
   airchetipo-design
-  airchetipo-figma-make
   airchetipo-implement
   airchetipo-inception
   airchetipo-plan
-  airchetipo-vibe-kanban
+
+Configuration:
+  .airchetipo/config.yaml is created with the selected backend (file or github).
 
 Supported tools:
   Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
@@ -223,6 +224,130 @@ fallback_menu() {
   fi
 }
 
+# ─── Backend selection (radio-button, single choice) ─────────────────────────
+BACKEND_OPTIONS=("file" "github")
+BACKEND_DESCRIPTIONS=("backlog e planning come file Markdown locali" "backlog e planning su GitHub Projects v2 — richiede GitHub CLI")
+
+select_backend() {
+  local cursor=0
+
+  # Reconnect stdin from tty for pipe mode (curl | bash)
+  if [[ ! -t 0 ]]; then
+    exec < /dev/tty
+  fi
+
+  if [[ ! -t 0 ]]; then
+    fallback_backend
+    return
+  fi
+
+  printf '\033[?25l'
+  trap 'printf "\033[?25h"' RETURN
+
+  local draw_backend
+  draw_backend() {
+    if [[ "${1:-}" == "redraw" ]]; then
+      printf "\033[%dA" "${#BACKEND_OPTIONS[@]}"
+    fi
+
+    for ((i = 0; i < ${#BACKEND_OPTIONS[@]}; i++)); do
+      local radio
+      if [[ $i -eq $cursor ]]; then
+        radio="${GREEN}(x)${RESET}"
+      else
+        radio="( )"
+      fi
+
+      local line
+      if [[ $i -eq $cursor ]]; then
+        line="${CYAN}❯${RESET} ${radio} ${BOLD}${BACKEND_OPTIONS[$i]}${RESET}  ${DIM}${BACKEND_DESCRIPTIONS[$i]}${RESET}"
+      else
+        line="  ${radio} ${BACKEND_OPTIONS[$i]}  ${DIM}${BACKEND_DESCRIPTIONS[$i]}${RESET}"
+      fi
+
+      printf "\r\033[K%b\n" "$line"
+    done
+    printf "\r\033[K${DIM}  ↑↓ navigate  ENTER confirm${RESET}"
+  }
+
+  draw_backend "first"
+
+  while true; do
+    IFS= read -rsn1 key
+
+    case "$key" in
+      $'\x1b')
+        read -rsn2 seq
+        case "$seq" in
+          '[A') ((cursor > 0)) && ((cursor--)) ;;
+          '[B') ((cursor < ${#BACKEND_OPTIONS[@]} - 1)) && ((cursor++)) ;;
+        esac
+        ;;
+      '')
+        printf "\n\n"
+        SELECTED_BACKEND="${BACKEND_OPTIONS[$cursor]}"
+        return
+        ;;
+    esac
+
+    draw_backend "redraw"
+  done
+}
+
+fallback_backend() {
+  echo ""
+  for ((i = 0; i < ${#BACKEND_OPTIONS[@]}; i++)); do
+    printf "  %d) %s  (%s)\n" "$((i + 1))" "${BACKEND_OPTIONS[$i]}" "${BACKEND_DESCRIPTIONS[$i]}"
+  done
+  echo ""
+  printf "Select backend [1]: "
+  read -r choice
+
+  if [[ "$choice" == "2" ]]; then
+    SELECTED_BACKEND="github"
+  else
+    SELECTED_BACKEND="file"
+  fi
+}
+
+# ─── Install config ──────────────────────────────────────────────────────────
+install_config() {
+  local source_dir="$1"
+  local backend="$2"
+  local config_dir=".airchetipo"
+  local config_file="$config_dir/config.yaml"
+
+  # Determine source config path
+  local source_config=""
+  if [[ -f "$source_dir/../.airchetipo/config.yaml" ]]; then
+    source_config="$source_dir/../.airchetipo/config.yaml"
+  else
+    echo ""
+    printf "  ${YELLOW}–${RESET} ${DIM}config.yaml non trovato nella source, skip${RESET}\n"
+    return
+  fi
+
+  # Check if config already exists
+  if [[ -f "$config_file" ]]; then
+    printf "\n  ${YELLOW}!${RESET} ${BOLD}.airchetipo/config.yaml${RESET} esiste già. Sovrascrivere? [s/N] "
+    read -r answer < /dev/tty
+    if [[ "$answer" != "s" && "$answer" != "S" && "$answer" != "y" && "$answer" != "Y" ]]; then
+      printf "  ${DIM}Config non modificato${RESET}\n"
+      return
+    fi
+  fi
+
+  mkdir -p "$config_dir"
+  cp -f "$source_config" "$config_file"
+
+  # Update backend value
+  if command -v sed &>/dev/null; then
+    sed -i.bak "s/^backend:.*/backend: $backend/" "$config_file" && rm -f "$config_file.bak"
+  fi
+
+  printf "\n  ${GREEN}✓${RESET} ${BOLD}.airchetipo/config.yaml${RESET} ${DIM}(backend: %s)${RESET}\n" "$backend"
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 main() {
   # Parse arguments
@@ -333,11 +458,18 @@ main() {
     exit 0
   fi
 
+  # Backend selection
+  printf "${BOLD}  Select backend:${RESET}\n\n"
+  select_backend
+
   # Install
   printf "${BOLD}  Installing...${RESET}\n"
   for tool_index in "${SELECTED_TOOLS[@]}"; do
     install_for_tool "$tool_index" "$source_dir"
   done
+
+  # Install config
+  install_config "$source_dir" "$SELECTED_BACKEND"
 
   # Summary
   echo ""

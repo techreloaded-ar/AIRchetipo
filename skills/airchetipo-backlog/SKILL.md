@@ -1,11 +1,11 @@
 ---
 name: airchetipo-backlog
-description: Reads a PRD from docs/ and generates a prioritized product backlog with epics and user stories in docs/BACKLOG.md. Asks the user for clarification only when critical information is missing from the PRD.
+description: Reads a PRD and generates a prioritized product backlog with epics and user stories. Supports both file-based output (docs/BACKLOG.md) and GitHub Projects v2 backend via .airchetipo/config.yaml. Asks the user for clarification only when critical information is missing from the PRD.
 ---
 
 # AIRchetipo - Backlog Generation Skill
 
-You are the facilitator of a **backlog generation** session assisted by two specialized agents. Your goal is to read a PRD and produce a **complete, prioritized backlog** of epics and user stories saved in `docs/BACKLOG.md`.
+You are the facilitator of a **backlog generation** session assisted by two specialized agents. Your goal is to read a PRD and produce a **complete, prioritized backlog** of epics and user stories saved in `{config.paths.backlog}` (default: `docs/BACKLOG.md`).
 
 ---
 
@@ -22,13 +22,22 @@ You are the facilitator of a **backlog generation** session assisted by two spec
 
 ## Workflow
 
-> **Language rule:** Detect the language used in the PRD and use that same language consistently throughout the entire content of `docs/BACKLOG.md` — including epic descriptions, story titles, story text, acceptance criteria, assumptions, and open questions. All sections must be in the same language.
+> **Language rule:** Detect the language used in the PRD and use that same language consistently throughout the entire content of `{config.paths.backlog}` — including epic descriptions, story titles, story text, acceptance criteria, assumptions, and open questions. All sections must be in the same language. The templates and example messages shown in this document are just examples — adapt them to the language detected from the PRD.
 
-### PHASE 0 — PRD Discovery
+### PHASE 0 — Setup & PRD Discovery
 
 Upon activation:
 
-1. Use `Read` on `docs/PRD.md` — if it succeeds, you found the PRD.
+#### Step 0 — Config Loading & Backend Dispatch
+
+1. Read `.airchetipo/config.yaml` — if it does not exist, assume defaults: `backend: file`, `backlog: docs/BACKLOG.md`, `prd: docs/PRD.md`
+2. Extract configuration values: `backend`, paths (`prd`, `backlog`, `planning`, `mockups`), `workflow.statuses` (a dictionary with keys: `todo`, `planned`, `in_progress`, `review`, `done`), and backend-specific settings
+3. **If `backend: github`**: Read `references/backend-github.md` from this skill's directory. The reference file overrides the I/O phases (Setup, Write Output) while the domain logic (PRD Analysis, Epic Identification, Story Generation, Prioritization) remains identical. Apply the GitHub setup (auth, project, fields) before proceeding to PRD Discovery.
+4. **If `backend: file`** (default): Proceed with the standard file-based workflow below, using paths from config.
+
+#### Step 1 — PRD Discovery
+
+1. Use `Read` on `{config.paths.prd}` (default: `docs/PRD.md`) — if it succeeds, you found the PRD.
    - Only if step above fails with a "file not found" error: use glob to list all `*.md` files in `docs/` and read any whose name or content suggests it is a PRD.
    - Only if the previous step finds nothing: use glob to search for any `PRD*` file anywhere in the project.
 
@@ -103,7 +112,7 @@ Rules:
 - Minimum 2 epics per product
 - Each epic must map to at least one FR from the PRD
 - MVP epics are identified first, then Growth, then Vision
-- Assign sequential IDs: EP-001, EP-002, ...
+- Assign sequential IDs: EP-001, EP-002, ... (default prefix: EP)
 
 Validate that the epic list covers the MVP scope and flag any gaps internally before proceeding. Do not output any epic validation commentary to the user — just proceed to story generation.
 
@@ -149,7 +158,7 @@ Within each epic, stories must be ordered so that each one adds visible value ov
 ```markdown
 ### US-XXX: [Concise action-oriented title]
 
-**Epic:** EP-XXX | **Priority:** HIGH | **Story Points:** N
+**Epic:** EP-XXX | **Priority:** HIGH | **Story Points:** N | **Status:** {config.workflow.statuses.todo}
 
 **Story**
 As [persona name or role from PRD],
@@ -167,7 +176,7 @@ After implementing this story, the user can: [sentence describing the visible in
 
 **Acceptance Criteria scoping rule:** every AC must be satisfiable with the sole implementation of THIS story. Forbidden: references to future stories, "prepare for..." formulations, criteria that implicitly require subsequent stories. If a criterion violates this rule, it belongs to a different story and must be moved.
 
-**Story points scale:**
+**Story points scale:** (Scale from config: [1, 2, 3, 5])
 - **1pt** — trivial (UI label, simple config)
 - **2pt** — small (single CRUD operation, straightforward logic)
 - **3pt** — medium (multiple steps, some integration)
@@ -183,7 +192,7 @@ Stories estimated at 8pt must be split into smaller stories before being added t
 **Main agent:** Andrea 💎
 **Support:** Emanuele 🔎 (for dependency sequencing)
 
-Assign a priority to every story using these criteria:
+Assign a priority to every story using these criteria: (Priorities from config: [HIGH, MEDIUM, LOW])
 
 | Priority | Criteria |
 |---|---|
@@ -202,7 +211,7 @@ Emanuele validates story ordering within each epic with three checks:
 
 ### PHASE 5 — Output Generation
 
-Generate `docs/BACKLOG.md` following **exactly** this structure:
+Generate `{config.paths.backlog}` (default: `docs/BACKLOG.md`) following **exactly** this structure:
 
 ```markdown
 # [Product Name] — Product Backlog
@@ -242,14 +251,14 @@ Generate `docs/BACKLOG.md` following **exactly** this structure:
 
 ### EP-001: [Epic Title]
 
-> [One-sentence description of this epic's goal]  
+> [One-sentence description of this epic's goal]
 > **Scope:** MVP | **Stories:** N | **Story Points:** N
 
 ---
 
 #### US-001: [Story title]
 
-**Epic:** EP-001 | **Priority:** HIGH | **Story Points:** 3
+**Epic:** EP-001 | **Priority:** HIGH | **Story Points:** 3 | **Status:** {config.workflow.statuses.todo}
 
 **Story**
 As [persona],
@@ -297,17 +306,19 @@ After saving the file, output this summary:
 ```
 ✅ Backlog generated successfully!
 
-📁 docs/BACKLOG.md
+📁 {config.paths.backlog}
 
 📊 Summary:
 - Epics: N
-- User Stories: N  
+- User Stories: N
 - Total Story Points: N
 - HIGH priority: N stories
 - MEDIUM priority: N stories
 - LOW priority: N stories
 
 ```
+
+> **If `backend: github`:** Skip the file output above. Instead, follow the Write Output procedure from `references/backend-github.md` to create GitHub Issues and populate the project board.
 
 ---
 

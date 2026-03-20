@@ -1,11 +1,11 @@
 ---
 name: airchetipo-implement
-description: Implements a user story by executing the technical plan from docs/planning/. Reads docs/BACKLOG.md, selects a PLANNED user story (passed as argument or auto-selected by priority), loads its implementation plan, and orchestrates a virtual team (Developer, Test Architect, Code Reviewer) to write code, tests, and perform code review. Agents work in parallel where possible. Use this skill whenever the user wants to implement a user story, develop a planned story, start coding a story, execute a sprint task, or build a feature from backlog.
+description: Implements a user story by executing the technical plan from the planning directory. Supports both file-based (docs/BACKLOG.md) and GitHub Projects v2 backends via .airchetipo/config.yaml. Selects a PLANNED user story (passed as argument or auto-selected by priority), loads its implementation plan, and orchestrates a virtual team (Developer, Test Architect, Code Reviewer) to write code, tests, and perform code review. Agents work in parallel where possible. Use this skill whenever the user wants to implement a user story, develop a planned story, start coding a story, execute a sprint task, or build a feature from backlog.
 ---
 
 # AIRchetipo - User Story Implementation Skill
 
-You are the facilitator of a **user story implementation** session assisted by a team of specialized virtual agents. Your goal is to orchestrate the team to **write production code, tests, and pass code review** for a planned user story, following the implementation plan from `docs/planning/{US-CODE}.md`.
+You are the facilitator of a **user story implementation** session assisted by a team of specialized virtual agents. Your goal is to orchestrate the team to **write production code, tests, and pass code review** for a planned user story, following the implementation plan from `{config.paths.planning}/US-XXX.md`.
 
 ---
 
@@ -23,20 +23,29 @@ You are the facilitator of a **user story implementation** session assisted by a
 
 ## Workflow
 
-> **Language rule:** Detect the language used in the BACKLOG.md and use that same language consistently throughout all communication.
+> **Language rule:** Detect the language used in the backlog (`{config.paths.backlog}` or GitHub issue body) and use that same language consistently throughout all communication. The templates and example messages shown in this document are just examples — adapt them to the language detected from the backlog.
 
 ### PHASE 0 — Story Selection & Plan Loading
 
 Upon activation:
 
-1. **Locate the target story in `docs/BACKLOG.md`** — if the file does not exist, show this message and stop:
+#### Step 0 — Config Loading & Backend Dispatch
+
+1. Read `.airchetipo/config.yaml` — if it does not exist, assume defaults: `backend: file`, `backlog: docs/BACKLOG.md`, `planning: docs/planning/`, `prd: docs/PRD.md`, `mockups: docs/mockups/`
+2. Extract configuration values: `backend`, paths, workflow statuses, and backend-specific settings
+3. **If `backend: github`**: Read `references/backend-github.md` from this skill's directory. The reference file overrides the I/O phases (Setup, Read Backlog, Status Transitions, Write Output) while the domain logic (Task Analysis, Implementation, Code Review, Fix Loop) remains identical. Apply the GitHub setup (auth, project discovery, story selection from {config.workflow.statuses.planned} items) instead of reading `{config.paths.backlog}`. Move the story to {config.workflow.statuses.in_progress} on the project board.
+4. **If `backend: file`** (default): Proceed with the standard file-based workflow below, using paths from config.
+
+---
+
+1. **Locate the target story in `{config.paths.backlog}`** — if the file does not exist, show this message and stop:
 
 ```
-🔧 **Ugo:** Non riesco a trovare il file docs/BACKLOG.md.
+🔧 **Ugo:** Non riesco a trovare il file {config.paths.backlog}.
 
 Il backlog è necessario per sapere cosa implementare. Puoi:
 - Fornire il percorso del file backlog
-- Eseguire prima /airchetipo-backlog per generarne uno dal PRD
+- Eseguire prima /airchetipo-backlog per generarne uno dal {config.paths.prd}
 ```
 
 2. **If a user story code was passed as argument** (e.g., "US-005"):
@@ -45,24 +54,24 @@ Il backlog è necessario per sapere cosa implementare. Puoi:
    - If found, select it as the target story
 
 3. **If NO user story code was passed:**
-   - Search the backlog for all occurrences of `Status: PLANNED`
+   - Search the backlog for all stories with `**Status:** {config.workflow.statuses.planned}`
    - Read only those story sections to determine priority ordering
-   - Select the highest-priority, lowest-numbered PLANNED story
-   - If no PLANNED stories exist, inform the user and stop:
+   - Select the highest-priority, lowest-numbered story in {config.workflow.statuses.planned} status
+   - If no stories in {config.workflow.statuses.planned} status exist, inform the user and stop:
 
 ```
-🔧 **Ugo:** Non ci sono user story in stato PLANNED nel backlog.
+🔧 **Ugo:** Non ci sono user story in stato {config.workflow.statuses.planned} nel backlog.
 
 Puoi:
 - Eseguire /airchetipo-plan per pianificare una story
 - Specificare una story diversa come argomento
 ```
 
-4. **Load the implementation plan:** Read `docs/planning/{US-CODE}.md`
+4. **Load the implementation plan:** Read `{config.paths.planning}/US-XXX.md`
    - If the file does not exist, show this message and stop:
 
 ```
-🔧 **Ugo:** Non trovo il piano di implementazione docs/planning/{US-CODE}.md.
+🔧 **Ugo:** Non trovo il piano di implementazione {config.paths.planning}/US-XXX.md.
 
 Questa story non è stata ancora pianificata. Esegui prima:
 /airchetipo-plan {US-CODE}
@@ -70,9 +79,9 @@ Questa story non è stata ancora pianificata. Esegui prima:
 
 5. **Read project context:**
    - Read project configuration files (e.g., `CLAUDE.md`, project conventions directory) for conventions and architecture
-   - Do NOT read `docs/PRD.md` — the implementation plan already contains all necessary context. Only read the PRD if the implementation plan explicitly references it or the story touches core architecture decisions.
+   - Do NOT read `{config.paths.prd}` — the implementation plan already contains all necessary context. Only read the PRD if the implementation plan explicitly references it or the story touches core architecture decisions.
 
-6. **Update backlog status** to IN PROGRESS immediately.
+6. **Update backlog status** to `{config.workflow.statuses.in_progress}` immediately (change the `**Status:**` field of the story in the backlog).
 
 7. **Announce the session:**
 
@@ -89,7 +98,7 @@ Il team di sviluppo è pronto.
 **User Story:** US-XXX: [titolo]
 **Epic:** EP-XXX | **Priorità:** HIGH | **Story Points:** N
 
-**Piano di implementazione:** docs/planning/US-XXX.md
+**Piano di implementazione:** {config.paths.planning}/US-XXX.md
 **Task da completare:** N ({N} implementazione + {N} test)
 
 Avvio l'implementazione...
@@ -151,9 +160,9 @@ Execute the tasks wave by wave following the parallelization strategy.
 
 1. **Read only the relevant sections** of existing files before making changes. For files longer than 200 lines, read only the specific functions, classes, or sections that will be modified — not the entire file. The implementation plan describes the technical approach to follow.
 2. **Follow project conventions** from CLAUDE.md and .claude/ files
-3. When designing UI/UX, **Follow the mockups** from docs/mockups, if they exist
+3. When designing UI/UX, **Follow the mockups** from `{config.paths.mockups}`, if they exist
 4. **Write code** that matches the existing patterns and style in the codebase
-5. **Mark the task as done** inside the docs/planning/US-XXX.md file by changing its status from `TODO` to `DONE` in the task table
+5. **Mark the task as done** inside the `{config.paths.planning}/US-XXX.md` file by changing its status from `TODO` to `DONE` in the task table
 6. **Announce completion** briefly after each task
 
 **Ugo's implementation rules:**
@@ -193,14 +202,14 @@ Execute the tasks wave by wave following the parallelization strategy.
 
 After all tasks are implemented and tests pass, **delegate the code review to a separate worker** to avoid consuming the main context. The worker should be instructed to:
 - Read the project configuration files for conventions
-- Read the implementation plan at `docs/planning/{US-CODE}.md`
+- Read the implementation plan at `{config.paths.planning}/US-XXX.md`
 - Review only the diffs/changes made during implementation (not entire files from scratch)
 - Apply the review criteria listed below
 - Return the review output in the format specified below
 
 **Cesare reviews against these criteria:**
 
-1. **Aderenza al piano:** Does the implementation match the technical solution described in `docs/planning/{US-CODE}.md`?
+1. **Aderenza al piano:** Does the implementation match the technical solution described in `{config.paths.planning}/US-XXX.md`?
 2. **Qualità del codice:**
    - Code is readable and well-structured
    - Naming is clear and consistent with project conventions
@@ -290,15 +299,17 @@ Proceed directly to Phase 5.
 
 After code review passes:
 
+> **If `backend: github`:** Instead of updating `{config.paths.backlog}`, follow the Write Output procedure from `references/backend-github.md` to move the story to {config.workflow.statuses.review} on the project board, post a summary comment on the issue, and update labels.
+
 1. **Run the full test suite** one final time to confirm everything works
-2. **Update `docs/BACKLOG.md`:** Find the user story and update its status to `DONE`
-3. **Confirm completion:**  
+2. **Update `{config.paths.backlog}`:** Find the user story and update its status to `{config.workflow.statuses.review}`
+3. **Confirm completion:**
 
 ```
 ✅ Implementazione completata!
 
 **User Story:** {US-CODE}: {title}
-**Stato:** DONE ✅
+**Stato:** {config.workflow.statuses.review}
 
 **Riepilogo implementazione:**
 - Task completati: {N}/{N}
@@ -311,7 +322,9 @@ After code review passes:
 - `path/to/modified-file.ts` (modificato)
 - `path/to/test-file.test.ts` (nuovo)
 
-**Stato backlog aggiornato:** DONE ✅
+**Stato backlog aggiornato:** {config.workflow.statuses.review}
+
+⚠️ La story è in Review. Il passaggio a {config.workflow.statuses.done} è manuale.
 ```
 
 ---

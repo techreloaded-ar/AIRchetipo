@@ -17,6 +17,10 @@ Your goal is to create interfaces that avoid generic "AI slop" aesthetics — ev
 
 ## Workflow
 
+### 0. Config loading
+
+Read `.airchetipo/config.yaml` — if it does not exist, assume defaults: `mockups: docs/mockups/`. Use `{config.paths.mockups}` as the base output path for all mockups throughout this workflow.
+
 ### 1. Requirements gathering
 
 The user provides what they want: a component, a page, an application, or an interface. They may include context about the purpose, audience, or technical constraints.
@@ -31,7 +35,7 @@ Before designing, explore the existing technical context:
 Search the codebase for design system libraries already in use (ShadCN, Material UI, Ant Design, Chakra UI, Tailwind CSS, Bootstrap, etc.). Check `package.json`, configuration files, and existing components. If you find a design system, use it as the foundation for the mockups — this ensures consistency with the rest of the product and real component reuse.
 
 **Existing mockups:**
-Check whether `docs/mockups/` already contains mockups. If so, analyze them to understand:
+Check whether `{config.paths.mockups}` already contains mockups. If so, analyze them to understand:
 - Color palette in use
 - Typographic choices
 - Layout and spacing patterns
@@ -95,7 +99,7 @@ Match implementation complexity to the aesthetic vision: maximalist designs need
 
 ## Output
 
-Output must **always** go inside `docs/mockups/` relative to the project root. Never generate files outside this folder. Organize in subfolders: `docs/mockups/mockup-name/`.
+Output must **always** go inside `{config.paths.mockups}` (default: `docs/mockups/`) relative to the project root. Never generate files outside this folder. Organize in subfolders: `{config.paths.mockups}/mockup-name/`.
 
 ### Format selection
 
