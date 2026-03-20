@@ -150,7 +150,34 @@ Emanuele validates that the solution covers all requirements identified in Phase
 
 ```
 
-**Proceed to Phase 3 autonomously.**
+**Proceed to the next phase autonomously.**
+
+---
+
+### PHASE 2.5 — UI/UX Design Assessment
+
+**Main agent:** Leonardo 📐
+
+After defining the technical solution, Leonardo evaluates whether the user story requires developing **new user interface** — new pages, significant new UI components, or substantial changes to existing layouts.
+
+**If UI work is needed:**
+
+1. Leonardo announces the need:
+
+```
+📐 **Leonardo:** La soluzione tecnica prevede lo sviluppo di nuova interfaccia grafica. Avvio la creazione dei mockup in parallelo.
+```
+
+2. Spawn a **separate agent** (using the Agent tool) that invokes the `/airchetipo-design` skill. The agent prompt must include:
+   - The full user story: code, title, story text, and acceptance criteria
+   - A summary of the technical solution designed in Phase 2 (relevant UI aspects)
+   - Any frontend framework or design system detected in the codebase
+   - Explicit instruction: **save all mockups in `docs/mockups/{US-CODE}/`**
+   - Explicit instruction: **analyze existing mockups in `docs/mockups/` and maintain visual consistency** with their style, color palette, typography, and layout patterns
+
+3. Set `mockup_generated = true` so Phase 4 includes a reference in the planning document.
+
+**If NO UI work is needed:** set `mockup_generated = false` and proceed directly to Phase 3.
 
 ---
 
@@ -246,8 +273,14 @@ After the team has completed their analysis, generate the planning document.
 
 ---
 
+{IF_MOCKUP_GENERATED}
+> 🎨 I mockup per questa storia sono disponibili in `docs/mockups/{US-CODE}/`
+{/IF_MOCKUP_GENERATED}
+
 _Piano generato via AIRchetipo Planning — {DATE}_
 ```
+
+> **Conditional block:** Include the mockup reference line only if `mockup_generated = true` (i.e., Phase 2.5 spawned the design agent). Omit it entirely otherwise — do not leave an empty placeholder.
 
 ---
 
@@ -255,11 +288,13 @@ _Piano generato via AIRchetipo Planning — {DATE}_
 
 After saving the planning document:
 
-1. **Update `docs/BACKLOG.md`:** Find the user story and add/update its status to `PLANNED`
+1. **If mockup generation is in progress** (Phase 2.5 spawned a design agent), wait for it to complete before proceeding. Do not close the planning session while mockups are still being generated.
+
+2. **Update `docs/BACKLOG.md`:** Find the user story and add/update its status to `PLANNED`
    - If the backlog uses a status field, update it
    - If there is no status field, add `**Status:** PLANNED` to the story
 
-2. **Confirm completion:**
+3. **Confirm completion:**
 
 ```
 ✅ Pianificazione completata!

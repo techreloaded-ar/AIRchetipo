@@ -99,6 +99,12 @@ Output must **always** go inside `docs/mockups/` relative to the project root. N
 
 ### Format selection
 
+**Match output scope to request complexity.** A single component or single functionality (login form, product card, confirmation modal, registration page, settings panel) requires a single HTML file — do not create separate pages for different states, edge cases, or alternative flows unless the user explicitly asks for them. Multiple screens are justified only when the functionality naturally requires navigation between distinct views (e.g., a dashboard with separate sections, an e-commerce flow with catalog/cart/checkout, an app with functionally different pages).
+
+**These are NOT separate screens:** different states of the same component (error, success, loading, empty), responsive variants, specific user scenarios (new user vs returning user), or steps within a single multi-step form. Handle these within the same page using CSS states, JavaScript, or by showing the primary/default state.
+
+**When in doubt, do less.** If you're unsure whether multiple screens are needed, start with one and ask the user if they want to expand. It's much easier to add screens later than to remove unnecessary ones.
+
 Choose the format based on the number of screens and complexity:
 
 **Single screen** — one component or page, mostly static or CSS/JS animations:
