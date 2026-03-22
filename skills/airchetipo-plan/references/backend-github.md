@@ -148,6 +148,25 @@ gh api -X POST /repos/$OWNER/$REPO/issues/$PARENT_NUMBER/sub_issues \
 
 **Important:** Create sub-issues in TASK order (TASK-01 first, then TASK-02, etc.) to maintain logical ordering.
 
+### Step 2b — Remove sub-issues from project board
+
+GitHub Projects v2 auto-add workflows may automatically add newly created issues to the board. Sub-issues must NOT appear as separate cards on the board — they live only inside the parent issue.
+
+After creating all sub-issues, check if any were auto-added to the board and remove them:
+
+```bash
+# For each sub-issue created, check if it was auto-added and remove it
+for CHILD_NUMBER in $ALL_CHILD_NUMBERS; do
+  ITEM_ID=$(gh project item-list $PROJECT_NUMBER --owner "$OWNER" --format json -L 200 \
+    --jq ".items[] | select(.content.number == $CHILD_NUMBER) | .id")
+  if [ -n "$ITEM_ID" ]; then
+    gh project item-delete $PROJECT_NUMBER --owner "$OWNER" --id "$ITEM_ID"
+  fi
+done
+```
+
+Where `$ALL_CHILD_NUMBERS` is the list of issue numbers created in Step 2.
+
 ### Step 3 — Update the parent issue body
 
 1. Read the current body:
@@ -217,6 +236,8 @@ The GitHub-specific completion message:
 ```
 
 ## Technical Reference
+
+> **Note:** `gh project item-list --format json` may return JSON with unescaped control characters in `content.body` that break external `jq`. Always use `gh`'s built-in `--jq` flag instead of piping to the system `jq` binary.
 
 ### Parsing IDs Flow
 
