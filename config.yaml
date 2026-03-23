@@ -3,8 +3,8 @@ backend: file   # file | github
 paths:
   prd: docs/PRD.md
   backlog: docs/BACKLOG.md.    #only valid for file backend
-  planning: docs/planning/     
-  mockups: docs/mockups/       
+  planning: docs/planning/
+  mockups: docs/mockups/
 
 workflow:
   statuses:

@@ -319,8 +319,8 @@ install_config() {
 
   # Determine source config path
   local source_config=""
-  if [[ -f "$source_dir/../.airchetipo/config.yaml" ]]; then
-    source_config="$source_dir/../.airchetipo/config.yaml"
+  if [[ -f "$source_dir/../config.yaml" ]]; then
+    source_config="$source_dir/../config.yaml"
   else
     echo ""
     printf "  ${YELLOW}–${RESET} ${DIM}config.yaml non trovato nella source, skip${RESET}\n"

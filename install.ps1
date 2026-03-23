@@ -278,7 +278,7 @@ function Install-Config {
   $configFile = Join-Path $configDir "config.yaml"
 
   # Determine source config path
-  $sourceConfig = Join-Path (Split-Path $SourceDir -Parent) ".airchetipo\config.yaml"
+  $sourceConfig = Join-Path (Split-Path $SourceDir -Parent) "config.yaml"
   if (-not (Test-Path $sourceConfig)) {
     Write-Host ""
     Write-Host "  - " -ForegroundColor Yellow -NoNewline
