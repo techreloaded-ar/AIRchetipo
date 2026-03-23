@@ -16,7 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $RepoZip    = "https://github.com/techreloaded-ar/AIRchetipo/archive/refs/heads/main.zip"
-$SkillNames = @("airchetipo-backlog", "airchetipo-design", "airchetipo-implement", "airchetipo-inception", "airchetipo-plan")
+$SkillNames = @("airchetipo-backlog", "airchetipo-design", "airchetipo-implement", "airchetipo-inception", "airchetipo-loop", "airchetipo-plan")
 
 # ─── Tool definitions ─────────────────────────────────────────────────────────
 $Tools = @(
