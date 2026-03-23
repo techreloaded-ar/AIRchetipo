@@ -207,6 +207,7 @@ _Piano generato via AIRchetipo Planning — {DATE}_
 - Each task: small enough for a single work session, independently verifiable, ordered by dependency
 - Task format: sequential ID (TASK-01, TASK-02...), action-oriented title, brief description (1-2 sentences), type (Impl/Test), dependencies
 - Implementation order: data model first → backend logic → frontend → tests interleaved (not all at end)
+- Frontend tasks when mockups exist: If `mockup_generated = true`, include at least one frontend implementation task (type: Impl) that explicitly references the mockups directory `{config.paths.mockups}/{US-CODE}/`. Omitting frontend tasks when `mockup_generated = true` is a plan error — do not proceed without them.
 - If total tasks exceed 15, suggest splitting into sub-stories
 
 ---

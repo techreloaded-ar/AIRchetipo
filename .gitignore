@@ -75,3 +75,6 @@ web-bundles/
 docs/
 
 .omc/
+
+# Skills workspace folders
+skills/*-workspace/

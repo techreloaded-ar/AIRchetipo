@@ -81,9 +81,15 @@ Questa story non è stata ancora pianificata. Esegui prima:
    - Read project configuration files (e.g., `CLAUDE.md`, project conventions directory) for conventions and architecture
    - Do NOT read `{config.paths.prd}` — the implementation plan already contains all necessary context. Only read the PRD if the implementation plan explicitly references it or the story touches core architecture decisions.
 
-6. **Update backlog status** to `{config.workflow.statuses.in_progress}` immediately (change the `**Status:**` field of the story in the backlog).
+6. **Load mockup references (if UI tasks are present):**
+   - Scan the implementation plan for references to mockup files (paths, filenames, or mentions of "mockup", "wireframe", "UI design")
+   - Search `{config.paths.mockups}` for files related to the user story (e.g., files containing `{US-XXX}` in their name, or files explicitly referenced in the plan)
+   - If mockup files are found, record their paths — they become **mandatory references** for any UI implementation task
+   - If the plan explicitly mentions specific mockup files, those have the highest priority and must be followed with strict fidelity
+   - Skip this step entirely if no tasks in the plan involve UI/frontend work
+7. **Update backlog status** to `{config.workflow.statuses.in_progress}` immediately (change the `**Status:**` field of the story in the backlog).
 
-7. **Announce the session:**
+8. **Announce the session:**
 
 ```
 ⚡ AIRCHETIPO - USER STORY IMPLEMENTATION
@@ -172,6 +178,16 @@ Execute the tasks wave by wave following the parallelization strategy.
 - If a task requires creating a new file, verify the target directory exists first
 - If the implementation plan specifies specific technologies or approaches, follow them
 
+**Mockup Adherence Rules (apply only when a task involves UI/frontend work):**
+
+These rules exist because mockups represent design decisions already made — they encode layout, visual hierarchy, component placement, and user flow. Ignoring them leads to UI that needs rework and breaks the design-development contract.
+
+- **Before writing any UI code**, Ugo MUST read the relevant mockup files identified in Phase 0. This means actually opening and examining the mockup content (images, HTML files, or design specs), not just acknowledging they exist.
+- **When the implementation plan explicitly references a mockup**, that mockup is the source of truth for the UI. Ugo must replicate the layout, element positioning, visual hierarchy, and component structure shown in the mockup. Deviations are acceptable only when technically impossible or when the mockup conflicts with the codebase's existing component library — in which case, Ugo flags the discrepancy to the user before proceeding.
+- **When mockups exist in `{config.paths.mockups}` but are not explicitly referenced in the plan**, Ugo must still read them for context and ensure the implemented UI is visually and structurally coherent with them. The mockups serve as a design reference — the UI should not contradict what the mockups show.
+- **When no mockups exist**, Ugo follows standard UI patterns from the existing codebase and uses his own judgment.
+- These rules do not apply to tasks that are purely backend, data, or infrastructure work.
+
 **Mina's test rules:**
 - Write tests that verify the acceptance criteria from the user story
 - Follow the test strategy defined in the implementation plan
@@ -230,7 +246,12 @@ After all tasks are implemented and tests pass, **delegate the code review to a 
    - Tests are meaningful (not just testing that code runs without error)
    - Edge cases and error scenarios are covered
    - No flaky or implementation-dependent tests
-6. **Completezza:**
+6. **Mockup adherence (only if UI tasks are present):**
+   - If mockups were identified in Phase 0, verify that the implemented UI follows them
+   - When the plan explicitly references a mockup: layout, element positioning, and visual hierarchy must match
+   - When mockups exist but are not explicitly referenced: the UI must not contradict what the mockups show
+   - Flag any discrepancies as 🔴 CRITICO if the plan explicitly referenced the mockup, or 🟡 MIGLIORAMENTO otherwise
+7. **Completeness:**
    - All acceptance criteria from the user story are satisfied
    - All tasks from the implementation plan are completed
 
