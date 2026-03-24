@@ -1,6 +1,6 @@
 ---
 name: airchetipo-plan
-description: Plans the implementation of a user story from the product backlog. Supports both file-based (docs/BACKLOG.md) and GitHub Projects v2 backends via .airchetipo/config.yaml. Selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan saved in docs/planning/{US-CODE}.md. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in the backlog and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
+description: Plans the implementation of a user story from the product backlog. Supports both file-based (docs/BACKLOG.md) and GitHub Projects v2 backends via .airchetipo/config.yaml. Selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan. With file backend, the plan is saved in docs/planning/{US-CODE}.md. With GitHub backend, the plan is written directly into the parent issue body (strategy) and sub-issues (executable tasks) — no local file is created. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in the backlog and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
 ---
 
 # AIRchetipo - User Story Planning Skill
@@ -141,7 +141,11 @@ In a **single turn**, produce both:
 🧪 **Mina:** [1 sentence on test strategy focus]
 ```
 
-**2. Write the planning document** to `{config.paths.planning}/{US-CODE}.md` using exactly this template:
+**2. Write the planning document:**
+
+> **Backend dispatch:** If `backend: github`, do NOT write a local file. Instead, the plan is written directly into the GitHub issue body and sub-issues as described in `references/backend-github.md`. Skip the file template below and proceed to STAGE 2. The template below applies only to `backend: file`.
+
+Write to `{config.paths.planning}/{US-CODE}.md` using exactly this template:
 
 ```markdown
 # {US-CODE}: {Story Title} — Piano di Implementazione
@@ -218,10 +222,11 @@ After saving the planning document:
 
 1. **Update backlog status:**
    - **File backend:** Find the story in `{config.paths.backlog}` and add/update status to `{config.workflow.statuses.planned}`
-   - **GitHub backend:** Follow the Write Output procedure from `references/backend-github.md` to create sub-issues, update parent issue body, add "planned" label, and move Status to {config.workflow.statuses.planned}
+   - **GitHub backend:** Follow the Write Output procedure from `references/backend-github.md` to write the full plan into the parent issue body, create sub-issues with executable task details, add "planned" label, and move Status to {config.workflow.statuses.planned}. No local file is written.
 
 2. **Confirm completion:**
 
+For **file backend:**
 ```
 ✅ Pianificazione completata!
 
@@ -232,6 +237,8 @@ After saving the planning document:
 - Task totali: {N} ({N} implementazione + {N} test)
 - Stato nel backlog: {config.workflow.statuses.planned} ✅
 ```
+
+For **github backend**, use the completion message format from `references/backend-github.md`.
 
 If mockup generation was spawned, add: `🎨 Mockup in generazione in background — disponibili in {config.paths.mockups}/{US-CODE}/ a breve.`
 
