@@ -66,7 +66,7 @@ Agents appear only in the **Team Brief** output. Each agent speaks **1-3 sentenc
 After selecting the story, read ALL context in a **single turn with parallel tool calls**:
 - `{config.paths.prd}` (if exists)
 - `{config.paths.mockups}/` contents (if exists)
-- Relevant codebase files: `prisma/schema.prisma`, existing related source files, existing tests
+- Relevant codebase files: schema/model definition files, existing related source files, existing tests
 - Check if `{config.paths.planning}/{US-CODE}.md` already exists (if so, ask user: overwrite or skip)
 
 #### Step 3 — Announce
@@ -97,14 +97,14 @@ Silently perform all of the following — this is your chain of thought, not vis
 - Flag ambiguities — if critical ambiguities exist, ask the user (max 3 questions in a single message) BEFORE proceeding
 
 **As Leonardo (Architecture):**
-- Read relevant codebase files to understand current patterns (models, routes, components)
+- Read relevant codebase files to understand current patterns and conventions
 - Design the technical solution: approach, motivation, key decisions across layers
 - Evaluate alternatives if multiple viable approaches exist
 
 **As Ugo (Development):**
 - Validate the solution is realistically implementable
 - Check for hidden dependencies or blocking issues
-- Break down into concrete tasks ordered by dependency (data model → backend → frontend → tests interleaved)
+- Break down into concrete tasks ordered by dependency, adapting the sequence to the project's architecture (tests interleaved, not all at end)
 
 **As Mina (Testing):**
 - Define test strategy: what to test, test type (unit/integration/e2e), coverage focus
@@ -210,7 +210,7 @@ _Piano generato via AIRchetipo Planning — {DATE}_
 **Task rules:**
 - Each task: small enough for a single work session, independently verifiable, ordered by dependency
 - Task format: sequential ID (TASK-01, TASK-02...), action-oriented title, brief description (1-2 sentences), type (Impl/Test), dependencies
-- Implementation order: data model first → backend logic → frontend → tests interleaved (not all at end)
+- Implementation order: follow the project's natural dependency chain — lower layers first, tests interleaved (not all at end)
 - Frontend tasks when mockups exist: If `mockup_generated = true`, include at least one frontend implementation task (type: Impl) that explicitly references the mockups directory `{config.paths.mockups}/{US-CODE}/`. Omitting frontend tasks when `mockup_generated = true` is a plan error — do not proceed without them.
 - If total tasks exceed 15, suggest splitting into sub-stories
 
