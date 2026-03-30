@@ -206,6 +206,15 @@ These rules exist because mockups represent design decisions already made — th
   - Write e2e tests that simulate real user behavior: full navigation flows, clicking, form filling, waiting for responses, visual confirmations — not isolated unit-style assertions
   - Each e2e test scenario must map to a user flow described in the plan's test strategy
   - Video artifacts MUST be saved in `{config.paths.test_results}/{story-id}/` (e.g., `docs/test-results/US-012/`). Create the subfolder if it doesn't exist
+  - **E2E test execution** (after e2e tests are written):
+    - Detect the e2e run command from the project config (scripts in `package.json`, `CLAUDE.md` conventions, framework config files like `playwright.config.*`, `cypress.config.*`, `wdio.conf.*`). Do NOT hardcode any specific command
+    - Detect the dev server start command from the project config (e.g., `dev`, `start`, `serve` scripts in `package.json`, or `CLAUDE.md` conventions). E2e tests typically require a running application server
+    - Start the dev server in the background before running e2e tests. Wait for the server to be ready (check the port or use the framework's built-in `webServer` configuration if available — many e2e frameworks handle this automatically)
+    - Run the e2e tests using the detected command
+    - After execution, verify that video artifacts were produced in `{config.paths.test_results}/{story-id}/`. If no video files exist, investigate: check framework config for video output path, check for recording errors in test output, and fix the configuration
+    - Stop the background dev server after e2e tests complete (unless the framework manages it automatically)
+    - If e2e tests fail due to missing browser binaries or dependencies, install them following the framework's documentation (e.g., the framework's `install` command) and retry
+    - If e2e tests fail due to timeouts or flakiness, retry the failing tests once. If they fail again, report the failure with the test output for diagnosis — do not silently skip them
 
 **Progress reporting:** After each wave completes, briefly report:
 
@@ -220,7 +229,12 @@ These rules exist because mockups represent design decisions already made — th
 **Prossima wave:** [N+1] — [breve descrizione]
 ```
 
-**After all implementation waves are done**, run the project's test suite to verify everything passes before proceeding to code review.
+**After all implementation waves are done**, run the test suites before proceeding to code review:
+
+1. **Unit & integration tests:** Detect and run the project's standard test command (from `package.json` scripts, `CLAUDE.md`, or project config). All tests must pass.
+2. **E2E tests** (if e2e tests were written in this story): Mina runs the e2e tests following the "E2E test execution" instructions in her test rules above. This is a separate step because e2e tests require a running dev server and browser infrastructure. All e2e tests must pass and video artifacts must be present in `{config.paths.test_results}/{story-id}/` before proceeding.
+
+If any tests fail, Mina investigates and Ugo fixes the implementation before proceeding to code review.
 
 ---
 
@@ -308,7 +322,7 @@ After all tasks are implemented and tests pass, **delegate the code review to a 
 
 1. Ugo and Mina fix the issues identified by Cesare
 2. They announce each fix briefly
-3. Run the test suite again to confirm nothing broke
+3. Run the test suite again (unit/integration + e2e if applicable) to confirm nothing broke. For e2e re-runs, follow the same "E2E test execution" steps from Mina's test rules
 4. Cesare re-reviews **only the diffs from the fixes** (not re-reading full files — review the changes, not the unchanged code)
 5. Repeat until no critical issues remain
 
@@ -334,7 +348,7 @@ After code review passes:
 
 > **If `backend: github`:** Instead of updating `{config.paths.backlog}`, follow the Write Output procedure from `references/backend-github.md` to move the story to {config.workflow.statuses.review} on the project board, post a summary comment on the issue, and update labels.
 
-1. **Run the full test suite** one final time to confirm everything works
+1. **Run the full test suite** one final time to confirm everything works: unit/integration tests first, then e2e tests (if applicable) with video artifact verification in `{config.paths.test_results}/{story-id}/`
 2. **Update `{config.paths.backlog}`:** Find the user story and update its status to `{config.workflow.statuses.review}`
 3. **Confirm completion:**
 
@@ -425,3 +439,9 @@ To maximize the amount of work that fits within a single session:
 - If the break is expected (behavior changed intentionally): update the tests
 - If unexpected: Ugo fixes the implementation to preserve existing behavior
 - Always ask the user before modifying existing tests
+
+**E2E tests fail due to infrastructure issues (not code bugs):**
+- Mina distinguishes between test failures (assertions fail = code bug) and infrastructure failures (browser not found, server not starting, timeout on startup, video recording not working)
+- For infrastructure failures: fix the configuration or install missing dependencies, then retry
+- If the dev server fails to start, check for port conflicts or missing build steps
+- Flag persistent infrastructure issues to the user rather than silently skipping e2e tests
