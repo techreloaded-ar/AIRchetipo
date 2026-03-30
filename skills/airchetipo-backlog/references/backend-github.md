@@ -67,37 +67,6 @@ gh project field-create $PROJECT_NUMBER --owner "$OWNER" --name "Story Points" -
 
 **Epic** field: created AFTER Phase 2, once epics are known.
 
-### Step 2b — Remove auto-add workflows
-
-After extracting field metadata, delete the "Auto-add sub-issues to project" workflow (and any other enabled auto-add workflows). This prevents GitHub from automatically adding sub-issues created by `airchetipo-plan` to the board — only explicit `addProjectV2ItemById` calls should add items.
-
-The GraphQL API does not support disabling workflows (`updateProjectV2Workflow` does not exist) — use `deleteProjectV2Workflow` instead.
-
-```bash
-# Find and delete all enabled workflows (auto-add sub-issues, etc.)
-WORKFLOWS=$(gh api graphql -f query='query {
-  node(id: "'$PROJECT_NODE_ID'") {
-    ... on ProjectV2 {
-      workflows(first: 20) {
-        nodes { id name enabled }
-      }
-    }
-  }
-}' --jq '.data.node.workflows.nodes[] | select(.enabled == true) | .id')
-
-for WF_ID in $WORKFLOWS; do
-  gh api graphql -f query='mutation {
-    deleteProjectV2Workflow(input: {
-      workflowId: "'$WF_ID'"
-    }) {
-      deletedWorkflowId
-    }
-  }'
-done
-```
-
-> **Note:** This step is idempotent — running it on a project with no enabled workflows is a no-op (the query returns nothing). Built-in disabled workflows (Item closed, Pull request merged, etc.) are left untouched.
-
 ### Step 3 — Status Options Setup
 
 The default Status field only has Todo / In Progress / Done. Add the missing statuses from `{config.workflow.statuses}` via GraphQL. The `updateProjectV2Field` mutation replaces ALL options, so always include existing ones.
@@ -137,6 +106,18 @@ GitHub Project: [project title] (#N)
 Owner: [owner]
 
 Analyzing requirements...
+```
+
+If the project was **just created** (not pre-existing), also show:
+
+```
+⚙️ **Setup board view (solo la prima volta)**
+Per nascondere le sub-issue (task) dalla board, aggiungi questo filtro alla view:
+1. Apri il progetto → [project URL]
+2. Passa a layout **Board**
+3. Clicca su **Filter** (icona imbuto)
+4. Incolla: `no:parent-issue`
+5. Salva la view (💾)
 ```
 
 ---
@@ -330,7 +311,7 @@ The optimized flow uses approximately:
 
 | Phase | Calls | Notes |
 |---|---|---|
-| Setup (auth + project + fields + status) | 4-6 | Down from 8 — merged owner+project discovery, use mutation responses |
+| Setup (auth + project + fields + status) | 3-5 | Merged owner+project discovery, use mutation responses |
 | Idempotency check | 1 | Unchanged |
 | Labels | 1 | Single Bash call with all labels |
 | Epic field | 1-2 | Create + optional field-list re-read |

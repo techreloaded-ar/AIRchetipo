@@ -96,7 +96,7 @@ queue:
     pipeline:
       plan:
         status: success  # pending | success | error | skipped
-        summary: "Piano creato con 8 task (5 impl, 2 test, 1 harness)"
+        summary: "Piano creato con 8 task (5 impl, 2 test)"
         timestamp: "2026-03-29T10:35:00"
       implement:
         status: success
