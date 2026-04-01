@@ -115,22 +115,22 @@ Silently perform all of the following — this is your chain of thought, not vis
   - Video recording enabled for every e2e scenario (to produce visual artifacts of test runs), with videos saved in `{config.paths.test_results}/{story-id}/`
   - The e2e framework to use, detected from the project (existing config files, `package.json`, harness inputs, and current repository conventions). Do NOT hardcode any specific framework — adapt to whatever the project uses
   - If no e2e infrastructure exists in the project, include a setup task (TASK) in the task list for installing and configuring the framework, including video recording support
+  - **This e2e strategy MUST be included in the planning document — it is not optional.** The implement skill will only write e2e tests if this strategy is present in the plan. Omitting the e2e strategy for a UI story is a planning error.
 
 #### UI/UX Assessment & Mockup Spawn
 
 If the story requires **new user interface** (new pages, significant UI components, or substantial layout changes):
 
-1. Spawn a **background agent** (using `run_in_background: true`) that invokes `/airchetipo-design` with:
+1. Spawn an agent that invokes `/airchetipo-design` with:
    - The full user story (code, title, text, acceptance criteria)
    - A summary of the technical solution (UI-relevant aspects)
    - Frontend framework/design system info
    - Instruction to save mockups in `{config.paths.mockups}/{US-CODE}/`
    - Instruction to analyze existing mockups in `{config.paths.mockups}/` for visual consistency
-2. Set `mockup_generated = true`
+2. **Wait for mockup completion before proceeding.** When running inside an autopilot pipeline, background agents are destroyed when the parent subagent's context is destroyed. The mockup agent MUST complete within the plan subagent's lifecycle.
+3. After the mockup agent completes, verify that at least one file exists in `{config.paths.mockups}/{US-CODE}/` before setting `mockup_generated = true`. If no files exist, log a warning and set `mockup_generated = false`.
 
 If NO UI work is needed: set `mockup_generated = false`.
-
-**Do NOT wait for mockup completion.** The mockup agent runs independently in the background.
 
 #### Output: Team Brief + Document
 

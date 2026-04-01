@@ -281,6 +281,14 @@ Trust the subagent's result — do not re-read the backlog. The plan skill alrea
 1. If the subagent returns successfully (no error):
    - Record `plan.status: success` and the summary in the state file
    - Update `updated_at`
+   - **Mockup artifact verification:** If the plan summary mentions UI work, mockups, or design:
+     1. Check if `{config.paths.mockups}/{US-CODE}/` contains at least one file (use `ls` or glob)
+     2. If mockup files are found: record `mockup_verified: true` in the state file and proceed
+     3. If NO mockup files are found:
+        - Spawn a dedicated mockup subagent: execute `/airchetipo-design {US-CODE}` with the story title and plan summary as context
+        - Wait for completion (do NOT run in background)
+        - Verify files exist after completion
+        - If still no files: log `mockup_missing: true` in the state file and proceed anyway (do not block the pipeline)
    - Proceed to Step B
 2. If the subagent returns an error or failure:
    - Record `plan.status: error` with the subagent's return as error detail
@@ -320,6 +328,10 @@ Trust the subagent's result — do not re-read the backlog. The implement skill 
    - Record `implement.status: success` and the summary in the state file
    - Mark story `result: completed`
    - Update `updated_at`
+   - **E2E verification:** If the story involves UI work and the implement summary does NOT mention e2e tests:
+     1. Log `e2e_missing: true` in the story's state entry
+     2. Include a warning in the story progress update: `⚠️ E2E test non scritti per questa storia`
+     3. Do NOT block the pipeline — proceed to the next story
 2. If the subagent returns an error or failure:
    - Record `implement.status: error`
    - Mark story `result: partial` (plan succeeded but implement failed)
