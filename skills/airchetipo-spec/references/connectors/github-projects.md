@@ -12,16 +12,17 @@ Use it for both:
 
 ### Step 1 - Auth and Repository Discovery
 
-Detect repository owner and repository name in one command:
+Detect repository owner, repository name, and repository node ID in one command:
 
 ```bash
-gh repo view --json owner,name,nameWithOwner --jq '{owner: .owner.login, name: .name, repo: .nameWithOwner}'
+gh repo view --json id,owner,name,nameWithOwner --jq '{owner: .owner.login, name: .name, repo: .nameWithOwner, repoId: .id}'
 ```
 
 Save:
 - `$OWNER`
 - `$REPO_NAME`
 - `$REPO_SLUG`
+- `$REPO_NODE_ID`
 
 Then discover available projects:
 
@@ -42,7 +43,9 @@ Poi rilancia la richiesta di backlog o user story.
 
 ### Step 2 - Detect Whether a Backlog Already Exists
 
-Infer which project is linked to the current repository.
+Infer which project is operationally associated with the current repository.
+
+This detection is only a backlog-discovery heuristic. It does not replace GitHub's formal ProjectV2-to-Repository link, which must be ensured later.
 
 A project counts as an existing backlog only when both conditions are true:
 1. its title suggests backlog work, preferring exact title `$REPO_NAME Backlog`, then titles containing `Backlog`
@@ -87,6 +90,31 @@ Extract:
 - priority option IDs if present
 - `$SP_FIELD_ID`
 - `$EPIC_FIELD_ID` if present
+
+Before creating or updating fields, ensure the project is formally linked to the repository.
+
+Why this matters:
+- downstream AIRchetipo skills discover the backlog project from repository context
+- adding repository issues to a project is not the same as creating GitHub's formal project-to-repository association
+- without the formal link, the project may look correct in the UI but still be missed by later automation
+
+Run this mutation once `$PROJECT_NODE_ID` and `$REPO_NODE_ID` are known:
+
+```bash
+gh api graphql -f query='mutation {
+  linkProjectV2ToRepository(input: {
+    projectId: "<PROJECT_NODE_ID>",
+    repositoryId: "<REPO_NODE_ID>"
+  }) {
+    repository {
+      id
+      nameWithOwner
+    }
+  }
+}'
+```
+
+If GitHub reports that the repository is already linked, continue without failing. Treat the link step as required but idempotent.
 
 Create missing fields when needed:
 
