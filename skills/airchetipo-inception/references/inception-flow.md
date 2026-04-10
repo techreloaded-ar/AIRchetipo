@@ -152,7 +152,6 @@ When the minimum is met:
 2. Generate the PRD
 3. Save it to `{config.paths.prd}`
 4. Confirm completion
-5. Ask whether to generate the backlog immediately
 
 ## Information Extraction Protocol
 

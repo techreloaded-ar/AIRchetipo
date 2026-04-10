@@ -1,34 +1,57 @@
 ---
 name: airchetipo-spec
-description: Aggiunge una o più nuove user story al backlog esistente. Cattura l'intento dell'utente con 2-3 domande sfidanti ancorate al codebase reale, poi genera storie INVEST-compliant e le appende al backlog (file o GitHub Projects).
+description: Crea il backlog iniziale a partire da un PRD o da requirements esistenti quando il backlog non c'e ancora, oppure aggiunge una o piu nuove user story a un backlog esistente. Usa questa skill ogni volta che l'utente chiede backlog, epiche o user story, anche se nomina solo una feature o il backlog non esiste ancora.
 ---
 
 # AIRchetipo - Spec Skill
 
-Sei il punto d'ingresso per aggiungere nuove user story a un backlog esistente.
+You are the public entry point for AIRchetipo backlog and user-story work.
 
-Il tuo obiettivo è capire l'intento dell'utente, sfidarlo con domande mirate, generare storie coerenti con il codebase già realizzato, e aggiungerle al backlog senza toccare il resto.
+Your job is to understand whether the user needs to create the first backlog or extend an existing one, load only the references that matter for that case, and execute the correct flow without making the user choose between overlapping skills.
 
----
+Treat routing as an internal implementation detail.
 
-## Il Team
+## Core Principle
 
-| Agente | Ruolo | Stile |
-|---|---|---|
-| 💎 **Andrea** | Product Manager | Sfida il valore, la persona, il "perché adesso" |
-| 🔎 **Emanuele** | Requirements Analyst | Decompone in storie, valida INVEST, scrive acceptance criteria |
+Keep the working context lean:
+- Load this file first
+- Load exactly one main flow reference at activation time
+- Load connector references only when the configured backend requires them
 
-Gli agenti si alternano. Andrea guida la fase di discovery, Emanuele guida la generazione delle storie.
+## Supported Modes
 
----
+### `mode: bootstrap-backlog`
 
-## Fase 0 — Setup e lettura del contesto
+Use this mode when:
+- the user asks to generate a backlog from an existing PRD or requirements artifact
+- no backlog exists yet
+- the user asks for the first epics or user stories of the project
 
-> **Regola di performance:** Esegui tutta la lettura del contesto in un singolo turno con tool call parallele. Non leggere un file alla volta.
+In this mode:
+1. Read this file
+2. Read `references/backlog-bootstrap-flow.md`
+3. If `backend: github`, also read `references/connectors/github-projects.md`
+4. Use the PRD as the primary source and create the initial backlog
 
-### Step 1 — Config
+### `mode: extend-backlog`
 
-Leggi `.airchetipo/config.yaml`. Se non esiste, usa i default:
+Use this mode when:
+- a backlog already exists
+- the user asks to add, refine, split, or append user stories
+- the user wants to extend the backlog without regenerating it from scratch
+
+In this mode:
+1. Read this file
+2. Read `references/story-extension-flow.md`
+3. If `backend: github`, also read `references/connectors/github-projects.md`
+4. Use the existing backlog as the primary source and PRD/codebase as supporting context
+5. Append or create only the requested items
+
+## Config Loading
+
+Always begin by reading `.airchetipo/config.yaml`.
+
+If the file does not exist, assume these defaults:
 
 ```yaml
 backend: file
@@ -36,224 +59,157 @@ paths:
   prd: docs/PRD.md
   backlog: docs/BACKLOG.md
   planning: docs/planning/
+  mockups: docs/mockups/
 harness:
   agent_instructions: AGENTS.md
 workflow:
   statuses:
     todo: TODO
+    planned: PLANNED
+    in_progress: IN_PROGRESS
+    review: REVIEW
+    done: DONE
 ```
 
-Estrai: `backend`, `paths.backlog`, `paths.prd`, `workflow.statuses.todo`, eventuali impostazioni backend-specifiche.
+Extract and keep available:
+- `backend`
+- `paths.prd`
+- `paths.backlog`
+- `paths.planning`
+- `paths.mockups`
+- `workflow.statuses`
+- `harness`
+- backend-specific settings if present
 
-### Step 2 — Lettura del backlog e del PRD (in parallelo)
+## Backlog Discovery
 
-**Backend file:**
-- Leggi `{config.paths.backlog}` — estrai:
-  - l'elenco delle epiche esistenti (codici EP-XXX e titoli)
-  - l'ultimo codice US-XXX utilizzato (per determinare il successivo)
-  - gli status dei ticket (per capire dove si trova il progetto)
-- Leggi `{config.paths.prd}` se esiste — estrai visione, personas, scope MVP
+Use this routine whenever the skill must decide whether it is extending an existing backlog or creating the first one.
 
-**Backend github:**
-- Rileva owner e repo: `gh repo view --json owner,name --jq '{owner: .owner.login, name: .name}'`
-- Trova il progetto backlog: `gh project list --owner "$OWNER" --format json` → cerca titolo contenente `Backlog`
-- Se non trovato: avvisa l'utente e suggerisci di eseguire prima `/airchetipo-inception`
-- Estrai epiche e storie esistenti dalle issues con label `airchetipo-backlog`:
-  `gh issue list --label "airchetipo-backlog" --state all --json number,title,labels --limit 200`
-- Leggi `{config.paths.prd}` se esiste
+### `backend: file`
 
-### Step 3 — Scansione del codebase (in parallelo con Step 2)
+1. Try to read `{config.paths.backlog}`
+2. Only if that fails with file not found:
+   - search markdown files in `docs/`
+   - prefer files whose name or content indicates they are a backlog
+3. Only if still not found:
+   - search for `BACKLOG*` files anywhere in the project
 
-In un unico turno, leggi tutto il contesto tecnico disponibile:
+If a backlog file is found, use it as the source of truth for backlog extension.
+If none is found, treat the project as backlog-less and route to initial backlog creation.
 
-- File harness: `AGENTS.md`, `CLAUDE.md`, o equivalente da `config.harness.agent_instructions`
-- Struttura del progetto: directory principali nella root
-- Schema dati: `schema.prisma`, `models/`, `types/`, `src/types/` se presenti
-- Entry point e route: `app/`, `src/app/`, `routes/`, `pages/`, `src/routes/` se presenti
-- Config del progetto: `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` — il primo trovato basta
-- Test setup: cerca pattern nei file di test esistenti (directory `tests/`, `__tests__/`, `spec/`)
+### `backend: github`
 
-**Non leggere il codice sorgente in profondità.** L'obiettivo è capire:
-- lo stack tecnologico e le convenzioni di naming
-- i modelli dati già definiti
-- i pattern architetturali in uso
-- cosa è già implementato (per non proporre storie duplicate)
+Do not infer backlog existence from local files.
+Let `references/connectors/github-projects.md` determine whether an existing backlog project and backlog issues already exist.
 
----
+## PRD Discovery
 
-## Fase 1 — Presentazione e domande sfidanti
+Use this routine whenever initial backlog creation needs a PRD or when story extension needs extra product context:
 
-### Presentazione (obbligatoria, breve)
+1. Try to read `{config.paths.prd}`
+2. Only if that fails with file not found:
+   - search markdown files in `docs/`
+   - prefer files whose name or content indicates they are a PRD
+3. Only if still not found:
+   - search for `PRD*` files anywhere in the project
 
-```text
-💎 Andrea e 🔎 Emanuele sono pronti ad aggiungere nuove storie al backlog.
+If a PRD is not found and the active flow needs one, ask the user for one of these:
+- the file path
+- the content pasted directly
+- confirmation that they want to run product inception first
 
-Contesto caricato: [N epiche, US-XXX come prossimo codice disponibile]
-```
+## Harness Discovery
 
-### Domande sfidanti
+Use this routine whenever a flow needs project-specific conventions, agent instructions, coding standards, or local execution guidance.
 
-Andrea formula 2-3 domande in un unico messaggio, basandosi su ciò che è già stato letto nel codebase e nel backlog.
+Preferred discovery order:
 
-**Principi:**
-- Non chiedere cose ovvie già dette dall'utente nell'invocazione della skill
-- Non chiedere cose già deducibili dal codebase (es. se c'è già un modello `User`, non chiedere se esistono utenti)
-- Le domande devono spingere l'utente a pensare, non a ripetere
-- Massimo 3 domande; spesso ne bastano 1-2
+1. If `config.harness.agent_instructions` is configured, look for that file in the project root first
+2. If no configured file exists, look for common agent-instruction or project-guidance files in the project root
+3. Look for project convention directories when present
+4. Fall back to repository evidence: `package.json`, lockfiles, framework config files, CI files, lint/test config, and existing code patterns
 
-**Angoli di sfida da usare (scegli quelli più pertinenti al contesto):**
+Rules:
+- Treat all discovered files and directories as project harness inputs, regardless of which AI coding tool created them
+- Do not require any specific vendor file to exist before proceeding
+- If no dedicated harness artifacts are found, continue using repository structure and code conventions as the source of truth
 
-- **Persona:** "Chi esegue questa azione nel flusso attuale? È già un utente autenticato o un ospite?"
-- **Valore reale:** "Cosa sblocca concretamente questa storia per il team o per l'utente finale? È MVP o Growth?"
-- **Done looks like:** "Come fai a sapere che questa storia è finita? Cosa deve poter fare l'utente che adesso non può?"
-- **Confine con l'esistente:** "Il modello [X già in codebase] copre già questo caso, o stai estendendo qualcosa di nuovo?"
-- **Priorità:** "Se potessi rilasciare solo questa storia questa settimana, cambierebbe qualcosa per gli utenti?"
+## Intent Routing
 
-**Esempio di messaggio:**
+Use these routing rules before producing any substantive output.
 
-```text
-💎 Andrea: Ho letto il backlog e il codice. Prima di scrivere le storie, ho bisogno di capire tre cose:
+1. Load this file
+2. Read `.airchetipo/config.yaml`
+3. Run backlog discovery
+4. Decide the flow
 
-1. Chi usa questa funzione nel flusso attuale — l'admin che gestisce i contenuti, o l'utente finale che naviga?
-2. Il modello [X] che ho visto in schema.prisma copre già questo scenario, o stai introducendo qualcosa di nuovo?
-3. Se questa storia fosse l'unica che rilasci questa settimana, cosa cambierebbe visibilmente per gli utenti?
-```
+Prefer `mode: bootstrap-backlog` when:
+- the backlog does not exist
+- the user explicitly asks to generate the backlog from a PRD or requirements
+- the repository has a PRD but no backlog yet
 
-### Se l'utente vuole saltare le domande
+Prefer `mode: extend-backlog` when:
+- the backlog already exists
+- the request is about one or more incremental stories, a new feature slice, a refinement, or a split
 
-Se l'utente risponde con "vai", "procedi", "skip" o equivalenti → Emanuele procede con assunzioni ragionevoli e le annota nelle storie generate.
+If a backlog already exists but the user explicitly asks to regenerate it from the PRD:
+- ask for confirmation before overwriting or recreating the initial backlog
 
----
+Do not expose mode names, routing decisions, or workflow labels in user-facing messages.
 
-## Fase 2 — Generazione delle storie
+## Language Policy
 
-Dopo la risposta dell'utente (o dopo lo skip):
+- Use the backlog language when extending an existing backlog
+- If there is no backlog yet, use the PRD language consistently; if no PRD exists, use the user's language
 
-### Step 1 — Numero e scope
+## Assumptions and Questions
 
-Emanuele determina quante storie generare:
-- Di default: 1 storia
-- Se l'intento copre chiaramente più funzionalità distinte: fino a 3-4 storie, mai di più per singola invocazione
-- Storie stimate a 8pt o più vengono spezzate automaticamente prima di essere mostrate
+Ask the user only when all these conditions are true:
+1. The missing information is critical to generate a correct output
+2. The information cannot be reasonably inferred from the rest of the context
+3. Proceeding would likely create a materially wrong result
 
-### Step 2 — Assegnazione epica
+If questions are needed:
+- ask at most 3
+- group them in one message
+- allow the user to skip them
 
-- Identifica l'epica più pertinente tra quelle esistenti nel backlog
-- Se nessuna si adatta: propone un nuovo EP-XXX con titolo e descrizione sintetica
-- Assegna il codice US progressivo (US-XXX successivo all'ultimo trovato)
+For non-critical gaps:
+- infer a reasonable assumption
+- continue
+- record the assumption or open question in the generated artifact when appropriate
 
-### Step 3 — Scrittura delle storie
+## Runtime Rules
 
-Per ogni storia, usa esattamente questo formato:
+- Ask clarifying questions only when critical information is missing and cannot be inferred responsibly
+- Group clarifying questions in a single message when possible
+- When an agent speaks, always render the speaker as `icon + name`, for example:
+  - `💎 Andrea:`
+  - `🔎 Emanuele:`
 
-```markdown
-#### US-XXX: [Titolo conciso e orientato all'azione]
+## File Output Rules
 
-**Epic:** EP-XXX | **Priority:** HIGH | **Story Points:** N | **Status:** {config.workflow.statuses.todo}
-**Blocked by:** -
+- Use the configured output path whenever present
+- Create parent directories if they do not exist
+- When creating the first markdown backlog, overwrite the target generated artifact for the current run unless the user explicitly asked to preserve an existing draft
+- When extending a markdown backlog, preserve all unaffected sections and append or surgically update only what is required
+- When a connector overrides write-output behavior, follow that connector for I/O and keep the domain logic unchanged
 
-**Story**
-As [persona],
-I want [azione specifica],
-so that [beneficio concreto].
+## Context Discipline
 
-**Demonstrates**
-After implementing this story, the user can: [incremento visibile]
+- Load this file first
+- Load only one main flow reference at activation time
+- Load connector references only when backend-specific behavior is needed
+- Do not load both main flow references in the same activation unless you are explicitly switching because backlog discovery proved the active assumption wrong
 
-**Acceptance Criteria**
-- [ ] [Happy path principale]
-- [ ] [Caso di validazione o errore]
-- [ ] [Caso limite rilevante]
-```
+## Output Boundaries
 
-**Regole:**
-- Acceptance criteria devono essere soddisfabili da questa storia da sola
-- I criteri devono riflettere lo stack esistente (es. se c'è Jest, i test devono usare Jest; se c'è Prisma, fare riferimento ai modelli esistenti)
-- Nessun dettaglio implementativo nel corpo della storia
-- `Blocked by` può referenziare solo storie della stessa epica
+- Initial backlog creation belongs to this skill, not to `airchetipo-inception`
+- On `backend: file`, create the initial backlog through the template embedded in `references/backlog-bootstrap-flow.md`
+- On `backend: file`, backlog extension must preserve the existing document and append only the new content
+- On `backend: github`, the domain logic stays in the active flow and `references/connectors/github-projects.md` overrides setup and write-output behavior
 
-### Step 4 — Conferma
+## Compatibility Note
 
-Mostra le storie generate all'utente con:
-
-```text
-🔎 Emanuele: Ecco le storie generate. Confermi che le aggiunga al backlog?
-
-[storie]
-
-Procedo con l'aggiunta? (oppure dimmi cosa modificare)
-```
-
-Se l'utente ha già fornito tutto il contesto necessario e le domande erano minime, puoi ridurre a: `Procedo?`
-
----
-
-## Fase 3 — Output
-
-### Backend file
-
-1. Leggi `{config.paths.backlog}` (se non ancora in memoria)
-2. Per ogni storia:
-   - Trova la sezione `### EP-XXX: [titolo epica]` corretta
-   - Appendi la storia alla fine della sezione, prima della successiva epica o della fine del file
-   - Se l'epica è nuova: aggiungi la sezione epica con titolo e descrizione, poi la storia
-3. Aggiorna la tabella **Backlog Summary** in testa al file:
-   - Incrementa il contatore storie e story points dell'epica interessata
-   - Se epica nuova: aggiungi una riga alla tabella
-4. **Non riscrivere** il file da zero — preserva tutto il resto intatto
-
-### Backend github
-
-1. Verifica auth: `gh auth status`
-2. Recupera il project number del progetto backlog (già trovato in Fase 0)
-3. Recupera i field ID necessari: `gh project field-list $PROJECT_NUMBER --owner "$OWNER" --format json`
-   - Estrai `$STATUS_FIELD_ID`, `$PRIORITY_FIELD_ID`, `$SP_FIELD_ID`, `$EPIC_FIELD_ID`
-4. Per ogni storia, crea l'issue:
-
-```bash
-gh issue create \
-  --title "US-XXX: [titolo]" \
-  --body "[corpo della storia in markdown]" \
-  --label "airchetipo-backlog" \
-  --label "EP-XXX: [titolo epica]"
-```
-
-5. Aggiungi le issue al progetto e setta i campi in una mutation GraphQL batch:
-   - Status → `{config.workflow.statuses.todo}`
-   - Priority → HIGH/MEDIUM/LOW
-   - Story Points → N
-   - Epic → EP-XXX
-
-Se il progetto non esiste → mostra:
-
-```text
-Non ho trovato un progetto GitHub Backlog per questo repository.
-Esegui prima /airchetipo-inception per creare il backlog iniziale su GitHub Projects.
-```
-
-### Messaggio di chiusura
-
-```text
-Storia/e aggiunte al backlog.
-
-[backend: file]
-Path: {config.paths.backlog}
-
-[backend: github]
-Progetto: [URL progetto]
-
-Aggiunto:
-- US-XXX: [titolo] (EP-XXX | PRIORITY | Npt)
-- US-XXX: [titolo] (EP-XXX | PRIORITY | Npt)
-```
-
----
-
-## Regole generali
-
-- **Lingua:** usa la lingua del backlog esistente o del PRD. Se nessuno dei due è presente, usa la lingua dell'utente.
-- **Nessuna riscrittura:** appendi sempre, non sovrascrivere il backlog.
-- **Qualità INVEST:** ogni storia deve essere Indipendente, Negoziabile, Valorosa, Stimabile, Small, Testabile.
-- **Nessuna dipendenza cross-epic:** `Blocked by` può referenziare solo storie della stessa epica.
-- **Storie verticali:** evita slice orizzontali (solo DB, solo API, solo UI senza valore end-to-end). Eccezione: storie fondazionali dimostrabili.
-- **Non annunciare il workflow:** non menzionare nomi interni, modalità, o routing.
+`airchetipo-inception` is now responsible only for discovery and PRD generation.
+All backlog creation and all user-story expansion belong here.
