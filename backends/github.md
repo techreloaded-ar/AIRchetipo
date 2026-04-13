@@ -1,6 +1,6 @@
 # Backend: GitHub Projects
 
-This file implements the AIRchetipo backend contracts for GitHub Projects v2. Load it only when `.airchetipo/config.yaml` has `backend: github`.
+This file implements the AIRchetipo backend contracts for GitHub Projects. Load it only when `.airchetipo/config.yaml` has `backend: github`.
 
 ## Performance Principles
 
@@ -24,11 +24,7 @@ Detect repository owner, name, slug, and node ID in one command:
 gh repo view --json id,owner,name,nameWithOwner --jq '{owner: .owner.login, name: .name, repo: .nameWithOwner, repoId: .id}'
 ```
 
-Save:
-- `$OWNER`
-- `$REPO_NAME`
-- `$REPO_SLUG`
-- `$REPO_NODE_ID`
+Save: `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$REPO_NODE_ID`.
 
 Then verify GitHub Projects auth:
 
@@ -85,6 +81,10 @@ gh project field-list $PROJECT_NUMBER --owner "$OWNER" --format json
 gh project item-list $PROJECT_NUMBER --owner "$OWNER" --format json -L 200
 ```
 
+> Always use `-L 200` with `gh project item-list` to avoid the default limit of 30 items.
+
+> **JSON parsing:** `gh project item-list --format json` may return JSON with unescaped control characters in `content.body` that break external `jq`. Always use `gh`'s built-in `--jq` flag instead of piping to the system `jq` binary.
+
 From the field list, extract and save:
 - `$PROJECT_NODE_ID` — the project's node ID
 - `$STATUS_FIELD_ID` + status option IDs (matching `{config.workflow.statuses}`)
@@ -102,25 +102,18 @@ Create custom fields, status options, epic field, and link the project to the re
 
 ### Step 1 — Link Project to Repository
 
-Run this mutation once `$PROJECT_NODE_ID` and `$REPO_NODE_ID` are known:
-
 ```bash
 gh api graphql -f query='mutation {
   linkProjectV2ToRepository(input: {
     projectId: "<PROJECT_NODE_ID>",
     repositoryId: "<REPO_NODE_ID>"
   }) {
-    repository {
-      id
-      nameWithOwner
-    }
+    repository { id nameWithOwner }
   }
 }'
 ```
 
-If GitHub reports the repository is already linked, continue without failing. This step is required but idempotent.
-
-Why: downstream skills discover the backlog project from repository context. Without the formal link, the project may be missed.
+If GitHub reports the repository is already linked, continue without failing. This step is idempotent and required so downstream skills can discover the backlog project from repository context.
 
 ### Step 2 — Create Missing Fields
 
@@ -134,20 +127,19 @@ gh project field-create $PROJECT_NUMBER --owner "$OWNER" --name "Story Points" -
 
 ### Step 3 — Ensure Status Options
 
-The default Status field only has Todo / In Progress / Done. Add the configured statuses via GraphQL. The `updateProjectV2Field` mutation **replaces ALL options**, so always include existing ones:
+The default Status field only has Todo / In Progress / Done. The `updateProjectV2Field` mutation **replaces ALL options**, so always include existing ones:
 
 ```bash
 gh api graphql -f query='mutation {
   updateProjectV2Field(input: {
-    projectId: "<PROJECT_NODE_ID>",
     fieldId: "<STATUS_FIELD_ID>",
     name: "Status",
     singleSelectOptions: [
-      {name: "{config.workflow.statuses.todo}", color: GRAY},
-      {name: "{config.workflow.statuses.planned}", color: BLUE},
-      {name: "{config.workflow.statuses.in_progress}", color: YELLOW},
-      {name: "{config.workflow.statuses.review}", color: PURPLE},
-      {name: "{config.workflow.statuses.done}", color: GREEN}
+      {name: "{config.workflow.statuses.todo}", color: GRAY, description: ""},
+      {name: "{config.workflow.statuses.planned}", color: BLUE, description: ""},
+      {name: "{config.workflow.statuses.in_progress}", color: YELLOW, description: ""},
+      {name: "{config.workflow.statuses.review}", color: PURPLE, description: ""},
+      {name: "{config.workflow.statuses.done}", color: GREEN, description: ""}
     ]
   }) {
     projectV2Field {
@@ -171,6 +163,8 @@ If the Epic field already exists, update it via GraphQL `updateProjectV2Field` m
 
 Extract the Epic field ID and option IDs from the create/update response. If the response does not include option IDs, do a single field-list re-read.
 
+> **Board view tip:** When a project is first created, sub-issues (tasks) appear on the board alongside stories. To hide them, the user should add a board filter: `no:parent-issue`.
+
 ---
 
 ## READ: fetch_backlog_items
@@ -183,17 +177,9 @@ Use the item list already fetched during `initialize_backend` (Step 3). If a ref
 gh project item-list $PROJECT_NUMBER --owner "$OWNER" --format json -L 200
 ```
 
-For each item, extract:
-- Title (contains US code)
-- Status field value
-- Priority field value
-- Story Points field value
-- Epic field value
-- Issue number (from `content.number`)
+For each item, extract: Title (contains US code), Status, Priority, Story Points, Epic, Issue number (from `content.number`).
 
 If `status_filter` is provided, return only items matching that status.
-
-> Always use `-L 200` with `gh project item-list` to avoid the default limit of 30 items.
 
 ---
 
@@ -201,24 +187,16 @@ If `status_filter` is provided, return only items matching that status.
 
 Pick a story by code or auto-select the highest-priority eligible story.
 
-1. **If a story code was passed as argument** (e.g., "US-005"):
-   - Search among the fetched items by title prefix
-   - If not found, list available stories and stop
+1. **If a story code was passed** (e.g., "US-005"): search among fetched items by title prefix. If not found, list available stories and stop.
 
-2. **If no argument was passed (auto-select):**
-   - Among eligible items (filtered by the caller's status criteria), select highest Priority (HIGH > MEDIUM > LOW)
-   - Break ties with the lowest story number (US-001 before US-002)
+2. **If no argument was passed (auto-select):** among eligible items (filtered by the caller's status criteria), select highest Priority (HIGH > MEDIUM > LOW). Break ties with the lowest story number.
 
 3. Read the full issue body:
    ```bash
    gh issue view <NUMBER> --json body,title,labels,number,url
    ```
 
-4. Parse the `Blocked by` field from the issue body. If it contains issue references (e.g., `#NN (US-XXX)`), fetch those issue bodies in **parallel tool calls** to load blocking story context:
-   ```bash
-   gh issue view <BLOCKER_NUMBER> --json body,title,number,url
-   ```
-   If `Blocked by` is absent or `-`, treat the story as having no dependencies.
+4. Parse the `Blocked by` field from the issue body. If it contains issue references (e.g., `#NN (US-XXX)`), fetch those issue bodies in **parallel tool calls**. If `Blocked by` is absent or `-`, treat the story as having no dependencies.
 
 > **Free-text story creation** is not supported with the GitHub backend. If the argument is not a US-XXX code, inform the user to create the issue on GitHub first, or run `airchetipo-spec` to add it to the backlog.
 
@@ -232,8 +210,6 @@ Read the full body/content of a story issue.
 gh issue view <NUMBER> --json body,title,labels,number,url
 ```
 
-Returns the complete issue body text, title, labels, issue number, and URL.
-
 ---
 
 ## READ: read_story_tasks
@@ -245,17 +221,11 @@ gh api /repos/$OWNER/$REPO_NAME/issues/<PARENT_NUMBER>/sub_issues \
   -H "X-GitHub-Api-Version: 2026-03-10"
 ```
 
-For each open sub-issue, extract when present:
-- Stable identity: GitHub issue number
-- Task ID from title (e.g., `TASK-01`)
-- Type from `**Tipo:**` field
-- Dependencies from `**Dipendenze:**` field
-- Prose description from the body
-- Completion criteria from `**Completamento:**`
+For each open sub-issue, extract when present: Task ID from title (e.g., `TASK-01`), Type from `**Tipo:**`, Dependencies from `**Dipendenze:**`, prose description from the body, Completion criteria from `**Completamento:**`.
 
 Build the task list with enough structure to schedule execution waves when possible.
 
-> **Note:** Validation policies (what to do when fields are missing or malformed) are defined by the calling skill, not by this backend file. This operation returns raw parsed data; the skill decides how to handle inconsistencies.
+> Validation policies (what to do when fields are missing or malformed) are defined by the calling skill, not by this backend file.
 
 ---
 
@@ -267,11 +237,7 @@ Read existing backlog items for idempotency checks when extending the backlog.
 gh issue list --label "airchetipo-backlog" --state all --json number,title,labels,body --limit 200
 ```
 
-Extract:
-- Existing story codes (US-XXX) from titles
-- Last US-XXX code used (for next code generation)
-- Existing epics from labels
-- Current issue numbers (for dependency backfilling)
+Extract: existing story codes (US-XXX) from titles, last US-XXX code used, existing epics from labels, current issue numbers (for dependency backfilling).
 
 ---
 
@@ -285,10 +251,7 @@ Create the initial backlog from a list of stories. This is a multi-step operatio
 gh issue list --label "airchetipo-backlog" --state all --json number,title --limit 200
 ```
 
-If issues are found, present options to the user:
-- **Skip existing** — create only new stories
-- **Recreate** — close existing and create new ones
-- **Abort** — cancel the operation
+If issues are found, present options: **Skip existing**, **Recreate** (close existing and create new), or **Abort**.
 
 ### Step 2 — Create Labels (batch)
 
@@ -297,7 +260,6 @@ Create all labels in a **single Bash call**:
 ```bash
 gh label create "airchetipo-backlog" --description "Story generated by AIRchetipo backlog" --color "1D76DB" --force
 gh label create "EP-001: [Epic Title]" --description "[description]" --color "[color]" --force
-gh label create "EP-002: [Epic Title]" --description "[description]" --color "[color]" --force
 # ... one line per epic
 ```
 
@@ -317,9 +279,7 @@ gh issue create --title "US-001: [Story Title]" \
   --body "$(cat <<'EOF'
 ## Story
 
-As [persona],
-I want [action],
-so that [benefit].
+As [persona], I want [action], so that [benefit].
 
 ## Demonstrates
 
@@ -329,7 +289,6 @@ After implementing this story, the user can: [visible increment]
 
 - [ ] [criterion 1]
 - [ ] [criterion 2]
-- [ ] [criterion 3]
 
 ---
 
@@ -341,20 +300,12 @@ After implementing this story, the user can: [visible increment]
 _Created by AIRchetipo backlog_
 EOF
 )"
-
 # Repeat for each story (all in the same Bash call)
 ```
 
 ### Step 4 — Backfill Dependencies
 
-After all issues are created, for stories with dependencies (`Blocked by` is not `-`), update their issue body to replace symbolic references with actual GitHub issue references (`#NN (US-XXX)`).
-
-Run in a **single Bash call** (only for stories with dependencies):
-
-```bash
-gh issue edit <NUMBER> --repo "$OWNER/$REPO_NAME" --body "$(updated body)"
-# ... repeat for each story with dependencies
-```
+After all issues are created, for stories with dependencies (`Blocked by` is not `-`), update their issue body to replace symbolic references with actual GitHub issue references (`#NN (US-XXX)`). Run in a **single Bash call**.
 
 ### Step 5 — Collect Node IDs
 
@@ -372,31 +323,29 @@ gh api graphql -f query='query {
 
 ### Step 6 — Add to Project + Set Fields (batch GraphQL)
 
-**Mutation 1:** Add all issues to the project:
+**Mutation 1 — Add all issues to the project:**
 
 ```bash
 gh api graphql -f query='mutation {
   add1: addProjectV2ItemById(input: {projectId: "<PROJECT_NODE_ID>", contentId: "<ISSUE_1_NODE_ID>"}) { item { id } }
   add2: addProjectV2ItemById(input: {projectId: "<PROJECT_NODE_ID>", contentId: "<ISSUE_2_NODE_ID>"}) { item { id } }
-  # ... one addN per issue
 }'
 ```
 
-**Mutation 2:** Set all fields (Status, Priority, Story Points, Epic) for every item:
-
-```bash
-gh api graphql -f query='mutation {
-  s1status: updateProjectV2ItemFieldValue(input: {projectId: "<PROJECT_NODE_ID>", itemId: "<ITEM_1_ID>", fieldId: "<STATUS_FIELD_ID>", value: {singleSelectOptionId: "<TODO_OPTION_ID>"}}) { projectV2Item { id } }
-  s1priority: updateProjectV2ItemFieldValue(input: {projectId: "<PROJECT_NODE_ID>", itemId: "<ITEM_1_ID>", fieldId: "<PRIORITY_FIELD_ID>", value: {singleSelectOptionId: "<PRIORITY_OPTION_ID>"}}) { projectV2Item { id } }
-  s1sp: updateProjectV2ItemFieldValue(input: {projectId: "<PROJECT_NODE_ID>", itemId: "<ITEM_1_ID>", fieldId: "<SP_FIELD_ID>", value: {number: N}}) { projectV2Item { id } }
-  s1epic: updateProjectV2ItemFieldValue(input: {projectId: "<PROJECT_NODE_ID>", itemId: "<ITEM_1_ID>", fieldId: "<EPIC_FIELD_ID>", value: {singleSelectOptionId: "<EPIC_OPTION_ID>"}}) { projectV2Item { id } }
-  # ... 4 field updates per issue, all in one mutation
-}'
-```
+**Mutation 2 — Set all fields** (Status, Priority, Story Points, Epic) for every item. Use 4 aliased `updateProjectV2ItemFieldValue` calls per item (one per field).
 
 > **Why two mutations?** `addProjectV2ItemById` returns the item ID needed by `updateProjectV2ItemFieldValue`. You cannot reference one alias's output in another within the same request.
 
-> **Mutation size limit:** GitHub GraphQL has a ~250KB query size limit. For backlogs with 30+ stories, split the field-update mutation into chunks of ~20 stories (80 field updates per mutation).
+> **Batch mutation notes:**
+> - GitHub GraphQL has a ~250KB query size limit. For backlogs with 30+ stories, split mutations into chunks of ~20 stories (~80 field updates per mutation).
+> - When a batch mutation with 100+ aliases exceeds bash quoting limits, write the query to a temporary file:
+>   ```bash
+>   cat > /tmp/mutation.graphql <<'GQLEOF'
+>   mutation { ... }
+>   GQLEOF
+>   QUERY=$(cat /tmp/mutation.graphql) && gh api graphql -f query="$QUERY"
+>   ```
+>   Do NOT use `gh api graphql --input file` — `--input` expects a JSON body, not a raw GraphQL query.
 
 ### Summary Format
 
@@ -425,27 +374,9 @@ Issues create:
 
 Add new stories to an existing backlog without rewriting existing content.
 
-### Step 1 — Read Existing Context
-
-Use `READ: read_existing_backlog` to get existing story codes, epics, and issue numbers.
-
-### Step 2 — Create Missing Labels and Epic Options
-
-If new stories touch a new epic:
-- Create the missing epic label in a single Bash call
-- Add the missing option to the `Epic` field via `updateProjectV2Field` while preserving existing ones
-
-### Step 3 — Create Only New Issues
-
-Create each new issue using the same body format as `save_initial_backlog`. Use `airchetipo-backlog` and the epic label.
-
-### Step 4 — Backfill Dependencies
-
-For new stories that depend on other stories (new or existing), replace symbolic references with GitHub issue references.
-
-### Step 5 — Add to Project + Set Fields
-
-Same batch GraphQL approach as `save_initial_backlog` (Step 6), but only for the newly created issues.
+1. Use `READ: read_existing_backlog` to get existing story codes, epics, and issue numbers.
+2. If new stories touch a new epic, create the missing epic label and add the option to the `Epic` field via `updateProjectV2Field` (preserving existing options).
+3. Create new issues, backfill dependencies, collect node IDs, and add to project with field values — follow Steps 3-6 of `save_initial_backlog`, applied only to the new stories.
 
 ### Summary Format
 
@@ -456,7 +387,6 @@ Project: [project URL]
 
 Aggiunte:
 - #NN US-XXX: [title] (EP-XXX | PRIORITY | Npt)
-- #NN US-XXX: [title] (EP-XXX | PRIORITY | Npt)
 ```
 
 ---
@@ -465,7 +395,7 @@ Aggiunte:
 
 Save an implementation plan for a story. The strategic plan goes into the parent issue body. Tasks become sub-issues.
 
-> **Important:** With `backend: github`, GitHub is the **single source of truth** for the implementation plan. No local file is written in `{config.paths.planning}/`.
+> With `backend: github`, GitHub is the **single source of truth** for the implementation plan. No local file is written in `{config.paths.planning}/`.
 
 ### Step 1 — Detect Epic Label
 
@@ -473,7 +403,7 @@ Read the labels from the parent issue (fetched during story selection). Identify
 
 ### Step 2 — Update Parent Issue Body
 
-Write the complete implementation plan into the parent issue body. This replaces the original story body with the story content PLUS the plan:
+Append the implementation plan to the original story body:
 
 ```bash
 gh issue edit <NUMBER> --repo "$OWNER/$REPO_NAME" --body "$(cat <<'BODYEOF'
@@ -483,19 +413,15 @@ gh issue edit <NUMBER> --repo "$OWNER/$REPO_NAME" --body "$(cat <<'BODYEOF'
 
 ## Piano di Implementazione
 
-**Generato da:** AIRchetipo Planning Team
-**Data:** {DATE}
+**Generato da:** AIRchetipo Planning Team | **Data:** {DATE}
 
 ### Soluzione Tecnica
-
 {content provided by the calling skill}
 
 ### Strategia di Test
-
 {content provided by the calling skill}
 
 ### Riepilogo Task
-
 - Task totali: {N}
 - I task dettagliati sono nelle sub-issues associate
 
@@ -504,54 +430,33 @@ BODYEOF
 )"
 ```
 
-> The plan content (technical solution, test strategy) is provided by the calling skill. This backend operation handles persistence only.
-
 ### Step 3 — Create Sub-Issues (batch)
 
-Create all sub-issues in **one Bash tool call** using a loop. Sub-issues are the executable task details. Their body structure is defined by the calling skill.
+Create all sub-issues in **one Bash tool call** using a loop. Sub-issue body structure is defined by the calling skill.
 
 ```bash
-OWNER="..."
-REPO="..."
-PARENT=N
-LABEL="EP-XXX: ..."
+OWNER="..." REPO="..." PARENT=N LABEL="EP-XXX: ..."
 NUMS=()
 
 # TASK-01
 URL=$(gh issue create --repo "$OWNER/$REPO" \
-  --title "TASK-01: {Title}" \
-  --label "$LABEL" \
+  --title "TASK-01: {Title}" --label "$LABEL" \
   --body "$(cat <<'EOF'
 {sub-issue body — provided by the calling skill}
 EOF
 )")
 NUMS+=($(echo "$URL" | grep -o '[0-9]*$'))
 
-# TASK-02
-URL=$(gh issue create --repo "$OWNER/$REPO" \
-  --title "TASK-02: {Title}" \
-  --label "$LABEL" \
-  --body "$(cat <<'EOF'
-{sub-issue body — provided by the calling skill}
-EOF
-)")
-NUMS+=($(echo "$URL" | grep -o '[0-9]*$'))
-
-# ... repeat for all tasks
-
+# ... repeat for all tasks in TASK order
 echo "Created issues: ${NUMS[*]}"
 ```
-
-Create sub-issues in TASK order (TASK-01 first, then TASK-02, etc.) to maintain logical ordering.
 
 ### Step 4 — Link Sub-Issues to Parent (batch)
 
 Link all sub-issues to the parent as native sub-issues in **one Bash tool call**:
 
 ```bash
-OWNER="..."
-REPO="..."
-PARENT=N
+OWNER="..." REPO="..." PARENT=N
 NUMS=(N N N N)  # actual issue numbers from Step 3
 
 for CHILD_NUMBER in ${NUMS[*]}; do
@@ -576,32 +481,28 @@ gh project item-edit --project-id "<PROJECT_NODE_ID>" --id "<ITEM_ID>" --field-i
 
 To get `<ITEM_ID>`, search the project items fetched during `initialize_backend` for the item matching the target issue number.
 
-### Status Transitions Reference
-
 | From | To | Typical Trigger |
 |---|---|---|
 | {config.workflow.statuses.todo} | {config.workflow.statuses.planned} | Plan skill |
 | {config.workflow.statuses.planned} | {config.workflow.statuses.in_progress} | Implement skill |
 | {config.workflow.statuses.in_progress} | {config.workflow.statuses.review} | Implement skill (after code review) |
-| {config.workflow.statuses.review} | {config.workflow.statuses.done} | Human reviewer only — no skill automates this |
+| {config.workflow.statuses.review} | {config.workflow.statuses.done} | Human reviewer only |
 
 ---
 
 ## WRITE: complete_task
 
-Mark a task (sub-issue) as completed by closing it.
+Mark a task (sub-issue) as completed by closing it. The calling skill determines which sub-issues to close.
 
 ```bash
 gh issue close <SUB_ISSUE_NUMBER> --repo "$OWNER/$REPO_NAME"
 ```
 
-> **Note:** The calling skill is responsible for determining which sub-issues to close. When task identity is ambiguous (e.g., sequential scheduling with weak task IDs), do not close sub-issues speculatively.
-
 ---
 
 ## WRITE: post_comment
 
-Post a comment on a story issue.
+Post a comment on a story issue. The comment content is defined by the calling skill.
 
 ```bash
 gh issue comment <NUMBER> --repo "$OWNER/$REPO_NAME" --body "$(cat <<'EOF'
@@ -610,79 +511,30 @@ EOF
 )"
 ```
 
-The comment content (format, sections, data) is defined by the calling skill. This operation handles persistence only.
-
 ---
 
 ## WRITE: add_label
 
-Add a label to a story issue.
+Add a label to a story issue (creates the label if it doesn't exist):
 
 ```bash
 gh label create "<LABEL_NAME>" --repo "$OWNER/$REPO_NAME" --description "<description>" --color "<color>" --force 2>/dev/null
 gh issue edit <NUMBER> --repo "$OWNER/$REPO_NAME" --add-label "<LABEL_NAME>"
 ```
 
-The `--force` on `label create` makes it idempotent (creates only if not existing).
-
 ---
 
 ## WRITE: create_labels
 
-Batch-create labels that will be used by stories.
+Batch-create labels in a **single Bash call**:
 
 ```bash
 gh label create "label-1" --repo "$OWNER/$REPO_NAME" --description "..." --color "..." --force
 gh label create "label-2" --repo "$OWNER/$REPO_NAME" --description "..." --color "..." --force
-# ... all in a single Bash call
 ```
 
 ---
 
 ## WRITE: backfill_dependencies
 
-After creating issues, replace symbolic dependency references (US-XXX) with GitHub issue references (#NN).
-
-For each story with dependencies (`Blocked by` is not `-`), update the issue body:
-
-```bash
-gh issue edit <NUMBER> --repo "$OWNER/$REPO_NAME" --body "$(updated body with #NN (US-XXX) in Blocked by field)"
-# ... repeat for each story with dependencies, all in one Bash call
-```
-
----
-
-## Technical Reference
-
-### Parsing IDs Flow
-
-1. `gh repo view --json id,owner,name,nameWithOwner` -> `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$REPO_NODE_ID`
-2. `gh project list --owner "$OWNER" --format json` -> project number + node ID
-3. `gh project field-list $N --owner "$OWNER" --format json` -> field IDs + option IDs
-4. `gh project item-list $N --owner "$OWNER" --format json -L 200` -> items with field values
-5. Status mutation response -> status option IDs
-6. Epic field create/update response -> epic option IDs
-7. `gh api graphql` (issues query) -> issue node IDs
-8. `addProjectV2ItemById` mutation response -> item IDs
-
-Always use `--format json` or GraphQL for machine-parseable output.
-
-### Item List Limit
-
-Always use `-L 200` with `gh project item-list` to avoid the default limit of 30 items.
-
-### JSON Parsing Warning
-
-`gh project item-list --format json` may return JSON with unescaped control characters in `content.body` that break external `jq`. Always use `gh`'s built-in `--jq` flag instead of piping to the system `jq` binary.
-
-### GraphQL Status Options Warning
-
-The `updateProjectV2Field` mutation **replaces ALL options**. Always read existing options first and include them in the mutation to avoid data loss.
-
-### Mutation Size Limit
-
-GitHub GraphQL has a ~250KB query size limit. For bulk operations with 30+ items, split mutations into chunks of ~20 items.
-
-### Board View Tip (first-time setup)
-
-When a project is first created, sub-issues (tasks) appear on the board alongside stories. To hide them, the user should add a board filter: `no:parent-issue`.
+After creating issues, replace symbolic dependency references (US-XXX) with GitHub issue references (`#NN (US-XXX)`) in the `Blocked by` field. Update all affected issue bodies in a **single Bash call**.
