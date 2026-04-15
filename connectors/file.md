@@ -1,6 +1,6 @@
-# Backend: File System
+# Connector: File System
 
-This file implements the AIRchetipo backend contracts for the local file system. This is the default backend when `.airchetipo/config.yaml` has `backend: file` or when config.yaml does not exist.
+This file implements the AIRchetipo connector contracts for the local file system. This is the default connector when `.airchetipo/config.yaml` has `connector: file` or when config.yaml does not exist.
 
 All data is stored as markdown files in the project directory. Paths come from `.airchetipo/config.yaml` with these defaults:
 
@@ -15,9 +15,9 @@ paths:
 
 ---
 
-## SETUP: initialize_backend
+## SETUP: initialize_connector
 
-No authentication or external service setup is needed. The file backend uses local filesystem paths from config.yaml.
+No authentication or external service setup is needed. The file connector uses local filesystem paths from config.yaml.
 
 **Outputs:**
 - `config.paths.backlog` — path to the backlog file (default: `docs/BACKLOG.md`)
@@ -179,6 +179,6 @@ Mark a task as completed in the planning file.
 
 ## WRITE: post_comment
 
-Not applicable for the file backend. There is no equivalent of comments on a local file.
+Not applicable for the file connector. There is no equivalent of comments on a local file.
 
-The calling skill should skip this operation silently when using the file backend.
+The calling skill should skip this operation silently when using the file connector.

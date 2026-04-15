@@ -16,7 +16,7 @@ Treat routing as an internal implementation detail.
 Keep the working context lean:
 - Load this file first
 - Load exactly one main flow reference at activation time
-- The backend is loaded once via contracts — no need for connector references
+- The connector is loaded once via contracts — no need for connector references
 
 ## Supported Modes
 
@@ -45,13 +45,13 @@ In this mode:
 3. Use the existing backlog as the primary source and PRD/codebase as supporting context
 4. Append or create only the requested items
 
-## Config Loading & Backend Dispatch
+## Config Loading & Connector Dispatch
 
-1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_backend` from the loaded backend file.
+1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
+2. Execute `SETUP: initialize_connector` from the loaded connector file.
 
 Extract and keep available:
-- `backend`
+- `connector`
 - `paths.prd`
 - `paths.backlog`
 - `paths.planning`
@@ -63,14 +63,14 @@ Extract and keep available:
 
 Use this routine whenever the skill must decide whether it is extending an existing backlog or creating the first one.
 
-Execute `READ: read_existing_backlog` from the backend. This operation:
-- For `backend: file`: reads `{config.paths.backlog}` and searches for backlog files if not found at the configured path
-- For other backends: queries the backend service for existing backlog items
+Execute `READ: read_existing_backlog` from the connector. This operation:
+- For `connector: file`: reads `{config.paths.backlog}` and searches for backlog files if not found at the configured path
+- For other connectors: queries the connector service for existing backlog items
 
 If existing stories are found, use them as the source of truth for backlog extension.
 If none are found, treat the project as backlog-less and route to initial backlog creation.
 
-**File backend fallback search** (only when `{config.paths.backlog}` is not found):
+**File connector fallback search** (only when `{config.paths.backlog}` is not found):
 1. Search markdown files in `docs/` — prefer files whose name or content indicates they are a backlog
 2. If still not found, search for `BACKLOG*` files anywhere in the project
 
@@ -171,15 +171,15 @@ For non-critical gaps:
 
 - Load this file first
 - Load only one main flow reference at activation time
-- The backend is loaded once via contracts at activation time — no additional connector references needed
+- The connector is loaded once via contracts at activation time — no additional connector references needed
 - Do not load both main flow references in the same activation unless you are explicitly switching because backlog discovery proved the active assumption wrong
 
 ## Output Boundaries
 
 - Initial backlog creation belongs to this skill, not to `airchetipo-inception`
-- For initial backlog creation, use `WRITE: save_initial_backlog` from the backend
-- For backlog extension, use `WRITE: append_stories` from the backend
-- Domain logic (PRD analysis, epic identification, story generation, prioritization) stays in the flow references and is backend-independent
+- For initial backlog creation, use `WRITE: save_initial_backlog` from the connector
+- For backlog extension, use `WRITE: append_stories` from the connector
+- Domain logic (PRD analysis, epic identification, story generation, prioritization) stays in the flow references and is connector-independent
 
 ## Compatibility Note
 

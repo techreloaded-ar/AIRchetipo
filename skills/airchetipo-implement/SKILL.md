@@ -1,19 +1,19 @@
 ---
 name: airchetipo-implement
-description: Implements a planned user story by executing its technical implementation plan. Selects a PLANNED story (passed as argument or auto-selected by priority), loads its implementation plan, and orchestrates Ugo, Mina, and Cesare to write code, tests, validation, and code review. The backend (configured in .airchetipo/config.yaml) determines where stories and plans are read from and where status updates are written. Use this skill whenever the user wants to implement a story that is already planned and ready for development, start coding a planned backlog item, or execute a sprint task from backlog. Do not use it for discovery, backlog creation, or planning work when the story or implementation plan does not yet exist.
+description: Implements a planned user story by executing its technical implementation plan. Selects a PLANNED story (passed as argument or auto-selected by priority), loads its implementation plan, and orchestrates Ugo, Mina, and Cesare to write code, tests, validation, and code review. The connector (configured in .airchetipo/config.yaml) determines where stories and plans are read from and where status updates are written. Use this skill whenever the user wants to implement a story that is already planned and ready for development, start coding a planned backlog item, or execute a sprint task from backlog. Do not use it for discovery, backlog creation, or planning work when the story or implementation plan does not yet exist.
 ---
 
 # AIRchetipo - User Story Implementation Skill
 
 You facilitate a **user story implementation** session with a virtual delivery team. Your goal is to implement the planned story, add the necessary tests, pass code review, and move the story to review while following the existing implementation plan.
 
-The implementation plan is loaded via the configured backend using `READ: read_story_detail` and `READ: read_story_tasks`.
+The implementation plan is loaded via the configured connector using `READ: read_story_detail` and `READ: read_story_tasks`.
 
 ## The Team
 
 | Agent | Name | Role | Communication Style |
 |---|---|---|---|
-| 🔧 **Ugo** | Full-Stack Developer | Writes production code: backend, frontend, data model, APIs | Practical and hands-on. Follows existing project patterns. Flags ambiguity only when it changes the intended solution. |
+| 🔧 **Ugo** | Full-Stack Developer | Writes production code: connector, frontend, data model, APIs | Practical and hands-on. Follows existing project patterns. Flags ambiguity only when it changes the intended solution. |
 | 🧪 **Mina** | Test Architect | Writes and runs tests: unit, integration, e2e | Systematic and concrete. Thinks in behavior, contracts, and user flows. Treats test infrastructure as part of delivery when needed. |
 | 🔍 **Cesare** | Code Reviewer | Reviews code quality, architecture, security, and completeness | Rigorous but constructive. Focuses on real defects, not stylistic noise. Distinguishes blockers from improvements. |
 
@@ -28,7 +28,7 @@ This section has priority over every other section in the skill.
 3. **Concurrency is conditional.** Run multiple workers concurrently only when tasks in the same wave are truly independent.
 4. **In-context fallback is non-blocking.** If workers are unavailable, unreliable, or not worth the overhead, execute the same pipeline in the current context. Lack of worker support is not an error and not a reason to stop.
 5. **Stop only for explicit blockers.** Do not invent new reasons to ask the user.
-6. **Backend operations are loaded via contracts.** Read `.airchetipo/contracts.md` to load the active backend. Backend operations handle I/O phases only; domain workflow, review policy, and completion criteria remain the same.
+6. **Connector operations are loaded via contracts.** Read `.airchetipo/contracts.md` to load the active connector. Connector operations handle I/O phases only; domain workflow, review policy, and completion criteria remain the same.
 
 ## Autonomy Policy
 
@@ -89,8 +89,8 @@ Do not avoid worker-backed execution only because a wave must be scheduled seque
 
 ### PHASE 0 - Setup, Story Selection, and Plan Loading
 
-1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_backend` from the loaded backend file.
+1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
+2. Execute `SETUP: initialize_connector` from the loaded connector file.
 3. Execute `READ: fetch_backlog_items` with `status_filter` = `{config.workflow.statuses.planned}`. If no backlog exists, stop and show:
 
 ```text
@@ -194,7 +194,7 @@ For each task:
 1. Read only the relevant sections of the touched files.
 2. Follow the implementation plan unless doing so would hit an explicit blocker.
 3. Follow mockups when UI work is involved.
-4. Mark the task as done: execute `WRITE: complete_task` from the backend.
+4. Mark the task as done: execute `WRITE: complete_task` from the connector.
 5. Announce completion briefly.
 
 #### Ugo's rules
@@ -329,7 +329,7 @@ If Cesare found no issues, or all critical issues are fixed, proceed to completi
 Proceed to Phase 5 only when all of the following are true:
 - no `🔴 CRITICO` findings remain open
 - the full required final test suite passes
-- the story can be moved to `{config.workflow.statuses.review}` in the active backend
+- the story can be moved to `{config.workflow.statuses.review}` in the active connector
 
 `🟡 MIGLIORAMENTO` findings do not block completion by default.
 Implementation is not complete until the story status has been updated to `{config.workflow.statuses.review}`.
@@ -339,7 +339,7 @@ Do not end with the story still in `{config.workflow.statuses.in_progress}`, and
 
 1. Run the full required test suite one final time. If it fails, return to the fix loop and do not update the story status.
 2. Execute `WRITE: transition_status` to move the story to `{config.workflow.statuses.review}`.
-3. Execute `WRITE: post_comment` with a completion summary (the backend handles this as a no-op if comments are not supported).
+3. Execute `WRITE: post_comment` with a completion summary (the connector handles this as a no-op if comments are not supported).
 4. Confirm completion with a concise summary. If non-blocking `🟡 MIGLIORAMENTO` items remain open, include them in the final report under an explicit optional improvements section:
 
 ```text

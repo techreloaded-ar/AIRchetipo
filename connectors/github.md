@@ -1,6 +1,6 @@
-# Backend: GitHub Projects
+# Connector: GitHub Projects
 
-This file implements the AIRchetipo backend contracts for GitHub Projects. Load it only when `.airchetipo/config.yaml` has `backend: github`.
+This file implements the AIRchetipo connector contracts for GitHub Projects. Load it only when `.airchetipo/config.yaml` has `connector: github`.
 
 ## Performance Principles
 
@@ -12,7 +12,7 @@ This file implements the AIRchetipo backend contracts for GitHub Projects. Load 
 
 ---
 
-## SETUP: initialize_backend
+## SETUP: initialize_connector
 
 Authenticate, detect the repository, find the backlog project, and load field metadata.
 
@@ -102,7 +102,7 @@ If a new project was created in Step 2, immediately run **Internal: ensure_proje
 
 ## Internal: ensure_project_infrastructure
 
-Create custom fields, status options, epic field, and link the project to the repository. Called internally by `initialize_backend` when a new project is created; not part of the public contract.
+Create custom fields, status options, epic field, and link the project to the repository. Called internally by `initialize_connector` when a new project is created; not part of the public contract.
 
 ### Step 1 — Link Project to Repository
 
@@ -121,7 +121,7 @@ If GitHub reports the repository is already linked, continue without failing. Th
 
 ### Step 2 — Create Missing Fields
 
-Create fields only if not already present (check the field list from `initialize_backend`):
+Create fields only if not already present (check the field list from `initialize_connector`):
 
 ```bash
 # Run in a single Bash call — skip commands for fields that already exist
@@ -175,7 +175,7 @@ Extract the Epic field ID and option IDs from the create/update response. If the
 
 Retrieve all items from the backlog project, optionally filtered by status.
 
-Use the item list already fetched during `initialize_backend` (Step 3). If a refresh is needed:
+Use the item list already fetched during `initialize_connector` (Step 3). If a refresh is needed:
 
 ```bash
 gh project item-list $PROJECT_NUMBER --owner "$OWNER" --format json -L 200
@@ -202,7 +202,7 @@ Pick a story by code or auto-select the highest-priority eligible story.
 
 4. Parse the `Blocked by` field from the issue body. If it contains issue references (e.g., `#NN (US-XXX)`), fetch those issue bodies in **parallel tool calls**. If `Blocked by` is absent or `-`, treat the story as having no dependencies.
 
-> **Free-text story creation** is not supported with the GitHub backend. If the argument is not a US-XXX code, inform the user to create the issue on GitHub first, or run `airchetipo-spec` to add it to the backlog.
+> **Free-text story creation** is not supported with the GitHub connector. If the argument is not a US-XXX code, inform the user to create the issue on GitHub first, or run `airchetipo-spec` to add it to the backlog.
 
 ---
 
@@ -229,7 +229,7 @@ For each open sub-issue, extract when present: Task ID from title (e.g., `TASK-0
 
 Build the task list with enough structure to schedule execution waves when possible.
 
-> Validation policies (what to do when fields are missing or malformed) are defined by the calling skill, not by this backend file.
+> Validation policies (what to do when fields are missing or malformed) are defined by the calling skill, not by this connector file.
 
 ---
 
@@ -397,7 +397,7 @@ Aggiunte:
 
 Save an implementation plan for a story. The strategic plan goes into the parent issue body. Tasks become sub-issues.
 
-> With `backend: github`, GitHub is the **single source of truth** for the implementation plan. No local file is written in `{config.paths.planning}/`.
+> With `connector: github`, GitHub is the **single source of truth** for the implementation plan. No local file is written in `{config.paths.planning}/`.
 
 ### Step 1 — Detect Epic Label
 
@@ -481,7 +481,7 @@ Change the workflow status of a story on the project board.
 gh project item-edit --project-id "<PROJECT_NODE_ID>" --id "<ITEM_ID>" --field-id "<STATUS_FIELD_ID>" --single-select-option-id "<TARGET_STATUS_OPTION_ID>"
 ```
 
-To get `<ITEM_ID>`, search the project items fetched during `initialize_backend` for the item matching the target issue number.
+To get `<ITEM_ID>`, search the project items fetched during `initialize_connector` for the item matching the target issue number.
 
 | From | To | Typical Trigger |
 |---|---|---|

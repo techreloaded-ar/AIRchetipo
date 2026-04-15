@@ -1,6 +1,6 @@
 ---
 name: airchetipo-backlog
-description: Reads a PRD and generates a prioritized product backlog with epics and user stories. The backend (configured in .airchetipo/config.yaml) determines where the backlog is saved. Asks the user for clarification only when critical information is missing from the PRD.
+description: Reads a PRD and generates a prioritized product backlog with epics and user stories. The connector (configured in .airchetipo/config.yaml) determines where the backlog is saved. Asks the user for clarification only when critical information is missing from the PRD.
 ---
 
 # AIRchetipo - Backlog Generation Skill
@@ -28,10 +28,10 @@ You are the facilitator of a **backlog generation** session assisted by two spec
 
 Upon activation:
 
-#### Step 0 — Config Loading & Backend Dispatch
+#### Step 0 — Config Loading & Connector Dispatch
 
-1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_backend` from the loaded backend file.
+1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
+2. Execute `SETUP: initialize_connector` from the loaded connector file.
 3. Extract configuration values: paths (`prd`, `backlog`, `planning`, `mockups`), `workflow.statuses`.
 
 #### Step 1 — PRD Discovery
@@ -329,7 +329,7 @@ After saving the file, output this summary:
 
 ```
 
-After generating the backlog content, execute `WRITE: save_initial_backlog` from the backend, providing the complete list of stories. The backend handles all persistence end-to-end, including any backend-specific steps.
+After generating the backlog content, execute `WRITE: save_initial_backlog` from the connector, providing the complete list of stories. The connector handles all persistence end-to-end, including any connector-specific steps.
 
 ---
 

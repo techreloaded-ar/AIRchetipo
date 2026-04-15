@@ -9,7 +9,7 @@ Always begin by reading `.airchetipo/config.yaml`.
 If the file does not exist, assume these defaults:
 
 ```yaml
-backend: file
+connector: file
 paths:
   prd: docs/PRD.md
   backlog: docs/BACKLOG.md
@@ -27,14 +27,14 @@ workflow:
 ```
 
 Extract and keep available:
-- `backend`
+- `connector`
 - `paths.prd`
 - `paths.backlog`
 - `paths.planning`
 - `paths.mockups`
 - `workflow.statuses`
 - `harness`
-- backend-specific settings if present
+- connector-specific settings if present
 
 ## Harness Discovery
 
@@ -88,4 +88,4 @@ For non-critical gaps:
 - Load `shared-runtime.md` first
 - Load only one main flow reference at activation time
 - Load templates only when writing the final output
-- Load connector references only when backend-specific behavior is needed
+- Load connector references only when connector-specific behavior is needed

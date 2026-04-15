@@ -1,24 +1,24 @@
-# AIRchetipo Backend Contracts
+# AIRchetipo Connector Contracts
 
-This file is the single entry point for all backend operations. Skills read this file instead of managing backend-specific logic themselves.
+This file is the single entry point for all connector operations. Skills read this file instead of managing connector-specific logic themselves.
 
 ## How It Works
 
-1. Read `.airchetipo/config.yaml` to determine the `backend` value (default: `file`)
-2. Read `.airchetipo/backends/{backend}.md` — that file contains the implementation of every operation listed below
-3. When a skill references an operation (e.g., `SETUP: initialize_backend`), find the matching section header in the loaded backend file and follow its instructions
+1. Read `.airchetipo/config.yaml` to determine the `connector` value (default: `file`)
+2. Read `.airchetipo/connectors/{connector}.md` — that file contains the implementation of every operation listed below
+3. When a skill references an operation (e.g., `SETUP: initialize_connector`), find the matching section header in the loaded connector file and follow its instructions
 
-> **Context discipline:** Load this file and the backend file once at the start of the skill. Do not re-read them unless the skill explicitly requires a refresh.
+> **Context discipline:** Load this file and the connector file once at the start of the skill. Do not re-read them unless the skill explicitly requires a refresh.
 
 ## Configuration
 
-The backend file receives these values from `.airchetipo/config.yaml`:
+The connector file receives these values from `.airchetipo/config.yaml`:
 
 ```yaml
-backend: file | github          # which backend implementation to load
-paths:                          # filesystem paths (used by all backends for PRD, mockups, etc.)
+connector: file | github          # which connector implementation to load
+paths:                            # filesystem paths (used by all connectors for PRD, mockups, etc.)
   prd: docs/PRD.md
-  backlog: docs/BACKLOG.md      # primary source for file backend
+  backlog: docs/BACKLOG.md      # primary source for file connector
   planning: docs/planning/
   mockups: docs/mockups/
   test_results: docs/test-results/
@@ -31,7 +31,7 @@ workflow:
     done: DONE
 ```
 
-If `.airchetipo/config.yaml` does not exist, assume `backend: file` with the default paths above.
+If `.airchetipo/config.yaml` does not exist, assume `connector: file` with the default paths above.
 
 ---
 
@@ -41,7 +41,7 @@ If `.airchetipo/config.yaml` does not exist, assume `backend: file` with the def
 
 | Operation | Description | Inputs | Outputs |
 |---|---|---|---|
-| `initialize_backend` | Authenticate, detect repository, find or create the project/backlog, load field metadata. For backends that require project infrastructure (e.g., custom fields, status options), also ensures that infrastructure exists as part of this step. | config values | `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$PROJECT_NUMBER`, `$PROJECT_NODE_ID`, field metadata (backend-specific; file backend outputs config paths only) |
+| `initialize_connector` | Authenticate, detect repository, find or create the project/backlog, load field metadata. For connectors that require project infrastructure (e.g., custom fields, status options), also ensures that infrastructure exists as part of this step. | config values | `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$PROJECT_NUMBER`, `$PROJECT_NODE_ID`, field metadata (connector-specific; file connector outputs config paths only) |
 
 ### READ
 
@@ -57,18 +57,18 @@ If `.airchetipo/config.yaml` does not exist, assume `backend: file` with the def
 
 | Operation | Description | Inputs | Outputs |
 |---|---|---|---|
-| `save_initial_backlog(stories[])` | Create the initial backlog from a list of stories. Handles all persistence end-to-end: file creation, issue creation, project board setup, field assignment — including any backend-specific steps like label creation or dependency backfilling. | array of story objects (code, title, epic, priority, story_points, acceptance_criteria, blocked_by, scope) | confirmation + references to created items |
+| `save_initial_backlog(stories[])` | Create the initial backlog from a list of stories. Handles all persistence end-to-end: file creation, issue creation, project board setup, field assignment — including any connector-specific steps like label creation or dependency backfilling. | array of story objects (code, title, epic, priority, story_points, acceptance_criteria, blocked_by, scope) | confirmation + references to created items |
 | `append_stories(stories[])` | Add new stories to an existing backlog without rewriting existing content | array of story objects (same format as above) | confirmation + references to created items |
 | `save_plan(story, strategic_plan, tasks[])` | Save an implementation plan for a story. The strategic plan goes into the main document/issue body. Tasks become individual trackable items (file sections or sub-issues) | story reference, plan markdown, array of task objects | confirmation + references to created items |
 | `transition_status(story, new_status)` | Change the workflow status of a story | story reference, target status label | confirmation |
 | `complete_task(task)` | Mark a single task as completed | task reference | confirmation |
-| `post_comment(story, text)` | Post a comment on a story (completion summary, review notes, etc.) | story reference, comment text | confirmation (no-op for backends without comment support) |
+| `post_comment(story, text)` | Post a comment on a story (completion summary, review notes, etc.) | story reference, comment text | confirmation (no-op for connectors without comment support) |
 
 ---
 
 ## Notes for Skill Authors
 
 - **Call only what you need.** Not every skill uses every operation. Unused operations have zero cost.
-- **Content templates belong in the skill, not here.** The skill defines *what* to write (plan format, sub-issue body template, story structure). The backend defines *how* to persist it.
+- **Content templates belong in the skill, not here.** The skill defines *what* to write (plan format, sub-issue body template, story structure). The connector defines *how* to persist it.
 - **Validation policies belong in the skill.** Post-processing and validation of data returned by READ operations (e.g., malformed task parsing, confidence thresholds) is the skill's responsibility.
-- **No-op operations are explicit.** If a backend does not support an operation (e.g., file backend has no comments), the backend file says so. The skill should not fail — it simply skips that step.
+- **No-op operations are explicit.** If a connector does not support an operation (e.g., file connector has no comments), the connector file says so. The skill should not fail — it simply skips that step.

@@ -1,11 +1,11 @@
 ---
 name: airchetipo-plan
-description: Plans the implementation of a user story from the product backlog. Selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan. The backend (configured in .airchetipo/config.yaml) determines where stories are read from and where plans are saved. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in the backlog and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
+description: Plans the implementation of a user story from the product backlog. Selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan. The connector (configured in .airchetipo/config.yaml) determines where stories are read from and where plans are saved. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in the backlog and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
 ---
 
 # AIRchetipo - User Story Planning Skill
 
-You facilitate a **user story planning** session assisted by a team of specialized virtual agents. Your goal is to produce a **detailed implementation plan** for a user story and save it via the configured backend.
+You facilitate a **user story planning** session assisted by a team of specialized virtual agents. Your goal is to produce a **detailed implementation plan** for a user story and save it via the configured connector.
 
 > **PERFORMANCE RULE:** This skill must execute fast. Never generate content as dialogue first and then rewrite it as a document. Perform all analysis internally, show only a brief Team Brief to the user, then write the document directly. Maximize parallel tool calls — read multiple files in a single turn, never one by one.
 
@@ -30,10 +30,10 @@ Agents appear only in the **Team Brief** output. Each agent speaks **1-3 sentenc
 
 ### STAGE 0 — Setup & Story Selection
 
-#### Step 0 — Config Loading & Backend Dispatch
+#### Step 0 — Config Loading & Connector Dispatch
 
-1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_backend` from the loaded backend file.
+1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
+2. Execute `SETUP: initialize_connector` from the loaded connector file.
 
 #### Step 1 — Story Selection
 
@@ -41,7 +41,7 @@ Agents appear only in the **Team Brief** output. Each agent speaks **1-3 sentenc
 
 2. Execute `READ: select_story` with the user's argument and eligible statuses = `[{config.workflow.statuses.todo}]`:
    - If a user story code was passed as argument (e.g., "US-005"), select that story
-   - If a free-text description was passed (not a US-XXX code), the backend handles creating a new story in the backlog and selecting it
+   - If a free-text description was passed (not a US-XXX code), the connector handles creating a new story in the backlog and selecting it
    - If no argument was passed, auto-select the highest-priority eligible story
 
 3. If no eligible stories exist, inform the user and stop.
@@ -135,14 +135,14 @@ In a **single turn**, produce both:
 
 **2. Write the planning document:**
 
-Execute `WRITE: save_plan` from the backend, providing:
+Execute `WRITE: save_plan` from the connector, providing:
 - The story reference
 - The strategic plan content (technical solution + test strategy)
 - The task list
 
-The backend determines where and how the plan is persisted. For `backend: file`, the plan follows the template below. For other backends, the backend file defines the persistence format.
+The connector determines where and how the plan is persisted. For `connector: file`, the plan follows the template below. For other connectors, the connector file defines the persistence format.
 
-**File backend plan template** (used when `backend: file` — write to `{config.paths.planning}/{US-CODE}.md`):
+**File connector plan template** (used when `connector: file` — write to `{config.paths.planning}/{US-CODE}.md`):
 
 ```markdown
 # {US-CODE}: {Story Title} — Piano di Implementazione

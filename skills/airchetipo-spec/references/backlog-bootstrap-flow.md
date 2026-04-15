@@ -16,11 +16,11 @@ Rotation rule:
 - Andrea leads prioritization
 - They collaborate only when trade-offs need to be justified
 
-## Backend Dispatch
+## Connector Dispatch
 
-The backend is already loaded via `.airchetipo/contracts.md` during `SKILL.md` config loading.
-All I/O operations in this flow use backend contract operations.
-Domain logic in this file is backend-independent.
+The connector is already loaded via `.airchetipo/contracts.md` during `SKILL.md` config loading.
+All I/O operations in this flow use connector contract operations.
+Domain logic in this file is connector-independent.
 
 ## Phase 0 - Setup and PRD Discovery
 
@@ -186,9 +186,9 @@ Emanuele validates:
 
 ## Phase 5 - Output Generation
 
-Execute `WRITE: save_initial_backlog` from the backend, providing the complete list of stories with all their metadata.
+Execute `WRITE: save_initial_backlog` from the connector, providing the complete list of stories with all their metadata.
 
-For `backend: file`, the backlog content follows this markdown structure (write to `{config.paths.backlog}`):
+For `connector: file`, the backlog content follows this markdown structure (write to `{config.paths.backlog}`):
 
 ```markdown
 # [Product Name] - Product Backlog

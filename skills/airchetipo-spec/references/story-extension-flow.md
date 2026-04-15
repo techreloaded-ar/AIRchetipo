@@ -13,11 +13,11 @@ Your goal is to understand the intent, challenge weak assumptions, generate cohe
 
 Gli agenti si alternano. Andrea guida la fase di discovery, Emanuele guida la generazione delle storie.
 
-## Backend Dispatch
+## Connector Dispatch
 
-The backend is already loaded via `.airchetipo/contracts.md` during `SKILL.md` config loading.
-All I/O operations in this flow use backend contract operations.
-Domain logic in this file is backend-independent.
+The connector is already loaded via `.airchetipo/contracts.md` during `SKILL.md` config loading.
+All I/O operations in this flow use connector contract operations.
+Domain logic in this file is connector-independent.
 
 ## Fase 0 - Setup e lettura del contesto
 
@@ -48,13 +48,13 @@ Con te oggi ci sono:
 
 ### Step 2 - Lettura backlog e PRD
 
-Execute `READ: read_existing_backlog` from the backend and extract:
+Execute `READ: read_existing_backlog` from the connector and extract:
 - existing epics (`EP-XXX` + titles)
 - the last `US-XXX` code used
 - ticket statuses already in use
 - the backlog language
 
-If the backend detects that no backlog exists yet, switch to initial backlog creation instead of failing.
+If the connector detects that no backlog exists yet, switch to initial backlog creation instead of failing.
 
 Read `{config.paths.prd}` if available and extract vision, personas, MVP scope as supporting context.
 
@@ -166,9 +166,9 @@ Procedo con l'aggiunta? Oppure dimmi cosa modificare.
 
 ## Fase 3 - Output
 
-Execute `WRITE: append_stories` from the backend, providing the confirmed new stories with all metadata. The backend handles the persistence details (file append, issue creation, project field updates, etc.).
+Execute `WRITE: append_stories` from the connector, providing the confirmed new stories with all metadata. The connector handles the persistence details (file append, issue creation, project field updates, etc.).
 
-If a new epic is introduced, the backend also handles creating the necessary labels/fields.
+If a new epic is introduced, the connector also handles creating the necessary labels/fields.
 
 ### Messaggio di chiusura
 

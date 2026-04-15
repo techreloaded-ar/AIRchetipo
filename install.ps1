@@ -184,13 +184,13 @@ function Show-FallbackMenu {
   return $result
 }
 
-# ─── Backend selection (radio-button, single choice) ─────────────────────────
-$BackendOptions      = @("file", "github")
-$BackendDescriptions = @("backlog e planning come file Markdown locali", "backlog e planning su GitHub Projects v2 — richiede GitHub CLI")
+# ─── Connector selection (radio-button, single choice) ─────────────────────────
+$ConnectorOptions      = @("file", "github")
+$ConnectorDescriptions = @("backlog e planning come file Markdown locali", "backlog e planning su GitHub Projects v2 — richiede GitHub CLI")
 
-function Show-BackendMenu {
+function Show-ConnectorMenu {
   $cursor = 0
-  $optCount = $BackendOptions.Count
+  $optCount = $ConnectorOptions.Count
 
   $isInteractive = $true
   try {
@@ -200,7 +200,7 @@ function Show-BackendMenu {
   }
 
   if (-not $isInteractive) {
-    return Show-FallbackBackend
+    return Show-FallbackConnector
   }
 
   try {
@@ -210,11 +210,11 @@ function Show-BackendMenu {
       $prefix = if ($i -eq $cursor) { ">" } else { " " }
 
       if ($i -eq $cursor) {
-        Write-Host "  $prefix $radio $($BackendOptions[$i])" -ForegroundColor Cyan -NoNewline
+        Write-Host "  $prefix $radio $($ConnectorOptions[$i])" -ForegroundColor Cyan -NoNewline
       } else {
-        Write-Host "  $prefix $radio $($BackendOptions[$i])" -NoNewline
+        Write-Host "  $prefix $radio $($ConnectorOptions[$i])" -NoNewline
       }
-      Write-Host "  $($BackendDescriptions[$i])" -ForegroundColor DarkGray
+      Write-Host "  $($ConnectorDescriptions[$i])" -ForegroundColor DarkGray
     }
     Write-Host "  Up/Down: navigate  Enter: confirm" -ForegroundColor DarkGray -NoNewline
 
@@ -227,7 +227,7 @@ function Show-BackendMenu {
         "Enter" {
           Write-Host ""
           [Console]::CursorVisible = $true
-          return $BackendOptions[$cursor]
+          return $ConnectorOptions[$cursor]
         }
       }
 
@@ -242,11 +242,11 @@ function Show-BackendMenu {
         Write-Host "`r" -NoNewline
 
         if ($i -eq $cursor) {
-          Write-Host "  $prefix $radio $($BackendOptions[$i])" -ForegroundColor Cyan -NoNewline
+          Write-Host "  $prefix $radio $($ConnectorOptions[$i])" -ForegroundColor Cyan -NoNewline
         } else {
-          Write-Host "  $prefix $radio $($BackendOptions[$i])" -NoNewline
+          Write-Host "  $prefix $radio $($ConnectorOptions[$i])" -NoNewline
         }
-        Write-Host "  $($BackendDescriptions[$i])" -ForegroundColor DarkGray
+        Write-Host "  $($ConnectorDescriptions[$i])" -ForegroundColor DarkGray
       }
       Write-Host ("`r" + (" " * [Console]::WindowWidth)) -NoNewline
       Write-Host "`r  Up/Down: navigate  Enter: confirm" -ForegroundColor DarkGray -NoNewline
@@ -256,13 +256,13 @@ function Show-BackendMenu {
   }
 }
 
-function Show-FallbackBackend {
+function Show-FallbackConnector {
   Write-Host ""
-  for ($i = 0; $i -lt $BackendOptions.Count; $i++) {
-    Write-Host "  $($i + 1)) $($BackendOptions[$i])  ($($BackendDescriptions[$i]))"
+  for ($i = 0; $i -lt $ConnectorOptions.Count; $i++) {
+    Write-Host "  $($i + 1)) $($ConnectorOptions[$i])  ($($ConnectorDescriptions[$i]))"
   }
   Write-Host ""
-  $choice = Read-Host "Select backend [1]"
+  $choice = Read-Host "Select connector [1]"
 
   if ($choice -eq "2") {
     return "github"
@@ -272,7 +272,7 @@ function Show-FallbackBackend {
 
 # ─── Install config ──────────────────────────────────────────────────────────
 function Install-Config {
-  param([string]$SourceDir, [string]$Backend)
+  param([string]$SourceDir, [string]$Connector)
 
   $configDir  = ".airchetipo"
   $configFile = Join-Path $configDir "config.yaml"
@@ -303,17 +303,17 @@ function Install-Config {
   }
   Copy-Item -Path $sourceConfig -Destination $configFile -Force
 
-  # Update backend value
+  # Update connector value
   $content = Get-Content $configFile -Raw
-  $content = $content -replace "^backend:.*", "backend: $Backend"
+  $content = $content -replace "^connector:.*", "connector: $Connector"
   Set-Content -Path $configFile -Value $content -NoNewline
 
   Write-Host ""
   Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
   Write-Host ".airchetipo\config.yaml" -ForegroundColor White -NoNewline
-  Write-Host " (backend: $Backend)" -ForegroundColor DarkGray
+  Write-Host " (connector: $Connector)" -ForegroundColor DarkGray
 
-  # Install backend contracts and implementations
+  # Install connector contracts and implementations
   $sourceRoot = Split-Path $SourceDir -Parent
   $contractsSource = Join-Path $sourceRoot "contracts.md"
   if (Test-Path $contractsSource) {
@@ -322,17 +322,17 @@ function Install-Config {
     Write-Host ".airchetipo\contracts.md" -ForegroundColor White
   }
 
-  $backendsSource = Join-Path $sourceRoot "backends"
-  if (Test-Path $backendsSource) {
-    $backendsDir = Join-Path $configDir "backends"
-    if (-not (Test-Path $backendsDir)) {
-      New-Item -ItemType Directory -Path $backendsDir -Force | Out-Null
+  $connectorsSource = Join-Path $sourceRoot "connectors"
+  if (Test-Path $connectorsSource) {
+    $connectorsDir = Join-Path $configDir "connectors"
+    if (-not (Test-Path $connectorsDir)) {
+      New-Item -ItemType Directory -Path $connectorsDir -Force | Out-Null
     }
-    Copy-Item -Path (Join-Path $backendsSource "*.md") -Destination $backendsDir -Force
-    $backendCount = (Get-ChildItem -Path $backendsDir -Filter "*.md" | Measure-Object).Count
+    Copy-Item -Path (Join-Path $connectorsSource "*.md") -Destination $connectorsDir -Force
+    $connectorCount = (Get-ChildItem -Path $connectorsDir -Filter "*.md" | Measure-Object).Count
     Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
-    Write-Host ".airchetipo\backends\" -ForegroundColor White -NoNewline
-    Write-Host " ($backendCount backend files)" -ForegroundColor DarkGray
+    Write-Host ".airchetipo\connectors\" -ForegroundColor White -NoNewline
+    Write-Host " ($connectorCount connector files)" -ForegroundColor DarkGray
   }
 }
 
@@ -362,7 +362,7 @@ Skills installed:
   airchetipo-spec
 
 Configuration:
-  .airchetipo\config.yaml is created with the selected backend (file or github).
+  .airchetipo\config.yaml is created with the selected connector (file or github).
 
 Supported tools:
   Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
@@ -455,10 +455,10 @@ Supported tools:
     return
   }
 
-  # Backend selection
-  Write-Host "  Select backend:" -ForegroundColor White
+  # Connector selection
+  Write-Host "  Select connector:" -ForegroundColor White
   Write-Host ""
-  $selectedBackend = Show-BackendMenu
+  $selectedConnector = Show-ConnectorMenu
 
   # Install
   Write-Host "  Installing..." -ForegroundColor White
@@ -468,7 +468,7 @@ Supported tools:
   }
 
   # Install config
-  Install-Config -SourceDir $sourceDir -Backend $selectedBackend
+  Install-Config -SourceDir $sourceDir -Connector $selectedConnector
 
   # Summary
   Write-Host ""

@@ -133,7 +133,7 @@ The state file has two purposes:
 
 1. Parse user arguments (steps, epic, priority, max-stories, stop-when, on-error)
 
-2. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`. Execute `SETUP: initialize_backend` from the loaded backend file.
+2. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`. Execute `SETUP: initialize_connector` from the loaded connector file.
 
 3. **Cleanup residual state files:** find all `.airchetipo/autopilot-state-*.yaml` files with terminal status (`completed`, `max_reached`, `stopped`) and delete them.
 
@@ -161,7 +161,7 @@ The state file has two purposes:
 
 5. **Build the story queue.** Read the backlog once and select stories.
 
-   Execute `READ: fetch_backlog_items` from the backend (no status filter — fetch all items to evaluate against the pipeline steps).
+   Execute `READ: fetch_backlog_items` from the connector (no status filter — fetch all items to evaluate against the pipeline steps).
 
    **Story selection rules:**
    - If `--steps` includes `plan`: select stories with `status: TODO`
@@ -321,7 +321,7 @@ After each story pipeline completes, run these checks in order:
 **Check A — Exit condition met:**
 If `--stop-when` was specified, verify the condition. This requires re-reading the backlog to check current statuses.
 
-Re-execute `READ: fetch_backlog_items` from the backend to get current statuses.
+Re-execute `READ: fetch_backlog_items` from the connector to get current statuses.
 
 Evaluate the `--stop-when` condition against the current state (e.g., "EP-001 completato" → check if all EP-001 stories are in REVIEW or DONE).
 

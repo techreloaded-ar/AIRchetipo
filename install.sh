@@ -36,7 +36,7 @@ Skills installed:
   airchetipo-spec
 
 Configuration:
-  .airchetipo/config.yaml is created with the selected backend (file or github).
+  .airchetipo/config.yaml is created with the selected connector (file or github).
 
 Supported tools:
   Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
@@ -225,11 +225,11 @@ fallback_menu() {
   fi
 }
 
-# ─── Backend selection (radio-button, single choice) ─────────────────────────
-BACKEND_OPTIONS=("file" "github")
-BACKEND_DESCRIPTIONS=("backlog e planning come file Markdown locali" "backlog e planning su GitHub Projects v2 — richiede GitHub CLI")
+# ─── Connector selection (radio-button, single choice) ───────────────────────
+CONNECTOR_OPTIONS=("file" "github")
+CONNECTOR_DESCRIPTIONS=("backlog e planning come file Markdown locali" "backlog e planning su GitHub Projects v2 — richiede GitHub CLI")
 
-select_backend() {
+select_connector() {
   local cursor=0
 
   # Reconnect stdin from tty for pipe mode (curl | bash)
@@ -238,20 +238,20 @@ select_backend() {
   fi
 
   if [[ ! -t 0 ]]; then
-    fallback_backend
+    fallback_connector
     return
   fi
 
   printf '\033[?25l'
   trap 'printf "\033[?25h"' RETURN
 
-  local draw_backend
-  draw_backend() {
+  local draw_connector
+  draw_connector() {
     if [[ "${1:-}" == "redraw" ]]; then
-      printf "\033[%dA" "${#BACKEND_OPTIONS[@]}"
+      printf "\033[%dA" "${#CONNECTOR_OPTIONS[@]}"
     fi
 
-    for ((i = 0; i < ${#BACKEND_OPTIONS[@]}; i++)); do
+    for ((i = 0; i < ${#CONNECTOR_OPTIONS[@]}; i++)); do
       local radio
       if [[ $i -eq $cursor ]]; then
         radio="${GREEN}(x)${RESET}"
@@ -261,9 +261,9 @@ select_backend() {
 
       local line
       if [[ $i -eq $cursor ]]; then
-        line="${CYAN}❯${RESET} ${radio} ${BOLD}${BACKEND_OPTIONS[$i]}${RESET}  ${DIM}${BACKEND_DESCRIPTIONS[$i]}${RESET}"
+        line="${CYAN}❯${RESET} ${radio} ${BOLD}${CONNECTOR_OPTIONS[$i]}${RESET}  ${DIM}${CONNECTOR_DESCRIPTIONS[$i]}${RESET}"
       else
-        line="  ${radio} ${BACKEND_OPTIONS[$i]}  ${DIM}${BACKEND_DESCRIPTIONS[$i]}${RESET}"
+        line="  ${radio} ${CONNECTOR_OPTIONS[$i]}  ${DIM}${CONNECTOR_DESCRIPTIONS[$i]}${RESET}"
       fi
 
       printf "\r\033[K%b\n" "$line"
@@ -271,7 +271,7 @@ select_backend() {
     printf "\r\033[K${DIM}  ↑↓ navigate  ENTER confirm${RESET}"
   }
 
-  draw_backend "first"
+  draw_connector "first"
 
   while true; do
     IFS= read -rsn1 key
@@ -281,40 +281,40 @@ select_backend() {
         read -rsn2 seq
         case "$seq" in
           '[A') ((cursor > 0)) && ((cursor--)) ;;
-          '[B') ((cursor < ${#BACKEND_OPTIONS[@]} - 1)) && ((cursor++)) ;;
+          '[B') ((cursor < ${#CONNECTOR_OPTIONS[@]} - 1)) && ((cursor++)) ;;
         esac
         ;;
       '')
         printf "\n\n"
-        SELECTED_BACKEND="${BACKEND_OPTIONS[$cursor]}"
+        SELECTED_CONNECTOR="${CONNECTOR_OPTIONS[$cursor]}"
         return
         ;;
     esac
 
-    draw_backend "redraw"
+    draw_connector "redraw"
   done
 }
 
-fallback_backend() {
+fallback_connector() {
   echo ""
-  for ((i = 0; i < ${#BACKEND_OPTIONS[@]}; i++)); do
-    printf "  %d) %s  (%s)\n" "$((i + 1))" "${BACKEND_OPTIONS[$i]}" "${BACKEND_DESCRIPTIONS[$i]}"
+  for ((i = 0; i < ${#CONNECTOR_OPTIONS[@]}; i++)); do
+    printf "  %d) %s  (%s)\n" "$((i + 1))" "${CONNECTOR_OPTIONS[$i]}" "${CONNECTOR_DESCRIPTIONS[$i]}"
   done
   echo ""
-  printf "Select backend [1]: "
+  printf "Select connector [1]: "
   read -r choice
 
   if [[ "$choice" == "2" ]]; then
-    SELECTED_BACKEND="github"
+    SELECTED_CONNECTOR="github"
   else
-    SELECTED_BACKEND="file"
+    SELECTED_CONNECTOR="file"
   fi
 }
 
 # ─── Install config ──────────────────────────────────────────────────────────
 install_config() {
   local source_dir="$1"
-  local backend="$2"
+  local connector="$2"
   local config_dir=".airchetipo"
   local config_file="$config_dir/config.yaml"
 
@@ -341,24 +341,24 @@ install_config() {
   mkdir -p "$config_dir"
   cp -f "$source_config" "$config_file"
 
-  # Update backend value
+  # Update connector value
   if command -v sed &>/dev/null; then
-    sed -i.bak "s/^backend:.*/backend: $backend/" "$config_file" && rm -f "$config_file.bak"
+    sed -i.bak "s/^connector:.*/connector: $connector/" "$config_file" && rm -f "$config_file.bak"
   fi
 
-  printf "\n  ${GREEN}✓${RESET} ${BOLD}.airchetipo/config.yaml${RESET} ${DIM}(backend: %s)${RESET}\n" "$backend"
+  printf "\n  ${GREEN}✓${RESET} ${BOLD}.airchetipo/config.yaml${RESET} ${DIM}(connector: %s)${RESET}\n" "$connector"
 
-  # Install backend contracts and implementations
+  # Install connector contracts and implementations
   local source_root="$source_dir/.."
   if [[ -f "$source_root/contracts.md" ]]; then
     cp -f "$source_root/contracts.md" "$config_dir/contracts.md"
     printf "  ${GREEN}✓${RESET} ${BOLD}.airchetipo/contracts.md${RESET}\n"
   fi
 
-  if [[ -d "$source_root/backends" ]]; then
-    mkdir -p "$config_dir/backends"
-    cp -f "$source_root/backends/"*.md "$config_dir/backends/" 2>/dev/null
-    printf "  ${GREEN}✓${RESET} ${BOLD}.airchetipo/backends/${RESET} ${DIM}($(ls "$config_dir/backends/" 2>/dev/null | wc -l | tr -d ' ') backend files)${RESET}\n"
+  if [[ -d "$source_root/connectors" ]]; then
+    mkdir -p "$config_dir/connectors"
+    cp -f "$source_root/connectors/"*.md "$config_dir/connectors/" 2>/dev/null
+    printf "  ${GREEN}✓${RESET} ${BOLD}.airchetipo/connectors/${RESET} ${DIM}($(ls "$config_dir/connectors/" 2>/dev/null | wc -l | tr -d ' ') connector files)${RESET}\n"
   fi
 }
 
@@ -472,9 +472,9 @@ main() {
     exit 0
   fi
 
-  # Backend selection
-  printf "${BOLD}  Select backend:${RESET}\n\n"
-  select_backend
+  # Connector selection
+  printf "${BOLD}  Select connector:${RESET}\n\n"
+  select_connector
 
   # Install
   printf "${BOLD}  Installing...${RESET}\n"
@@ -483,7 +483,7 @@ main() {
   done
 
   # Install config
-  install_config "$source_dir" "$SELECTED_BACKEND"
+  install_config "$source_dir" "$SELECTED_CONNECTOR"
 
   # Summary
   echo ""
