@@ -30,12 +30,6 @@ Verify that `{config.paths.backlog}` exists. If it does not exist and the callin
 
 ---
 
-## SETUP: ensure_project_infrastructure
-
-Not applicable for the file backend. No infrastructure setup is needed — directories are created on demand when writing files.
-
----
-
 ## READ: fetch_backlog_items
 
 Read `{config.paths.backlog}`. Parse story blocks by matching `#### US-\d+:` headers and extracting fields from each block:
@@ -186,29 +180,5 @@ Mark a task as completed in the planning file.
 ## WRITE: post_comment
 
 Not applicable for the file backend. There is no equivalent of comments on a local file.
-
-The calling skill should skip this operation silently when using the file backend.
-
----
-
-## WRITE: add_label
-
-Not applicable for the file backend. Labels/tags are not a concept in the markdown file structure.
-
-The calling skill should skip this operation silently when using the file backend.
-
----
-
-## WRITE: create_labels
-
-Not applicable for the file backend.
-
-The calling skill should skip this operation silently when using the file backend.
-
----
-
-## WRITE: backfill_dependencies
-
-Not applicable for the file backend. Story references in the markdown file are already symbolic (US-XXX codes) and do not need to be converted to another format.
 
 The calling skill should skip this operation silently when using the file backend.

@@ -41,8 +41,7 @@ If `.airchetipo/config.yaml` does not exist, assume `backend: file` with the def
 
 | Operation | Description | Inputs | Outputs |
 |---|---|---|---|
-| `initialize_backend` | Authenticate, detect repository, find or create the project/backlog, load field metadata | config values | `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$PROJECT_NUMBER`, `$PROJECT_NODE_ID`, field metadata (backend-specific; file backend outputs config paths only) |
-| `ensure_project_infrastructure` | Create custom fields, status options, epic field, link project to repository. Only needed when creating or extending a backlog for the first time. | `$PROJECT_NUMBER`, `$OWNER` | field IDs, option IDs |
+| `initialize_backend` | Authenticate, detect repository, find or create the project/backlog, load field metadata. For backends that require project infrastructure (e.g., custom fields, status options), also ensures that infrastructure exists as part of this step. | config values | `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$PROJECT_NUMBER`, `$PROJECT_NODE_ID`, field metadata (backend-specific; file backend outputs config paths only) |
 
 ### READ
 
@@ -58,15 +57,12 @@ If `.airchetipo/config.yaml` does not exist, assume `backend: file` with the def
 
 | Operation | Description | Inputs | Outputs |
 |---|---|---|---|
-| `save_initial_backlog(stories[])` | Create the initial backlog from a list of stories. Handles all persistence: file creation, issue creation, project board setup, field assignment, labels, dependencies | array of story objects (code, title, epic, priority, story_points, acceptance_criteria, blocked_by, scope) | confirmation + references to created items |
+| `save_initial_backlog(stories[])` | Create the initial backlog from a list of stories. Handles all persistence end-to-end: file creation, issue creation, project board setup, field assignment — including any backend-specific steps like label creation or dependency backfilling. | array of story objects (code, title, epic, priority, story_points, acceptance_criteria, blocked_by, scope) | confirmation + references to created items |
 | `append_stories(stories[])` | Add new stories to an existing backlog without rewriting existing content | array of story objects (same format as above) | confirmation + references to created items |
 | `save_plan(story, strategic_plan, tasks[])` | Save an implementation plan for a story. The strategic plan goes into the main document/issue body. Tasks become individual trackable items (file sections or sub-issues) | story reference, plan markdown, array of task objects | confirmation + references to created items |
 | `transition_status(story, new_status)` | Change the workflow status of a story | story reference, target status label | confirmation |
 | `complete_task(task)` | Mark a single task as completed | task reference | confirmation |
 | `post_comment(story, text)` | Post a comment on a story (completion summary, review notes, etc.) | story reference, comment text | confirmation (no-op for backends without comment support) |
-| `add_label(story, label)` | Add a label/tag to a story | story reference, label name | confirmation (no-op for backends without label support) |
-| `create_labels(labels[])` | Batch-create labels/tags that will be used by stories | array of label definitions | confirmation (no-op for backends without label support) |
-| `backfill_dependencies(stories_map)` | Replace symbolic dependency references (e.g., US-003) with backend-native references (e.g., #42) | map of story codes to backend references | confirmation (no-op for backends with text-based references) |
 
 ---
 

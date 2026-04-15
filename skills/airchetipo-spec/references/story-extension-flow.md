@@ -170,8 +170,6 @@ Execute `WRITE: append_stories` from the backend, providing the confirmed new st
 
 If a new epic is introduced, the backend also handles creating the necessary labels/fields.
 
-After writing, execute `WRITE: create_labels` and `WRITE: backfill_dependencies` if applicable (the backend handles these as no-ops when not needed).
-
 ### Messaggio di chiusura
 
 ```text

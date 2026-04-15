@@ -32,8 +32,7 @@ Upon activation:
 
 1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`.
 2. Execute `SETUP: initialize_backend` from the loaded backend file.
-3. Execute `SETUP: ensure_project_infrastructure` (the backend handles this as a no-op if not applicable).
-4. Extract configuration values: paths (`prd`, `backlog`, `planning`, `mockups`), `workflow.statuses`.
+3. Extract configuration values: paths (`prd`, `backlog`, `planning`, `mockups`), `workflow.statuses`.
 
 #### Step 1 — PRD Discovery
 
@@ -330,7 +329,7 @@ After saving the file, output this summary:
 
 ```
 
-After generating the backlog content, execute `WRITE: save_initial_backlog` from the backend, providing the complete list of stories. Then execute `WRITE: create_labels` and `WRITE: backfill_dependencies` if applicable (the backend handles these as no-ops when not needed).
+After generating the backlog content, execute `WRITE: save_initial_backlog` from the backend, providing the complete list of stories. The backend handles all persistence end-to-end, including any backend-specific steps.
 
 ---
 

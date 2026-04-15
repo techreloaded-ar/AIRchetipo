@@ -49,7 +49,6 @@ In this mode:
 
 1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the backend contracts and instructs you to read the active backend implementation file based on `config.yaml`.
 2. Execute `SETUP: initialize_backend` from the loaded backend file.
-3. If the calling flow creates or extends a backlog, also execute `SETUP: ensure_project_infrastructure` (the backend handles this as a no-op if not applicable).
 
 Extract and keep available:
 - `backend`

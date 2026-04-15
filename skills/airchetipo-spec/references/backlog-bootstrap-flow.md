@@ -266,8 +266,6 @@ _Backlog generated via AIRchetipo - [DATE]_
 _[Total N stories across N epics - N story points total]_
 ```
 
-After writing, execute `WRITE: create_labels` and `WRITE: backfill_dependencies` if applicable (the backend handles these as no-ops when not needed).
-
 Output this closing confirmation:
 
 ```text

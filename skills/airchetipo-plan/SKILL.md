@@ -233,9 +233,7 @@ After saving the planning document:
 
 1. **Update backlog status:** Execute `WRITE: transition_status` to move the story to `{config.workflow.statuses.planned}`.
 
-2. **Add label (if supported):** Execute `WRITE: add_label` with label `planned`. The backend handles this as a no-op if labels are not supported.
-
-3. **Confirm completion:**
+2. **Confirm completion:**
 
 ```
 ✅ Pianificazione completata!
