@@ -91,54 +91,17 @@ Do not avoid worker-backed execution only because a wave must be scheduled seque
 
 1. Read `.airchetipo/contracts.md` from the `.airchetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
 2. Execute `SETUP: initialize_connector` from the loaded connector file.
-3. Execute `READ: fetch_backlog_items` with `status_filter` = `{config.workflow.statuses.planned}`. If no backlog exists, stop and show:
+3. Execute `READ: fetch_backlog_items` with `status_filter` = `{config.workflow.statuses.planned}`. If no backlog exists, stop and display the template from `references/output-templates.md` ("No backlog" error message).
 
-```text
-[Adapt to detected language]
-❌ **Ugo:** No backlog found. A backlog is required to know what to implement.
-   Run `/airchetipo-spec` to create one, then `/airchetipo-plan` to plan the first story.
-```
-
-4. Execute `READ: select_story` with the user's argument and eligible statuses = `[{config.workflow.statuses.planned}]`. If no eligible story exists, stop and show:
-
-```text
-[Adapt to detected language]
-❌ **Ugo:** No user stories in status {config.workflow.statuses.planned} found in the backlog.
-   Run `/airchetipo-plan` to plan a story, or pass a different story as argument.
-```
+4. Execute `READ: select_story` with the user's argument and eligible statuses = `[{config.workflow.statuses.planned}]`. If no eligible story exists, stop and display the template from `references/output-templates.md` ("No planned stories" error message).
 
 5. Execute `READ: read_story_detail` to load the full story content.
-6. Execute `READ: read_story_tasks` to load the implementation plan (task list). If no plan exists, stop and show:
-
-```text
-[Adapt to detected language]
-❌ **Ugo:** No implementation plan found for this story.
-   The story has not been planned yet. Run first:
-   `/airchetipo-plan {US-CODE}`
-```
+6. Execute `READ: read_story_tasks` to load the implementation plan (task list). If no plan exists, stop and display the template from `references/output-templates.md` ("No implementation plan" error message).
 
 7. Load the relevant project context: harness inputs, conventions, project config, and existing patterns in the touched area.
 8. If the plan contains UI work, scan it for mockups or design references and search `{config.paths.mockups}` for matching files. Treat explicitly referenced mockups as the source of truth.
 9. Execute `WRITE: transition_status` to move the story to `{config.workflow.statuses.in_progress}`.
-10. Announce the session briefly:
-
-```text
-[Adapt to detected language]
-⚡ AIRCHETIPO - USER STORY IMPLEMENTATION
-
-The delivery team is ready.
-
-**Team:**
-🔧 Ugo - Full-Stack Developer
-🧪 Mina - Test Architect
-🔍 Cesare - Code Reviewer
-
-**User Story:** {US-CODE}: {title}
-**Epic:** {EP-CODE} | **Priority:** {PRIORITY} | **Story Points:** {N}
-**Tasks to complete:** {N}
-
-Starting implementation...
-```
+10. Announce the session briefly using the template from `references/output-templates.md` ("Session Announcement").
 
 ### Validation policy for task parsing
 
@@ -162,27 +125,7 @@ When loading tasks via `READ: read_story_tasks`, apply these validation rules:
    - `sequential workers` when dependencies, shared files, or unstable interfaces require ordering
    - in `in-context fallback`, execute the same wave sequentially in the current context
 5. In `worker-backed preferred`, execute every wave through worker contexts. For sequential waves, wait for one worker to finish before starting the next dependent worker.
-6. Present the execution plan and proceed automatically:
-
-```text
-🔧 **Ugo:** Ho analizzato i task dal piano. Ecco come li eseguiremo:
-
-**Contesto di esecuzione:** Worker-backed preferred | In-context fallback
-
-**Wave 1 - Sequential workers**
-- 🔧 Ugo: TASK-01 [descrizione]
-- 🧪 Mina: TASK-02 [descrizione]
-
-**Motivo scheduling sequenziale:** [dipendenze | file condivisi | interfacce instabili]
-
-**Wave 2 - Concurrent workers**
-- 🔧 Ugo: TASK-03 [descrizione]
-- 🧪 Mina: TASK-04 [descrizione]
-
-**Fallback al contesto corrente:** [solo se i worker non sono disponibili o non affidabili]
-
-Procedo.
-```
+6. Present the execution plan and proceed automatically. See `references/output-templates.md` for the "Wave Execution Plan" template.
 
 ### PHASE 2 - Implementation
 
@@ -245,17 +188,7 @@ Apply this section when the plan requires e2e coverage, or when Mina determines 
 
 #### Progress reporting
 
-After each wave, report briefly:
-
-```text
-✅ **Wave N completata**
-
-**Completati:**
-- TASK-01: [titolo] ✅
-- TASK-02: [titolo] ✅
-
-**Prossima wave:** [N+1]
-```
+After each wave, report briefly. See `references/output-templates.md` for the "Wave Completion Report" template.
 
 #### Before code review
 
@@ -273,39 +206,15 @@ After all implementation waves:
 - Review only diffs or changed areas, using project conventions and the implementation plan as reference
 
 **Review criteria:**
-1. aderenza al piano
-2. qualita del codice
-3. aderenza all'architettura
-4. sicurezza
+1. plan adherence
+2. code quality
+3. architecture adherence
+4. security
 5. test quality
 6. mockup adherence when UI work exists
-7. completezza rispetto a task e acceptance criteria
+7. completeness vs. tasks and acceptance criteria
 
-**Output format:**
-
-```text
-🔍 **Cesare:** Ho completato la code review.
-
-**Riepilogo:** [N] problemi trovati ([N] critici, [N] miglioramenti)
-
-**🔴 CRITICO - [Titolo]**
-**File:** `path/to/file.ts:NN`
-**Problema:** [descrizione]
-**Motivazione:** [perche conta]
-**Suggerimento:** [fix]
-
-**🟡 MIGLIORAMENTO - [Titolo]**
-**File:** `path/to/file.ts:NN`
-**Problema:** [descrizione]
-**Suggerimento:** [miglioria]
-
-**✅ Punti positivi:**
-- [nota positiva]
-```
-
-Severity:
-- `🔴 CRITICO` -> must fix before completion
-- `🟡 MIGLIORAMENTO` -> should fix, but may be skipped with user approval
+**Output format:** See `references/output-templates.md` for the "Code Review Output" template.
 
 ### PHASE 4 - Fix & Re-Review Loop
 
@@ -325,11 +234,11 @@ If Cesare found no issues, or all critical issues are fixed, proceed to completi
 ### Completion Gate
 
 Proceed to Phase 5 only when all of the following are true:
-- no `🔴 CRITICO` findings remain open
+- no `🔴 CRITICAL` findings remain open
 - the full required final test suite passes
 - the story can be moved to `{config.workflow.statuses.review}` in the active connector
 
-`🟡 MIGLIORAMENTO` findings do not block completion by default.
+`🟡 IMPROVEMENT` findings do not block completion by default.
 Implementation is not complete until the story status has been updated to `{config.workflow.statuses.review}`.
 Do not end with the story still in `{config.workflow.statuses.in_progress}`, and do not move it to `{config.workflow.statuses.done}` from this skill.
 
@@ -338,30 +247,7 @@ Do not end with the story still in `{config.workflow.statuses.in_progress}`, and
 1. Run the full required test suite one final time. If it fails, return to the fix loop and do not update the story status.
 2. Execute `WRITE: transition_status` to move the story to `{config.workflow.statuses.review}`.
 3. Execute `WRITE: post_comment` with a completion summary (the connector handles this as a no-op if comments are not supported).
-4. Confirm completion with a concise summary. If non-blocking `🟡 MIGLIORAMENTO` items remain open, include them in the final report under an explicit optional improvements section:
-
-```text
-✅ Implementazione completata!
-
-**User Story:** {US-CODE}: {title}
-**Stato:** {config.workflow.statuses.review}
-
-**Riepilogo implementazione:**
-- Task completati: {N}/{N}
-- Test scritti/eseguiti: {N}
-- Code review: superata ✅
-- Cicli di review: {N}
-
-**File creati/modificati:**
-- `path/to/new-file.ts`
-- `path/to/modified-file.ts`
-- `path/to/test-file.test.ts`
-
-**Miglioramenti opzionali rimasti aperti:**
-- [Titolo miglioramento] - `path/to/file.ts:NN` - [breve suggerimento]
-
-⚠️ La story e in Review. Il passaggio a {config.workflow.statuses.done} e manuale.
-```
+4. Confirm completion with a concise summary. See `references/output-templates.md` for the "Completion Summary" template. If non-blocking `🟡 IMPROVEMENT` items remain open, include them in the final report under an explicit optional improvements section.
 
 ## Conversation Guidelines
 

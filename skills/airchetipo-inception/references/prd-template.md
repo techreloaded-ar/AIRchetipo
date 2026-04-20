@@ -214,10 +214,9 @@ When the inception flow has gathered the minimum required information, generate 
 
 ## Next Steps
 
-1. **Harness Setup** - Run `/airchetipo-harness` to generate the development harness
-2. **Backlog** - Ask `airchetipo-inception` to transform this PRD into a backlog
-3. **UX Design** - Define detailed interaction flows and wireframes for MVP features
-4. **Validation** - Review with stakeholders and test the riskiest assumptions
+1. **Backlog** - Run `/airchetipo-spec` to transform this PRD into a backlog
+2. **Design** - Run `/airchetipo-design` for UI mockups (when applicable)
+3. **Validation** - Review with stakeholders and test the riskiest assumptions
 
 ---
 

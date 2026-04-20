@@ -1,6 +1,6 @@
 ---
 name: airchetipo-spec
-description: Crea il backlog iniziale a partire da un PRD o da requirements esistenti quando il backlog non c'e ancora, oppure aggiunge una o piu nuove user story a un backlog esistente. Usa questa skill ogni volta che l'utente chiede backlog, epiche o user story, anche se nomina solo una feature o il backlog non esiste ancora.
+description: Creates the initial backlog from a PRD or existing requirements when no backlog exists yet, or appends one or more new user stories to an existing backlog. Use this skill whenever the user asks for a backlog, epics, or user stories, even if they only mention a single feature or the backlog does not yet exist.
 ---
 
 # AIRchetipo - Spec Skill
@@ -138,8 +138,3 @@ Do not expose mode names, routing decisions, or workflow labels in user-facing m
 - For initial backlog creation, use `WRITE: save_initial_backlog` from the connector
 - For backlog extension, use `WRITE: append_stories` from the connector
 - Domain logic (PRD analysis, epic identification, story generation, prioritization) stays in the flow references and is connector-independent
-
-## Compatibility Note
-
-`airchetipo-inception` is now responsible only for discovery and PRD generation.
-All backlog creation and all user-story expansion belong here.

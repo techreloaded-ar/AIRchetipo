@@ -75,7 +75,3 @@ Load context progressively and keep the working context lean:
 - Produce the PRD only through `references/prd-template.md`
 - Do not generate or mutate backlog artifacts in this skill
 - If the user asks for backlog generation, epics, or user stories from an existing PRD, that belongs to `airchetipo-spec`
-
-## Compatibility Note
-
-Backlog creation and backlog extension now belong to `airchetipo-spec`.

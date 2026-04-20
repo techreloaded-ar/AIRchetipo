@@ -1,0 +1,154 @@
+# AIRchetipo Implement — Output Templates
+
+> **Language note:** These templates are in English. Adapt all labels, headers, and messages to the detected language of the backlog when appropriate.
+
+---
+
+## Error Messages (Phase 0)
+
+### No backlog
+
+```text
+❌ **Ugo:** No backlog found. A backlog is required to know what to implement.
+   Run `/airchetipo-spec` to create one, then `/airchetipo-plan` to plan the first story.
+```
+
+### No planned stories
+
+```text
+❌ **Ugo:** No user stories in status {config.workflow.statuses.planned} found in the backlog.
+   Run `/airchetipo-plan` to plan a story, or pass a different story as argument.
+```
+
+### No implementation plan
+
+```text
+❌ **Ugo:** No implementation plan found for this story.
+   The story has not been planned yet. Run first:
+   `/airchetipo-plan {US-CODE}`
+```
+
+---
+
+## Session Announcement (Phase 0, Step 10)
+
+```text
+⚡ AIRCHETIPO — USER STORY IMPLEMENTATION
+
+The delivery team is ready.
+
+**Team:**
+🔧 Ugo — Full-Stack Developer
+🧪 Mina — Test Architect
+🔍 Cesare — Code Reviewer
+
+**User Story:** {US-CODE}: {title}
+**Epic:** {EP-CODE} | **Priority:** {PRIORITY} | **Story Points:** {N}
+**Tasks to complete:** {N}
+
+Starting implementation...
+```
+
+---
+
+## Wave Execution Plan (Phase 1, Step 6)
+
+```text
+🔧 **Ugo:** I've analyzed the tasks from the plan. Here is how we will execute them:
+
+**Execution context:** Worker-backed preferred | In-context fallback
+
+**Wave 1 — Sequential workers**
+- 🔧 Ugo: TASK-01 [description]
+- 🧪 Mina: TASK-02 [description]
+
+**Reason for sequential scheduling:** [dependencies | shared files | unstable interfaces]
+
+**Wave 2 — Concurrent workers**
+- 🔧 Ugo: TASK-03 [description]
+- 🧪 Mina: TASK-04 [description]
+
+**Fallback to current context:** [only if workers are unavailable or unreliable]
+
+Proceeding.
+```
+
+---
+
+## Wave Completion Report (Phase 2)
+
+```text
+✅ **Wave N complete**
+
+**Completed:**
+- TASK-01: [title] ✅
+- TASK-02: [title] ✅
+
+**Next wave:** [N+1]
+```
+
+---
+
+## Code Review Output (Phase 3)
+
+**Review criteria (English labels):**
+1. plan adherence
+2. code quality
+3. architecture adherence
+4. security
+5. test quality
+6. mockup adherence when UI work exists
+7. completeness vs. tasks and acceptance criteria
+
+**Output format:**
+
+```text
+🔍 **Cesare:** Code review complete.
+
+**Summary:** [N] issues found ([N] critical, [N] improvements)
+
+**🔴 CRITICAL — [Title]**
+**File:** `path/to/file.ts:NN`
+**Problem:** [description]
+**Why it matters:** [rationale]
+**Suggested fix:** [fix]
+
+**🟡 IMPROVEMENT — [Title]**
+**File:** `path/to/file.ts:NN`
+**Problem:** [description]
+**Suggestion:** [improvement]
+
+**✅ Positive notes:**
+- [positive observation]
+```
+
+**Severity labels:**
+- `🔴 CRITICAL` — must fix before completion
+- `🟡 IMPROVEMENT` — should fix, but may be skipped with user approval
+
+---
+
+## Completion Summary (Phase 5)
+
+```text
+✅ Implementation complete!
+
+**User Story:** {US-CODE}: {title}
+**Status:** {config.workflow.statuses.review}
+
+**Implementation summary:**
+- Tasks completed: {N}/{N}
+- Tests written/executed: {N}
+- Code review: passed ✅
+- Review cycles: {N}
+
+**Files created/modified:**
+- `path/to/new-file.ts`
+- `path/to/modified-file.ts`
+- `path/to/test-file.test.ts`
+
+**Optional improvements left open:**
+- [Improvement title] — `path/to/file.ts:NN` — [brief suggestion]
+
+⚠️ The story is in Review. Moving to {config.workflow.statuses.done} is manual.
+```
