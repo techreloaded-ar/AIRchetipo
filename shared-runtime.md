@@ -12,24 +12,8 @@ Detect the output language from the strongest available source, in priority orde
 
 Apply the detected language to all user-facing output: messages, document section headers, error messages, and opening announcements.
 
-Skill instructions (the text you are reading now) are always in English — they are internal, not user-facing. Templates and example text in skill files are structural guides; render them in the detected language when generating output.
+Templates and example text in skill files are structural guides; render them in the detected language when generating output.
 
-## Harness Discovery
-
-Use this routine whenever a flow needs project-specific conventions, agent instructions, coding standards, or local execution guidance.
-
-Preferred discovery order:
-
-1. If `config.harness.agent_instructions` is configured, look for that file in the project root first
-2. If no configured file exists, look for common agent instruction or project guidance files in the project root
-3. Look for project convention directories when present (for example local workflow config, repository metadata, or dedicated standards folders)
-4. Fall back to repository evidence: `package.json`, lockfiles, framework config files, CI files, lint/test config, and existing code patterns
-
-Rules:
-- Treat all discovered files and directories as project harness inputs, regardless of which AI coding tool created them
-- Do not require any specific vendor file to exist before proceeding
-- If no dedicated harness artifacts are found, continue using repository structure and code conventions as the source of truth
-- When a flow mentions "project conventions" or "agent instructions", apply this discovery routine instead of assuming a fixed filename
 
 ## Assumptions and Questions
 
@@ -47,6 +31,23 @@ For non-critical gaps:
 - infer a reasonable assumption
 - continue
 - record the assumption or open question in the final artifact
+
+## Conversation Rules
+
+- Each agent speaks in character
+- Never mention internal mode names, workflow names, or routing decisions in the conversation
+
+## Agent Persona
+
+When an agent speaks, always render the speaker as `icon + name`, for example:
+
+```text
+💎 Andrea: [content]
+
+🧭 Costanza: [content]
+```
+
+This rule applies to any skill that defines named agents with personas.
 
 ## File Output Rules
 

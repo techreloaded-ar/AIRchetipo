@@ -320,8 +320,8 @@ install_config() {
 
   # Determine source config path
   local source_config=""
-  if [[ -f "$source_dir/../config.yaml" ]]; then
-    source_config="$source_dir/../config.yaml"
+  if [[ -f "$source_dir/../.airchetipo/config.yaml" ]]; then
+    source_config="$source_dir/../.airchetipo/config.yaml"
   else
     echo ""
     printf "  ${YELLOW}–${RESET} ${DIM}config.yaml non trovato nella source, skip${RESET}\n"
@@ -350,14 +350,14 @@ install_config() {
 
   # Install connector contracts and implementations
   local source_root="$source_dir/.."
-  if [[ -f "$source_root/contracts.md" ]]; then
-    cp -f "$source_root/contracts.md" "$config_dir/contracts.md"
+  if [[ -f "$source_root/.airchetipo/contracts.md" ]]; then
+    cp -f "$source_root/.airchetipo/contracts.md" "$config_dir/contracts.md"
     printf "  ${GREEN}✓${RESET} ${BOLD}.airchetipo/contracts.md${RESET}\n"
   fi
 
-  if [[ -d "$source_root/connectors" ]]; then
+  if [[ -d "$source_root/.airchetipo/connectors" ]]; then
     mkdir -p "$config_dir/connectors"
-    cp -f "$source_root/connectors/"*.md "$config_dir/connectors/" 2>/dev/null
+    cp -f "$source_root/.airchetipo/connectors/"*.md "$config_dir/connectors/" 2>/dev/null
     printf "  ${GREEN}✓${RESET} ${BOLD}.airchetipo/connectors/${RESET} ${DIM}($(ls "$config_dir/connectors/" 2>/dev/null | wc -l | tr -d ' ') connector files)${RESET}\n"
   fi
 }

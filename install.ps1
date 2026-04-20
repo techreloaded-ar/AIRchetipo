@@ -278,7 +278,7 @@ function Install-Config {
   $configFile = Join-Path $configDir "config.yaml"
 
   # Determine source config path
-  $sourceConfig = Join-Path (Split-Path $SourceDir -Parent) "config.yaml"
+  $sourceConfig = Join-Path (Split-Path $SourceDir -Parent) ".airchetipo\config.yaml"
   if (-not (Test-Path $sourceConfig)) {
     Write-Host ""
     Write-Host "  - " -ForegroundColor Yellow -NoNewline
@@ -315,14 +315,14 @@ function Install-Config {
 
   # Install connector contracts and implementations
   $sourceRoot = Split-Path $SourceDir -Parent
-  $contractsSource = Join-Path $sourceRoot "contracts.md"
+  $contractsSource = Join-Path $sourceRoot ".airchetipo\contracts.md"
   if (Test-Path $contractsSource) {
     Copy-Item -Path $contractsSource -Destination (Join-Path $configDir "contracts.md") -Force
     Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
     Write-Host ".airchetipo\contracts.md" -ForegroundColor White
   }
 
-  $connectorsSource = Join-Path $sourceRoot "connectors"
+  $connectorsSource = Join-Path $sourceRoot ".airchetipo\connectors"
   if (Test-Path $connectorsSource) {
     $connectorsDir = Join-Path $configDir "connectors"
     if (-not (Test-Path $connectorsDir)) {

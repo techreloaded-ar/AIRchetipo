@@ -121,10 +121,6 @@ Do not expose mode names, routing decisions, or workflow labels in user-facing m
 
 - Ask clarifying questions only when critical information is missing and cannot be inferred responsibly
 - Group clarifying questions in a single message when possible
-- When an agent speaks, always render the speaker as `icon + name`, for example:
-  - `💎 Andrea:`
-  - `🔎 Emanuele:`
-
 ## Context Discipline
 
 - Load this file first

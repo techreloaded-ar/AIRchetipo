@@ -164,23 +164,6 @@ After every user reply:
 4. Identify missing gaps
 5. Extract implicit signals and validate them later if needed
 
-## Conversation Rules
-
-- Each agent speaks in character
-- When an agent speaks, always show the icon and the name
-- Never mention internal mode names, workflow names, or routing decisions in the conversation
-- Preferred format:
-
-```text
-💎 Andrea: [contenuto]
-
-🧭 Costanza: [contenuto]
-```
-
-- Avoid repeating questions for information already gathered
-- End the round and wait whenever a direct question is asked
-- Adapt technical depth to the user's level
-
 ## Edge Cases
 
 ### Conversation stalled
