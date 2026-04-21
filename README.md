@@ -88,19 +88,18 @@ Ad ogni passo la skill adotta la lingua della conversazione (rileva automaticame
 AIRchetipo è un set di **skill** (file markdown con istruzioni + reference) caricate dall'AI coding agent. Ogni skill incarna una fase del processo, ispirata alla metodologia **Spec-Driven Development**: la specifica è il contratto, e il ciclo `spec → plan → implement` si ripete per ogni slice di valore fino a completare il prodotto.
 
 ```mermaid
-%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 flowchart LR
     I["🧭 Inception<br/><i>PRD</i>"] --> S
-    I -. create mockup .-> D
+    I -. initial mockup .-> D["🎨 Design<br/><i>mockup</i>"]
 
-    subgraph Loop["♻️ Spec-Driven Loop"]
+    subgraph Loop["Spec-Driven Loop"]
         direction TB
-        D["🎨 Design<br/><i>mockup</i>"]
         S["📋 Spec<br/><i>backlog</i>"] --> P["📐 Plan<br/><i>tasks</i>"]
         P --> IM["🔧 Implement<br/><i>code + tests</i>"]
         IM -. next story .-> S
-        P -. UI needed .-> D
     end
+
+    P -. UI needed .-> D
 
     classDef oneshot fill:#eef,stroke:#557,stroke-width:1px,color:#000;
     classDef loop fill:#efe,stroke:#575,stroke-width:1px,color:#000;
