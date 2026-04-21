@@ -1,6 +1,6 @@
-# AIRchetipo Plan — File Connector Template
+# AIRchetipo Plan — Document Template
 
-> Used when `connector: file` — write to `{config.paths.planning}/{US-CODE}.md`.
+> Document template for the plan produced by the skill. Persistence is the connector's responsibility (see `contracts.md` § `save_plan`).
 > **Language rule:** All section headers and table column headers in this template must be rendered in the detected language of the project (see Language Policy in `.airchetipo/shared-runtime.md`). The connector parses the task table by column index, not by header text — headers may be translated freely.
 
 ---

@@ -73,13 +73,14 @@ Collect internally:
 
 ### Brainstorming Protocol
 
-Costanza must run at least one brainstorming round using some of:
-- "What if..."
-- assumption challenging
-- audience flip
-- anti-problem
+Costanza must run at least one brainstorming round using some of these techniques:
 
-Summarize discoveries before moving on.
+- **"What if..."** — ask provocative what-if questions that shift one constraint (budget, scale, audience, technology) to surface alternative product directions.
+- **Assumption challenging** — make an implicit assumption in the PRD explicit, then ask "what if it were false?" to test its robustness.
+- **Audience flip** — imagine the product being used by a completely different persona than the target one, and look at what changes (or surprisingly doesn't).
+- **Anti-problem** — frame the opposite of the goal (e.g. "how would we make this unusable?") and reverse the insights to find risks and differentiators.
+
+Pick the technique(s) that best fit the information gaps of the moment. Summarize discoveries before moving on.
 
 ## Phase 2 - Technical Architecture
 

@@ -1,6 +1,6 @@
 ---
 name: airchetipo-spec
-description: Creates the initial backlog from a PRD or existing requirements when no backlog exists yet, or appends one or more new user stories to an existing backlog. Use this skill whenever the user asks for a backlog, epics, or user stories, even if they only mention a single feature or the backlog does not yet exist.
+description: Creates the initial product backlog from a PRD, or appends new user stories to an existing one. Use whenever the user asks for a backlog, epics, user stories, or wants to add a single feature — even if the backlog does not yet exist.
 ---
 
 # AIRchetipo - Spec Skill

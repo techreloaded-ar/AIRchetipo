@@ -4,6 +4,20 @@ Use this flow when the project does not have a backlog yet or when the user expl
 
 Your goal is to produce the first prioritized backlog of epics and user stories for the project.
 
+## Contents
+
+- [Team](#team)
+- [Connector Dispatch](#connector-dispatch)
+- [Phase 0 - Setup and PRD Discovery](#phase-0---setup-and-prd-discovery)
+- [Phase 1 - Requirements Decomposition](#phase-1---requirements-decomposition)
+- [Phase 2 - Epic Definition](#phase-2---epic-definition)
+- [Phase 3 - Story Generation](#phase-3---story-generation)
+  - [Story Template](#story-template)
+- [Phase 4 - Prioritization](#phase-4---prioritization)
+- [Phase 5 - Output Generation](#phase-5---output-generation)
+- [Quality Rules](#quality-rules)
+- [Edge Cases](#edge-cases)
+
 ## Team
 
 | Agent | Name | Role | Communication Style |
@@ -237,21 +251,7 @@ For `connector: file`, the backlog content follows this markdown structure (writ
 
 #### US-001: [Story title]
 
-**Epic:** EP-001 | **Priority:** HIGH | **Story Points:** 3 | **Status:** {config.workflow.statuses.todo}
-**Blocked by:** -
-
-**Story**
-As [persona],
-I want [action],
-so that [benefit].
-
-**Demonstrates**
-After implementing this story, the user can: [visible increment]
-
-**Acceptance Criteria**
-- [ ] [Happy path]
-- [ ] [Validation or error case]
-- [ ] [Edge case]
+_Render each story using the shape defined in [Story Template](#story-template) above. Do not duplicate the template here — repeat the block once per story, nested under its epic._
 
 ---
 

@@ -176,7 +176,7 @@ When the inception flow has gathered the minimum required information, generate 
 
 ## Harness Blueprint
 
-> **Proposed by:** Leonardo (Architect) & Mina (Quality Architect)
+> **Proposed by:** Leonardo (Architect)
 >
 > This section defines the development harness that enables AI agents to produce reliable code.
 

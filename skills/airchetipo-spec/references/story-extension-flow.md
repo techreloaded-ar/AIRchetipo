@@ -187,9 +187,8 @@ Added:
 
 ## General Rules
 
-- Use the backlog language consistently
-- Append or surgically update; never rewrite the entire backlog
-- Every story must remain INVEST-compliant
-- No cross-epic dependency is allowed
-- Prefer vertical slices over technical layers
-- Do not announce workflow names, routing, or internal implementation details
+INVEST compliance, vertical slicing, and the no-cross-epic-dependency rule come from `backlog-bootstrap-flow.md` and apply here too. Extension-specific rules:
+
+- Append or surgically update; never rewrite the entire backlog.
+- Keep the backlog language consistent with the existing content.
+- Do not announce workflow names, routing, or internal implementation details.

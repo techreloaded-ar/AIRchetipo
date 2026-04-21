@@ -1,6 +1,6 @@
 ---
 name: airchetipo-plan
-description: Plans the implementation of a user story from the product backlog. Selects the target user story (passed as argument or auto-selected by priority), and orchestrates a virtual team (Architect, Analyst, Developer, Test Architect) to produce a detailed technical implementation plan. The connector (configured in .airchetipo/config.yaml) determines where stories are read from and where plans are saved. If the argument is a free-text description of a new feature (not a US-XXX code), the skill first creates the user story in the backlog and then plans it. Use this skill whenever the user wants to plan a user story, create an implementation plan, do sprint planning, break down a story into technical tasks, prepare a story for development, or quickly plan a new feature idea.
+description: Creates a detailed technical implementation plan for a user story. Use this skill whenever the user wants to plan a user story, break down a feature into technical tasks, create an implementation plan, do sprint planning, prepare a story for development or estimate a feature. Also triggers on requests like "plan this", "break this down", "what are the tasks for this story", or "how would we build this". The story can be passed by code (e.g., US-005) or as a free-text description — the skill handles both automatically.
 ---
 
 ## Subagents capability
@@ -126,9 +126,9 @@ If the story requires **new user interface** (new pages, significant UI componen
 3. After the mockup agent completes, verify that at least one file exists in `{config.paths.mockups}/{US-CODE}/` before setting `mockup_generated = true`. If no files exist, log a warning and set `mockup_generated = false`.
 
 **If subagent/worker support is NOT available:**
-1. Generate mockups **inline** in the current context, following the same design rules and output constraints defined in the `airchetipo-design` skill.
-2. Save mockup files directly to `{config.paths.mockups}/{US-CODE}/`.
-3. Verify at least one file exists after saving, then set `mockup_generated = true`. If no files were created, log a warning and set `mockup_generated = false`.
+1. Load `skills/airchetipo-design/SKILL.md` and apply its workflow inline — design rules, aesthetic guidelines, and output constraints live there and must not be duplicated here.
+2. Save mockup files to `{config.paths.mockups}/{US-CODE}/` as instructed by the design skill.
+3. After generation, verify at least one file exists: set `mockup_generated = true` on success, or `mockup_generated = false` with a warning if the directory is empty.
 
 If NO UI work is needed: set `mockup_generated = false`.
 

@@ -1,6 +1,6 @@
 ---
 name: airchetipo-inception
-description: Conducts product inception and generates a PRD. Use this skill when the user needs discovery, scope definition, personas, architecture, or a product requirements document, even if they do not explicitly ask for a PRD yet.
+description: Conducts product inception and generates a PRD covering vision, personas, MVP scope, technical architecture, and functional requirements. Use whenever the user wants to define a new product, explore a product idea, scope an MVP, identify users and personas, or set up product vision — even if they do not explicitly ask for a PRD. Also triggers on Italian variants like "definire il prodotto", "idea di prodotto", "documento di prodotto".
 ---
 
 # AIRchetipo - Product Inception Skill
@@ -18,27 +18,9 @@ Read `.airchetipo/shared-runtime.md` for Language Policy, Assumptions and Questi
 1. Read `.airchetipo/contracts.md`. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
 2. Execute `SETUP: initialize_connector` from the loaded connector file.
 
-If `.airchetipo/config.yaml` does not exist, assume `connector: file` with these defaults:
+If `.airchetipo/config.yaml` does not exist, use the defaults defined in `.airchetipo/contracts.md` (section "Configuration").
 
-```yaml
-connector: file
-paths:
-  prd: docs/PRD.md
-  backlog: docs/BACKLOG.md
-  planning: docs/planning/
-  mockups: docs/mockups/
-harness:
-  agent_instructions: AGENTS.md
-workflow:
-  statuses:
-    todo: TODO
-    planned: PLANNED
-    in_progress: IN_PROGRESS
-    review: REVIEW
-    done: DONE
-```
-
-Extract and keep available:
+From the effective configuration, extract and keep available:
 - `connector`
 - `paths.prd`
 - `paths.backlog`
