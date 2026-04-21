@@ -1,7 +1,7 @@
 # AIRchetipo Plan — File Connector Template
 
 > Used when `connector: file` — write to `{config.paths.planning}/{US-CODE}.md`.
-> Render all section headers in the detected language.
+> **Language rule:** All section headers and table column headers in this template must be rendered in the detected language of the project (see Language Policy in `.airchetipo/shared-runtime.md`). The connector parses the task table by column index, not by header text — headers may be translated freely.
 
 ---
 
@@ -62,7 +62,7 @@
 
 ## Implementation Tasks
 
-| Status | # | Task | Description | Type | Dependencies |
+| {STATUS_HEADER} | # | {TASK_HEADER} | {DESCRIPTION_HEADER} | {TYPE_HEADER} | {DEPENDENCIES_HEADER} |
 |---|---|---|---|---|---|
 | TODO | TASK-01 | {TITLE} | {BRIEF_DESCRIPTION} | Impl | - |
 | TODO | TASK-02 | {TITLE} | {BRIEF_DESCRIPTION} | Test | TASK-01 |
@@ -76,6 +76,8 @@
 
 _Plan generated via AIRchetipo Planning — {DATE}_
 ```
+
+> **Table parsing note:** The task table is parsed by the connector using column position (index). You must translate the column headers into the detected project language. Example translations: Status→Stato, Task→Titolo, Description→Descrizione, Type→Tipo, Dependencies→Dipendenze. The data rows (TODO/DONE, Impl/Test, TASK-XX) remain in English as they are machine-readable tokens.
 
 > Include the mockup reference line only if `mockup_generated = true`. Omit entirely otherwise.
 >

@@ -87,12 +87,19 @@ Returns: full story text including acceptance criteria, epic, priority, story po
 
 Read the task list for a story from its planning file.
 
-Read `{config.paths.planning}/{US-CODE}.md` and parse the **Task di Implementazione** table:
+Read `{config.paths.planning}/{US-CODE}.md` and parse the **Implementation Tasks** table.
+The table columns are extracted by **position index**.
 
-| Stato | # | Task | Descrizione | Tipo | Dipendenze |
-|---|---|---|---|---|---|
-| TODO | TASK-01 | {Title} | {Description} | Impl | - |
-| DONE | TASK-02 | {Title} | {Description} | Test | TASK-01 |
+**Expected column order (headers rendered in the detected project language):**
+
+| Index | Semantic Field | Example Content | Typical Header (translated) |
+|---|---|---|---|
+| 1 | Status | `TODO` or `DONE` | "Status" / "Stato" / etc. |
+| 2 | Task ID | `TASK-01`, `TASK-02` | "#" |
+| 3 | Title | Task name | "Task" / "Titolo" |
+| 4 | Description | Brief description (1-2 sentences) | "Description" / "Descrizione" |
+| 5 | Type | `Impl` or `Test` | "Type" / "Tipo" |
+| 6 | Dependencies | Other `TASK-XX` codes or `-` | "Dependencies" / "Dipendenze" |
 
 For each row, extract:
 - Status (TODO / DONE)
@@ -115,6 +122,16 @@ Read `{config.paths.backlog}` and extract:
 - Last US-XXX code used (for next code generation)
 - Existing epics
 - Story titles (for duplicate detection)
+
+---
+
+## WRITE: save_prd
+
+Write the PRD document to `{config.paths.prd}`.
+
+The calling skill provides the complete PRD content. This operation writes (or overwrites) the file.
+
+Create the parent directory if it does not exist.
 
 ---
 

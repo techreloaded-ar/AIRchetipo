@@ -4,11 +4,9 @@ This file implements the AIRchetipo connector contracts for GitHub Projects. Loa
 
 ## Performance Principles
 
-- **Minimize API round-trips.** Every extra `gh` command adds 200-500ms of network latency.
-- **Batch with single Bash calls.** Use loops inside a single Bash tool call for label creation, issue creation, and sub-issue creation. Never issue one tool call per item.
-- **Batch with GraphQL aliases.** Use aliased mutations to add multiple items to a project or set multiple fields in a single HTTP request.
-- **Use mutation responses.** Extract IDs directly from mutation responses instead of re-reading field lists.
-- **Maximize parallel tool calls.** When two commands have no data dependency, run them as parallel tool calls.
+- Minimize API round-trips; batch operations in single Bash calls and GraphQL aliased mutations
+- Extract IDs from mutation responses instead of re-reading
+- Use parallel tool calls for independent operations
 
 ---
 
@@ -35,12 +33,9 @@ gh project list --owner "$OWNER" --limit 1 --format json
 If this fails with a scope/permission error, stop and show:
 
 ```text
-Non ho i permessi necessari per accedere ai GitHub Projects.
-
-Esegui questo comando per abilitare lo scope necessario:
+GitHub Projects access requires additional scopes. Run:
 gh auth refresh -s read:project -s project
-
-Poi rilancia la skill.
+Then re-run the skill.
 ```
 
 ### Step 2 — Project Discovery
@@ -245,6 +240,16 @@ Extract: existing story codes (US-XXX) from titles, last US-XXX code used, exist
 
 ---
 
+## WRITE: save_prd
+
+Write the PRD document to `{config.paths.prd}` as a local markdown file.
+
+The calling skill provides the complete PRD content. This operation writes (or overwrites) the file. Create the parent directory if it does not exist.
+
+> With `connector: github`, the PRD is stored as a local file, not as a GitHub artifact.
+
+---
+
 ## WRITE: save_initial_backlog
 
 Create the initial backlog from a list of stories. This is a multi-step operation.
@@ -349,24 +354,11 @@ gh api graphql -f query='mutation {
 
 ### Summary Format
 
-```text
-Backlog generato su GitHub Projects.
-
-Project: [project URL]
-
-Riepilogo:
-- Epiche: N
-- User Stories (Issues): N
-- Story Points totali: N
-- HIGH priority: N storie
-- MEDIUM priority: N storie
-- LOW priority: N storie
-
-Issues create:
-- #NN US-001: [title] (HIGH, 3pt)
-- #NN US-002: [title] (HIGH, 2pt)
-- ...
-```
+Render the summary in the detected project language. Include:
+- Project URL
+- Counts: epics, user stories, total story points
+- Breakdown by priority (HIGH, MEDIUM, LOW)
+- List of created issues with number, US code, title, priority, and points
 
 ---
 

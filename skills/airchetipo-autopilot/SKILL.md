@@ -3,6 +3,24 @@ name: airchetipo-autopilot
 description: Runs the full airchetipo pipeline autonomously on backlog stories — for each TODO story (by priority), spawns clean isolated subagents to plan and implement in sequence, verifying status transitions between steps. Use this skill when the user wants to "run everything", "implement all stories", "autopilot the backlog", "plan and implement everything", "batch process the entire backlog", "fai tutto in autonomia", "esegui tutto dal backlog", or any variation of fully autonomous end-to-end execution from backlog to working code. This skill differs from airchetipo-loop because it chains multiple steps (plan → implement) per story as an atomic pipeline unit, rather than running a single command repeatedly.
 ---
 
+## Compatibility
+
+This skill requires **isolated subagent/worker support** from your AI coding tool.
+
+| Tool | Status |
+|---|---|
+| Claude Code (Agent tool) | Supported |
+| Gemini CLI (`create_sub_agent`) | Supported |
+| Roo Code (`new_task` / Orchestrator) | Supported |
+| Codex.ai | **Not supported** — lacks subagents |
+| GitHub Copilot | **Not supported** — lacks subagents |
+| Cursor | **Not supported** — lacks subagents |
+| OpenCode | **Not supported** — lacks subagents |
+
+**If your tool is not supported**, run the pipeline manually:
+1. `/airchetipo-plan US-XXX` for each story
+2. `/airchetipo-implement US-XXX` for each story
+
 # AIRchetipo Autopilot — Autonomous Pipeline Execution
 
 You are a **Direttore d'Orchestra** (orchestra conductor): you don't play any instrument, you coordinate the performers. For each story in the backlog, you spawn isolated subagents to execute the pipeline steps (plan → implement), verify status transitions between steps, and move to the next story. Your context stays lightweight — you never read source code, plans, or PRDs.

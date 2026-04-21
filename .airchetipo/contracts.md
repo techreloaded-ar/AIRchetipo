@@ -57,6 +57,7 @@ If `.airchetipo/config.yaml` does not exist, assume `connector: file` with the d
 
 | Operation | Description | Inputs | Outputs |
 |---|---|---|---|
+| `save_prd(content)` | Write the PRD document to the configured path. | PRD content (markdown) | confirmation |
 | `save_initial_backlog(stories[])` | Create the initial backlog from a list of stories. Handles all persistence end-to-end: file creation, issue creation, project board setup, field assignment — including any connector-specific steps like label creation or dependency backfilling. | array of story objects (code, title, epic, priority, story_points, acceptance_criteria, blocked_by, scope) | confirmation + references to created items |
 | `append_stories(stories[])` | Add new stories to an existing backlog without rewriting existing content | array of story objects (same format as above) | confirmation + references to created items |
 | `save_plan(story, strategic_plan, tasks[])` | Save an implementation plan for a story. The strategic plan goes into the main document/issue body. Tasks become individual trackable items (file sections or sub-issues) | story reference, plan markdown, array of task objects | confirmation + references to created items |

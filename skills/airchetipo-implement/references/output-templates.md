@@ -1,6 +1,7 @@
 # AIRchetipo Implement — Output Templates
 
-> **Language note:** These templates are in English. Adapt all labels, headers, and messages to the detected language of the backlog when appropriate.
+> **Language rule:** All structural labels, headers, and user-facing messages in these templates must be rendered in the detected project language (see Language Policy in `.airchetipo/shared-runtime.md`).  
+> Exception: agent names and role identifiers (Ugo, Mina, Cesare) are part of the AIRchetipo brand voice and remain unchanged across languages.
 
 ---
 
