@@ -21,9 +21,9 @@ Un workflow spec driven che trasforma il tuo assistente AI in una squadra di svi
 
 ## Perché ARchetipo
 
-Gli AI coding agent sono potenti, ma tendono a rispondere a prompt isolati senza un processo. **ARchetipo introduce un flusso di lavoro ispirato ai team di prodotto reali**, con ruoli specializzati e artefatti persistenti (PRD, backlog, piani tecnici, mockup) che si passano da una fase all'altra.
+Gli AI coding agent sono potenti, ma tendono a rispondere a prompt isolati senza un processo. **ARchetipo introduce un flusso di lavoro ispirato ai team di prodotto reali**, con ruoli specializzati e artefatti persistenti (PRD, backlog, piani tecnici, mockup).
 
-- **Un processo, non un prompt.** Dalla discovery al code review, ogni fase ha la propria skill, i propri ruoli e i propri output.
+- **Un processo, non un prompt.** Dalla discovery all'implementazione, ogni fase ha la propria skill.
 - **Agnostico rispetto al tool.** Le stesse skill funzionano su Claude Code, Codex, Gemini CLI, OpenCode e GitHub Copilot.
 - **Autonomo quando serve.** Il flusso può essere guidato passo-passo oppure lanciato in autopilot sull'intero backlog.
 
@@ -44,17 +44,6 @@ curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/inst
 ```powershell
 irm https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.ps1 | iex
 ```
-
-L'installer:
-1. Scarica le skill da GitHub.
-2. Mostra un menu interattivo per scegliere su quali AI tool installarle.
-3. Copia ogni skill nella directory corretta del tool.
-4. Crea la cartella `.archetipo` con le configurazioni di default.
-
-**Prerequisiti:**
-- `curl` + `unzip` su macOS/Linux (inclusi di default)
-- PowerShell 5.1+ su Windows
-- opzionale [`gh` CLI](https://cli.github.com/) autenticato se usi il connector GitHub.
 
 ---
 
@@ -89,7 +78,6 @@ flowchart LR
 - **Spec** (`/archetipo-spec`) apre il ciclo iterativo. Genera il `Backlog` iniziale partendo dal `PRD`, oppure lo estende con nuove user story.
 - **Plan** (`/archetipo-plan`) pianifica la singola storia. Si occupa di analisi tecnca, task breakdown e strategia di test. Se la storia richiede UI nuova, invoca automaticamente Design.
 - **Implement** (`/archetipo-implement`) esegue il piano. Genera codice e test, conduce una code review rigorosa e prepara la storia per essere revisionata dall'utente.
-  
 - **Design** produce mockup frontend distintivi. Viene invocato da `/archetipo-plan` quando serve UI per una nuova funzionalità, o direttamente con `/archetipo-design` per esplorare concept visivi senza toccare il codice applicativo.
 
 Il ciclo `Spec → Plan → Implement` si ripete per ogni funzionalità.

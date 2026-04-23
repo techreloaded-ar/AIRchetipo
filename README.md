@@ -6,7 +6,7 @@
 
 **An AI team at your side, from idea to finished product.**
 
-A spec-driven workflow that turns your AI assistant into a product development squad: analyst, architect, developer, tester, reviewer, designer — each with their own role and voice.
+A spec-driven workflow that turns your AI assistant into a product development squad: analyst, architect, developer, tester, reviewer, designer, each with their own role and voice.
 
 [![Status](https://img.shields.io/badge/status-beta-orange.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
@@ -21,9 +21,9 @@ A spec-driven workflow that turns your AI assistant into a product development s
 
 ## Why ARchetipo
 
-AI coding agents are powerful, but they tend to answer isolated prompts without a process. **ARchetipo introduces a workflow inspired by real product teams**, with specialized roles and persistent artifacts (PRD, backlog, technical plans, mockups) that flow from one phase to the next.
+AI coding agents are powerful, but they tend to answer isolated prompts without a process. **ARchetipo introduces a workflow inspired by real product teams**, with specialized roles and persistent artifacts (PRD, backlog, technical plans, mockups).
 
-- **A process, not a prompt.** From discovery to code review, every phase has its own skill, its own roles, and its own outputs.
+- **A process, not a prompt.** From discovery to code production, every phase has its own skill.
 - **Tool-agnostic.** The same skills work on Claude Code, Codex, Gemini CLI, OpenCode, and GitHub Copilot.
 - **Autonomous when needed.** The flow can be guided step-by-step or launched on autopilot across the whole backlog.
 
@@ -44,17 +44,6 @@ curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/inst
 ```powershell
 irm https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.ps1 | iex
 ```
-
-The installer:
-1. Downloads the skills from GitHub.
-2. Shows an interactive menu to pick which AI tools to install them on.
-3. Copies every skill into the correct directory for each tool.
-4. Creates the `.archetipo` folder with default configuration.
-
-**Prerequisites:**
-- `curl` + `unzip` on macOS/Linux (included by default)
-- PowerShell 5.1+ on Windows
-- optional [`gh` CLI](https://cli.github.com/) authenticated if you use the GitHub connector.
 
 ---
 
@@ -89,7 +78,6 @@ flowchart LR
 - **Spec** (`/archetipo-spec`) opens the iterative loop. It generates the initial `Backlog` from the `PRD`, or extends it with new user stories.
 - **Plan** (`/archetipo-plan`) plans a single story. It handles technical analysis, task breakdown, and test strategy. If the story requires new UI, it automatically invokes Design.
 - **Implement** (`/archetipo-implement`) executes the plan. It produces code and tests, runs a rigorous code review, and hands the story off for user review.
-
 - **Design** produces distinctive frontend mockups. It is invoked by `/archetipo-plan` when new UI is needed for a feature, or directly via `/archetipo-design` to explore visual concepts without touching the application code.
 
 The `Spec → Plan → Implement` cycle repeats for every feature.
