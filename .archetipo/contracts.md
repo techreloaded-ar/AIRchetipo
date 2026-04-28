@@ -1,29 +1,59 @@
 # ARchetipo Connector Contracts
 
-This file is the single entry point for all connector operations. Skills read this file instead of managing connector-specific logic themselves.
+This file is the single entry point for connector operations. Skills read this file to know **how to invoke the CLI** that performs every operation deterministically.
 
 ## How It Works
 
-1. Read `.archetipo/config.yaml` to determine the `connector` value (default: `file`)
-2. Read `.archetipo/connectors/{connector}.md` — that file contains the implementation of every operation listed below
-3. When a skill references an operation (e.g., `SETUP: initialize_connector`), find the matching section header in the loaded connector file and follow its instructions
+1. Read `.archetipo/config.yaml` to determine the active `connector` (`file` or `github`) and the target paths.
+2. Invoke the CLI binary at `.archetipo/bin/archetipo`.
+3. Parse the JSON envelope written to stdout. On failure, the JSON envelope on stderr describes the error.
 
-> **Context discipline:** Load this file and the connector file once at the start of the skill. Do not re-read them unless the skill explicitly requires a refresh.
+> **Context discipline:** Load this file once at the start of the skill. Do not re-read it unless the skill explicitly requires a refresh.
 
-## Configuration
+## Protocol
 
-The connector file receives these values from `.archetipo/config.yaml`:
+### Stdout envelope (success)
+
+```json
+{"schema":"archetipo/v1","kind":"<kind>","data":{...}}
+```
+
+### Stderr envelope (failure)
+
+```json
+{"schema":"archetipo/v1","kind":"error","error":{"code":"E_*","message":"...","hint":"..."}}
+```
+
+The skill should never branch on `message` (free-text); branch on `code`.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | success |
+| `1` | generic error |
+| `2` | invalid input (bad flag, malformed stdin JSON) |
+| `3` | connector failure (auth, network, gh, fs) |
+| `4` | precondition missing (e.g. backlog absent) |
+
+### Error codes (`error.code`)
+
+`E_INVALID_INPUT`, `E_AUTH_SCOPE`, `E_NETWORK`, `E_CONNECTOR`, `E_PRECONDITION`, `E_NOT_FOUND`, `E_CONFLICT`, `E_INTERNAL`.
+
+### Configuration
+
+The CLI reads `.archetipo/config.yaml` from the project root (walks up if invoked from a subdir). Defaults: `connector: file` with the canonical paths.
 
 ```yaml
-connector: file | github          # which connector implementation to load
-paths:                            # filesystem paths (used by all connectors for PRD, mockups, etc.)
+connector: file | github
+paths:
   prd: docs/PRD.md
-  backlog: docs/BACKLOG.md      # primary source for file connector
+  backlog: docs/BACKLOG.md
   planning: docs/planning/
   mockups: docs/mockups/
   test_results: docs/test-results/
 workflow:
-  statuses:                     # status labels used by transition_status
+  statuses:
     todo: TODO
     planned: PLANNED
     in_progress: IN PROGRESS
@@ -31,45 +61,172 @@ workflow:
     done: DONE
 ```
 
-If `.archetipo/config.yaml` does not exist, assume `connector: file` with the default paths above.
-
 ---
 
 ## Operation Catalog
 
+> Every command emits an envelope with `schema: archetipo/v1`. The `kind` of each envelope is listed below; `data.*` fields follow the schemas in [domain types](#domain-types).
+
 ### SETUP
 
-| Operation | Description | Inputs | Outputs |
-|---|---|---|---|
-| `initialize_connector` | Authenticate, detect repository, find or create the project/backlog, load field metadata. For connectors that require project infrastructure (e.g., custom fields, status options), also ensures that infrastructure exists as part of this step. | config values | `$OWNER`, `$REPO_NAME`, `$REPO_SLUG`, `$PROJECT_NUMBER`, `$PROJECT_NODE_ID`, field metadata (connector-specific; file connector outputs config paths only) |
+#### `archetipo init` — initialize_connector
+
+Authenticate, detect repo/project, load metadata.
+
+- **Args:** none
+- **Stdin:** none
+- **Stdout kind:** `setup` — `data` is a `SetupInfo`.
+- **Errors:** `E_AUTH_SCOPE` (gh missing scopes), `E_PRECONDITION` (no project linked).
+
+```bash
+.archetipo/bin/archetipo init
+```
 
 ### READ
 
-| Operation | Description | Inputs | Outputs |
-|---|---|---|---|
-| `fetch_backlog_items(status_filter?)` | Retrieve all items from the backlog, optionally filtered by status | optional status filter | list of stories with: code, title, epic, priority, story points, status, blocked_by |
-| `select_story(code_or_auto, eligible_statuses)` | Pick a specific story by code, or auto-select the highest-priority story matching the eligible statuses | story code OR `auto`, list of eligible statuses | single story reference with full metadata |
-| `read_story_detail(reference)` | Read the full body/content of a story | story reference (US code or issue number) | story body text (acceptance criteria, scope, context) |
-| `read_story_tasks(parent_reference)` | Read the task list for a story (sub-issues or planning file task table) | parent story reference | ordered list of tasks with: id, title, description, status, dependencies |
-| `read_existing_backlog()` | Read existing backlog items for idempotency checks (avoid duplicates when extending) | — | list of existing story codes and titles |
+#### `archetipo backlog list` — fetch_backlog_items
+
+- **Args:** `--status <STATUS>` (optional) filter by workflow status.
+- **Stdout kind:** `stories` — `data.items: Story[]`.
+
+#### `archetipo story select` — select_story
+
+- **Args:** `--story US-XXX` (specific story) **or** `--auto` with `--eligible TODO,PLANNED` (comma-separated). `--story` and `--auto` are mutually exclusive; default is auto-select with `--eligible TODO`.
+- **Stdout kind:** `story` — `data` is a `Story`.
+- **Errors:** `E_PRECONDITION` (no eligible stories or US-XXX not found).
+
+#### `archetipo story read` — read_story_detail
+
+- **Args:** `--ref US-XXX` (required).
+- **Stdout kind:** `story`.
+
+#### `archetipo tasks read` — read_story_tasks
+
+- **Args:** `--ref US-XXX` (required, parent story).
+- **Stdout kind:** `tasks` — `data.items: Task[]`.
+- **Errors:** `E_PRECONDITION` (no plan saved yet).
+
+#### `archetipo backlog existing` — read_existing_backlog
+
+Idempotency metadata for extending an existing backlog.
+
+- **Stdout kind:** `backlog_summary` — `data: BacklogSummary` with `codes`, `last_code`, `epics`, `titles`.
 
 ### WRITE
 
-| Operation | Description | Inputs | Outputs |
-|---|---|---|---|
-| `save_prd(content)` | Write the PRD document to the configured path. | PRD content (markdown) | confirmation |
-| `save_initial_backlog(stories[])` | Create the initial backlog from a list of stories. Handles all persistence end-to-end: file creation, issue creation, project board setup, field assignment — including any connector-specific steps like label creation or dependency backfilling. | array of story objects (code, title, epic, priority, story_points, acceptance_criteria, blocked_by, scope) | confirmation + references to created items |
-| `append_stories(stories[])` | Add new stories to an existing backlog without rewriting existing content | array of story objects (same format as above) | confirmation + references to created items |
-| `save_plan(story, strategic_plan, tasks[])` | Save an implementation plan for a story. The strategic plan goes into the main document/issue body. Tasks become individual trackable items (file sections or sub-issues) | story reference, plan markdown, array of task objects | confirmation + references to created items |
-| `transition_status(story, new_status)` | Change the workflow status of a story | story reference, target status label | confirmation |
-| `complete_task(task)` | Mark a single task as completed | task reference | confirmation |
-| `post_comment(story, text)` | Post a comment on a story (completion summary, review notes, etc.) | story reference, comment text | confirmation (no-op for connectors without comment support) |
+All write operations emit `kind: write_result` with `data: {ok: boolean, refs: Ref[]}`.
+
+#### `archetipo prd save` — save_prd
+
+- **Stdin:** raw markdown body.
+- **Errors:** filesystem errors as `E_CONNECTOR`.
+
+#### `archetipo backlog save` — save_initial_backlog
+
+- **Stdin JSON:** `{"stories":[Story, ...]}`.
+- **Errors:** `E_CONFLICT` if a non-empty backlog already exists. Use `backlog append` instead.
+
+#### `archetipo backlog append` — append_stories
+
+- **Stdin JSON:** `{"stories":[Story, ...]}`. Stories whose `code` already exists are skipped.
+
+#### `archetipo plan save` — save_plan
+
+- **Args:** `--ref US-XXX` (parent story).
+- **Stdin JSON:** `{"plan_body":"<markdown>","tasks":[Task, ...]}`.
+- **Effect (file):** writes `{paths.planning}/{US-XXX}.md` with the canonical layout (preamble marker, plan body, tasks marker, GFM table).
+- **Effect (github):** appends the plan body to the parent issue, creates one sub-issue per task, links sub-issues to parent.
+
+#### `archetipo status set` — transition_status
+
+- **Args:** `--ref US-XXX --to <STATUS>` (status from `workflow.statuses`).
+
+#### `archetipo task complete` — complete_task
+
+- **Args:** `--parent US-XXX --ref TASK-NN`.
+
+#### `archetipo comment post` — post_comment
+
+- **Args:** `--ref US-XXX`.
+- **Stdin:** raw markdown body.
+- **Note:** no-op for the file connector (returns `ok: true`).
 
 ---
 
-## Notes for Skill Authors
+## Domain types
 
-- **Call only what you need.** Not every skill uses every operation. Unused operations have zero cost.
-- **Content templates belong in the skill, not here.** The skill defines *what* to write (plan format, sub-issue body template, story structure). The connector defines *how* to persist it.
-- **Validation policies belong in the skill.** Post-processing and validation of data returned by READ operations (e.g., malformed task parsing, confidence thresholds) is the skill's responsibility.
-- **No-op operations are explicit.** If a connector does not support an operation (e.g., file connector has no comments), the connector file says so. The skill should not fail — it simply skips that step.
+All field names in JSON are `snake_case`.
+
+### `Story`
+
+```jsonc
+{
+  "code": "US-001",
+  "title": "Login utente",
+  "epic": {"code": "EP-001", "title": "Auth Foundations"},
+  "priority": "HIGH",            // HIGH | MEDIUM | LOW
+  "story_points": 3,
+  "status": "TODO",              // value from workflow.statuses
+  "blocked_by": ["US-002"],      // optional, strings
+  "scope": "MVP",                // optional
+  "body": "## Story\n\n...",     // markdown body — produced by the skill
+  "ref": "US-001",               // connector-local id (issue number for github)
+  "url": "https://..."           // populated when the connector has one
+}
+```
+
+### `Task`
+
+```jsonc
+{
+  "id": "TASK-01",
+  "title": "Schema DB",
+  "description": "Create the users schema",
+  "type": "Impl",                // Impl | Test
+  "status": "TODO",              // value from workflow.statuses
+  "dependencies": ["TASK-00"],   // optional
+  "body": "...",                 // optional markdown body (read on github)
+  "ref": "TASK-01"               // connector-local id (sub-issue number for github)
+}
+```
+
+### `Ref`
+
+```jsonc
+{"code": "US-001", "number": 42, "path": "docs/BACKLOG.md", "url": "https://..."}
+```
+
+`number`, `path`, `url` are populated only when the connector has one.
+
+### `SetupInfo`
+
+```jsonc
+{
+  "connector": "file",
+  "paths": { ... },              // mirrors config.yaml paths
+  "workflow": { "statuses": { ... } },
+  "repo": { "owner": "...", "name": "...", "slug": "owner/name", "node_id": "..." },     // github only
+  "project": { "number": 4, "node_id": "...", "url": "...", "fields": { ... } }          // github only
+}
+```
+
+### `BacklogSummary`
+
+```jsonc
+{
+  "codes": ["US-001", "US-002"],
+  "last_code": "US-002",
+  "epics": [{"code": "EP-001", "title": "..."}],
+  "titles": ["Login", "Logout"]
+}
+```
+
+---
+
+## Notes for skill authors
+
+- **Call only what you need.** Not every skill uses every command. Unused commands have zero cost.
+- **Content templates belong to the skill, not to the CLI.** The skill produces the markdown body of stories, plans, comments and PRDs. The CLI persists what the skill emits and adds machine-readable markers around it.
+- **Branch on error `code`, not on `message`.** The CLI guarantees stable codes; messages are human-readable and may change.
+- **No-op operations are explicit.** `comment post` returns `ok: true` even when the file connector has no comment store. Skills never need to suppress those calls.
+- **Compose with stdin/stdout.** Every command that takes content reads it from stdin; every command that returns data writes a single JSON envelope to stdout. Pipe and parse.

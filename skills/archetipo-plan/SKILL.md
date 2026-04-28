@@ -41,19 +41,19 @@ Agents appear only in the **Team Brief** output. Each agent speaks **1-3 sentenc
 
 #### Step 0 — Config Loading & Connector Dispatch
 
-1. Read `.archetipo/contracts.md` from the `.archetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_connector` from the loaded connector file.
+1. Read `.archetipo/contracts.md` once for the CLI protocol reference.
+2. Run `.archetipo/bin/archetipo init` and parse the stdout JSON envelope; keep the `data` (SetupInfo) available.
 
 #### Step 1 — Story Selection
 
-1. Execute `READ: fetch_backlog_items` with `status_filter` = `{config.workflow.statuses.todo}`. If no backlog exists, tell the user to run `archetipo-spec` first and stop.
+1. Run `.archetipo/bin/archetipo backlog list --status {config.workflow.statuses.todo}`. If the envelope reports `error.code = E_PRECONDITION` (no backlog), tell the user to run `archetipo-spec` first and stop.
 
-2. Execute `READ: select_story` with the user's argument and eligible statuses = `[{config.workflow.statuses.todo}]`:
-   - If a user story code was passed as argument (e.g., "US-005"), select that story
-   - If a free-text description was passed (not a US-XXX code), the connector handles creating a new story in the backlog and selecting it
-   - If no argument was passed, auto-select the highest-priority eligible story
+2. Run `.archetipo/bin/archetipo story select` with the appropriate flags:
+   - If a user story code was passed (e.g. "US-005"): `--story US-005`
+   - Free-text descriptions are not supported as story selectors. If the user passes free text, route to `archetipo-spec` to add the story first.
+   - If no argument was passed: `--eligible {config.workflow.statuses.todo}` (auto-select)
 
-3. If no eligible stories exist, inform the user and stop.
+3. If `error.code = E_PRECONDITION`, inform the user that no eligible stories exist and stop.
 
 #### Step 2 — Context Loading (parallel)
 
@@ -150,18 +150,19 @@ In a **single turn**, produce both:
 
 **2. Write the planning document:**
 
-Execute `WRITE: save_plan` from the connector, providing:
-- The story reference
-- The strategic plan content (technical solution + test strategy)
-- The task list
+Pipe a JSON payload into `.archetipo/bin/archetipo plan save --ref {US-CODE}` containing:
 
-The connector determines where and how the plan is persisted. For `connector: file`, the plan follows the template in `references/plan-template.md`. For other connectors, the connector file defines the persistence format.
+```json
+{"plan_body":"<technical solution + test strategy as markdown>","tasks":[{"id":"TASK-01","title":"...","description":"...","type":"Impl|Test","status":"TODO","dependencies":[]}]}
+```
+
+The CLI persists according to the active connector (file: writes `{paths.planning}/{US-CODE}.md`; github: appends to the parent issue body and creates one sub-issue per task). For the file connector, follow the template in `references/plan-template.md` to compose `plan_body`.
 
 ### STAGE 2 — Backlog Update & Close
 
 After saving the planning document:
 
-1. **Update backlog status:** Execute `WRITE: transition_status` to move the story to `{config.workflow.statuses.planned}`.
+1. **Update backlog status:** Run `.archetipo/bin/archetipo status set --ref {US-CODE} --to {config.workflow.statuses.planned}`.
 
 2. **Confirm completion:**
 

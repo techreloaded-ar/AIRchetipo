@@ -182,9 +182,13 @@ Emanuele validates:
 
 ## Phase 5 - Output Generation
 
-Execute `WRITE: save_initial_backlog` from the connector, providing the complete list of stories with all their metadata.
+Pipe a JSON payload into `.archetipo/bin/archetipo backlog save`:
 
-For `connector: file`, the backlog content follows this markdown structure (write to `{config.paths.backlog}`):
+```json
+{"stories":[{"code":"US-001","title":"...","epic":{"code":"EP-001","title":"..."},"priority":"HIGH","story_points":3,"status":"TODO","scope":"MVP","blocked_by":[],"body":"<story markdown>"}, ...]}
+```
+
+The CLI persists according to the active connector. The `body` field carries the markdown narrative the skill produces. For `connector: file`, the body should follow this structure:
 
 ```markdown
 # [Product Name] - Product Backlog

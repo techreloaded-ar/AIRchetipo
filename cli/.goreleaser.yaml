@@ -1,0 +1,45 @@
+version: 2
+
+project_name: archetipo
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: archetipo
+    main: ./cmd/archetipo
+    binary: archetipo
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/techreloaded-ar/ARchetipo/cli/internal/version.Version={{ .Version }}
+
+# Single bare binary per platform — install.sh / install.ps1 download by exact
+# asset name (archetipo-<os>-<arch>) into .archetipo/bin/.
+archives:
+  - id: bare
+    formats: [binary]
+    name_template: "archetipo-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"

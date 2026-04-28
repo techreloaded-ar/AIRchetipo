@@ -52,13 +52,13 @@ With you today:
 
 ### Step 2 - Backlog and PRD Loading
 
-Execute `READ: read_existing_backlog` from the connector and extract:
-- existing epics (`EP-XXX` + titles)
-- the last `US-XXX` code used
-- ticket statuses already in use
-- the backlog language
+Run `.archetipo/bin/archetipo backlog existing` and extract from the returned `BacklogSummary`:
+- existing epics (`EP-XXX` + titles, from `epics`)
+- the last `US-XXX` code used (from `last_code`)
+- ticket statuses already in use (combine with `archetipo backlog list` if needed)
+- the backlog language (infer from titles)
 
-If the connector detects that no backlog exists yet, switch to initial backlog creation instead of failing.
+If the CLI returns `error.code = E_PRECONDITION` (no backlog yet), switch to initial backlog creation instead of failing.
 
 Read `{config.paths.prd}` if available and extract vision, personas, MVP scope as supporting context.
 
@@ -152,9 +152,13 @@ Proceed with adding them? Or tell me what to change.
 
 ## Phase 3 - Output
 
-Execute `WRITE: append_stories` from the connector, providing the confirmed new stories with all metadata. The connector handles the persistence details (file append, issue creation, project field updates, etc.).
+Pipe a JSON payload into `.archetipo/bin/archetipo backlog append`:
 
-If a new epic is introduced, the connector also handles creating the necessary labels/fields.
+```json
+{"stories":[{"code":"US-NNN","title":"...", ...}]}
+```
+
+The CLI handles the persistence details (file append, issue creation, project field updates, label creation for new epics, etc.). Stories whose `code` already exists are skipped silently.
 
 ### Closing Message
 

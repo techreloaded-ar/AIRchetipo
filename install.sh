@@ -355,11 +355,65 @@ install_config() {
     printf "  ${GREEN}✓${RESET} ${BOLD}.archetipo/contracts.md${RESET}\n"
   fi
 
-  if [[ -d "$source_root/.archetipo/connectors" ]]; then
-    mkdir -p "$config_dir/connectors"
-    cp -f "$source_root/.archetipo/connectors/"*.md "$config_dir/connectors/" 2>/dev/null
-    printf "  ${GREEN}✓${RESET} ${BOLD}.archetipo/connectors/${RESET} ${DIM}($(ls "$config_dir/connectors/" 2>/dev/null | wc -l | tr -d ' ') connector files)${RESET}\n"
+  if [[ -f "$source_root/.archetipo/shared-runtime.md" ]]; then
+    cp -f "$source_root/.archetipo/shared-runtime.md" "$config_dir/shared-runtime.md"
+    printf "  ${GREEN}✓${RESET} ${BOLD}.archetipo/shared-runtime.md${RESET}\n"
   fi
+}
+
+# ─── Install CLI binary ──────────────────────────────────────────────────────
+# Builds the archetipo binary locally when --local is used, or downloads it
+# from the latest GitHub release otherwise. The binary lives under
+# .archetipo/bin/archetipo (per-project, no sudo, no global PATH conflicts).
+install_cli() {
+  local source_root="$1"
+  local use_local="$2"
+  local bin_dir=".archetipo/bin"
+  local bin_path="$bin_dir/archetipo"
+
+  mkdir -p "$bin_dir"
+
+  if [[ "$use_local" == "1" ]]; then
+    if [[ ! -d "$source_root/cli" ]]; then
+      printf "  ${YELLOW}–${RESET} ${DIM}cli/ source not found at %s/cli, skip${RESET}\n" "$source_root"
+      return
+    fi
+    if ! command -v go &>/dev/null; then
+      printf "  ${RED}✗${RESET} Go toolchain not found. Install Go 1.26+ then re-run --local, or omit --local to download a prebuilt binary.\n"
+      return 1
+    fi
+    printf "\n  ${DIM}Building archetipo from source...${RESET}\n"
+    local abs_bin="$(pwd)/$bin_path"
+    ( cd "$source_root/cli" && go build -o "$abs_bin" ./cmd/archetipo ) || {
+      printf "  ${RED}✗${RESET} go build failed\n"
+      return 1
+    }
+    printf "  ${GREEN}✓${RESET} ${BOLD}.archetipo/bin/archetipo${RESET} ${DIM}(local build)${RESET}\n"
+    return
+  fi
+
+  # Pre-built binary path (release-driven). Detect platform.
+  local os arch asset_name
+  case "$(uname -s)" in
+    Darwin) os="darwin" ;;
+    Linux)  os="linux" ;;
+    *) printf "  ${YELLOW}–${RESET} unsupported OS for prebuilt binary; rerun with --local\n"; return ;;
+  esac
+  case "$(uname -m)" in
+    arm64|aarch64) arch="arm64" ;;
+    x86_64|amd64) arch="amd64" ;;
+    *) printf "  ${YELLOW}–${RESET} unsupported arch for prebuilt binary; rerun with --local\n"; return ;;
+  esac
+  asset_name="archetipo-${os}-${arch}"
+
+  printf "\n  ${DIM}Downloading %s from latest release...${RESET}\n" "$asset_name"
+  local release_url="https://github.com/techreloaded-ar/ARchetipo/releases/latest/download/${asset_name}"
+  if ! curl -fsSL "$release_url" -o "$bin_path" 2>/dev/null; then
+    printf "  ${YELLOW}–${RESET} Could not fetch %s. Re-run with ${BOLD}--local${RESET} to compile from source.\n" "$asset_name"
+    return
+  fi
+  chmod +x "$bin_path"
+  printf "  ${GREEN}✓${RESET} ${BOLD}.archetipo/bin/archetipo${RESET} ${DIM}(release download)${RESET}\n"
 }
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -484,6 +538,9 @@ main() {
 
   # Install config
   install_config "$source_dir" "$SELECTED_CONNECTOR"
+
+  # Install CLI binary (.archetipo/bin/archetipo)
+  install_cli "$source_dir/.." "$use_local"
 
   # Summary
   echo ""

@@ -15,12 +15,12 @@ Read `.archetipo/shared-runtime.md` for Language Policy, Assumptions and Questio
 
 ## Config Loading & Connector Dispatch
 
-1. Read `.archetipo/contracts.md`. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_connector` from the loaded connector file.
+1. Read `.archetipo/contracts.md` once for the CLI protocol reference.
+2. Run `.archetipo/bin/archetipo init` and parse the stdout JSON envelope.
 
-If `.archetipo/config.yaml` does not exist, use the defaults defined in `.archetipo/contracts.md` (section "Configuration").
+If the CLI cannot find `.archetipo/config.yaml`, it falls back to the defaults documented in `.archetipo/contracts.md` (section "Configuration").
 
-From the effective configuration, extract and keep available:
+From the parsed `data` (SetupInfo), extract and keep available:
 - `connector`
 - `paths.prd`
 - `paths.backlog`
@@ -49,6 +49,6 @@ Load context progressively and keep the working context lean:
 ## Output Boundaries
 
 - Produce the PRD using `references/prd-template.md` as the format template
-- Persist the PRD via `WRITE: save_prd` from the connector
+- Persist the PRD by piping the markdown into `.archetipo/bin/archetipo prd save` and verifying the resulting `write_result` envelope
 - Do not generate or mutate backlog artifacts in this skill
 - If the user asks for backlog generation, epics, or user stories from an existing PRD, that belongs to `archetipo-spec`

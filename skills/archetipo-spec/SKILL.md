@@ -20,7 +20,7 @@ Read `.archetipo/shared-runtime.md` for Language Policy, Assumptions and Questio
 Keep the working context lean:
 - Load this file first
 - Load exactly one main flow reference at activation time
-- The connector is loaded once via contracts — no need for connector references
+- Connector logic lives in the `.archetipo/bin/archetipo` CLI; this skill never interprets a connector file
 
 ## Supported Modes
 
@@ -51,10 +51,10 @@ In this mode:
 
 ## Config Loading & Connector Dispatch
 
-1. Read `.archetipo/contracts.md` from the `.archetipo/` directory. This loads the connector contracts and instructs you to read the active connector implementation file based on `config.yaml`.
-2. Execute `SETUP: initialize_connector` from the loaded connector file.
+1. Read `.archetipo/contracts.md` once for the CLI protocol reference (envelope shape, sub-commands, error codes).
+2. Run `.archetipo/bin/archetipo init` and parse the stdout JSON envelope. The `data` field is a `SetupInfo` object.
 
-Extract and keep available:
+Extract and keep available from `data`:
 - `connector`
 - `paths.prd`
 - `paths.backlog`
@@ -66,14 +66,12 @@ Extract and keep available:
 
 Use this routine whenever the skill must decide whether it is extending an existing backlog or creating the first one.
 
-Execute `READ: read_existing_backlog` from the connector. This operation:
-- For `connector: file`: reads `{config.paths.backlog}` and searches for backlog files if not found at the configured path
-- For other connectors: queries the connector service for existing backlog items
+Run `.archetipo/bin/archetipo backlog existing` and parse the JSON envelope. The CLI returns codes, last code, epics, and titles for the existing backlog.
 
 If existing stories are found, use them as the source of truth for backlog extension.
-If none are found, treat the project as backlog-less and route to initial backlog creation.
+If `error.code` is `E_PRECONDITION` (no backlog yet), treat the project as backlog-less and route to initial backlog creation.
 
-**File connector fallback search** (only when `{config.paths.backlog}` is not found):
+**Fallback search** (only when the CLI reports no backlog and `connector: file`):
 1. Search markdown files in `docs/` — prefer files whose name or content indicates they are a backlog
 2. If still not found, search for `BACKLOG*` files anywhere in the project
 

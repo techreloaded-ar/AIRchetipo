@@ -322,17 +322,74 @@ function Install-Config {
     Write-Host ".archetipo\contracts.md" -ForegroundColor White
   }
 
-  $connectorsSource = Join-Path $sourceRoot ".archetipo\connectors"
-  if (Test-Path $connectorsSource) {
-    $connectorsDir = Join-Path $configDir "connectors"
-    if (-not (Test-Path $connectorsDir)) {
-      New-Item -ItemType Directory -Path $connectorsDir -Force | Out-Null
-    }
-    Copy-Item -Path (Join-Path $connectorsSource "*.md") -Destination $connectorsDir -Force
-    $connectorCount = (Get-ChildItem -Path $connectorsDir -Filter "*.md" | Measure-Object).Count
+  $sharedRuntimeSource = Join-Path $sourceRoot ".archetipo\shared-runtime.md"
+  if (Test-Path $sharedRuntimeSource) {
+    Copy-Item -Path $sharedRuntimeSource -Destination (Join-Path $configDir "shared-runtime.md") -Force
     Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
-    Write-Host ".archetipo\connectors\" -ForegroundColor White -NoNewline
-    Write-Host " ($connectorCount connector files)" -ForegroundColor DarkGray
+    Write-Host ".archetipo\shared-runtime.md" -ForegroundColor White
+  }
+}
+
+# ─── Install CLI binary ──────────────────────────────────────────────────────
+function Install-Cli {
+  param(
+    [string]$SourceRoot,
+    [bool]$UseLocal
+  )
+  $binDir = ".archetipo\bin"
+  $binPath = Join-Path $binDir "archetipo.exe"
+  if (-not (Test-Path $binDir)) {
+    New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+  }
+
+  if ($UseLocal) {
+    $cliDir = Join-Path $SourceRoot "cli"
+    if (-not (Test-Path $cliDir)) {
+      Write-Host "  $([char]0x2013) " -ForegroundColor Yellow -NoNewline
+      Write-Host "cli/ source not found at $cliDir, skip" -ForegroundColor DarkGray
+      return
+    }
+    if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+      Write-Host "  $([char]0x2717) " -ForegroundColor Red -NoNewline
+      Write-Host "Go toolchain not found. Install Go 1.26+ then re-run -Local, or omit -Local to download a prebuilt binary." -ForegroundColor White
+      return
+    }
+    Write-Host ""
+    Write-Host "  Building archetipo from source..." -ForegroundColor DarkGray
+    $absBin = Join-Path (Get-Location) $binPath
+    Push-Location $cliDir
+    try {
+      & go build -o $absBin "./cmd/archetipo"
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "  $([char]0x2717) go build failed" -ForegroundColor Red
+        return
+      }
+    } finally {
+      Pop-Location
+    }
+    Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
+    Write-Host ".archetipo\bin\archetipo.exe " -ForegroundColor White -NoNewline
+    Write-Host "(local build)" -ForegroundColor DarkGray
+    return
+  }
+
+  $arch = if ([Environment]::Is64BitOperatingSystem) { "amd64" } else { "" }
+  if (-not $arch) {
+    Write-Host "  $([char]0x2013) unsupported arch for prebuilt binary; rerun with -Local" -ForegroundColor Yellow
+    return
+  }
+  $assetName = "archetipo-windows-$arch.exe"
+  $url = "https://github.com/techreloaded-ar/ARchetipo/releases/latest/download/$assetName"
+  Write-Host ""
+  Write-Host "  Downloading $assetName from latest release..." -ForegroundColor DarkGray
+  try {
+    Invoke-WebRequest -Uri $url -OutFile $binPath -ErrorAction Stop
+    Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
+    Write-Host ".archetipo\bin\archetipo.exe " -ForegroundColor White -NoNewline
+    Write-Host "(release download)" -ForegroundColor DarkGray
+  } catch {
+    Write-Host "  $([char]0x2013) " -ForegroundColor Yellow -NoNewline
+    Write-Host "Could not fetch $assetName. Re-run with -Local to compile from source." -ForegroundColor White
   }
 }
 
@@ -469,6 +526,10 @@ Supported tools:
 
   # Install config
   Install-Config -SourceDir $sourceDir -Connector $selectedConnector
+
+  # Install CLI binary
+  $sourceRoot = Split-Path $sourceDir -Parent
+  Install-Cli -SourceRoot $sourceRoot -UseLocal $Local
 
   # Summary
   Write-Host ""
