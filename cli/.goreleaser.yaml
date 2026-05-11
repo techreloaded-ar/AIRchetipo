@@ -22,8 +22,8 @@ builds:
     ldflags:
       - -s -w -X github.com/techreloaded-ar/ARchetipo/cli/internal/version.Version={{ .Version }}
 
-# Single bare binary per platform — install.sh / install.ps1 download by exact
-# asset name (archetipo-<os>-<arch>) into .archetipo/bin/.
+# Single bare binary per platform. Installers download the platform-specific
+# release asset, then normalize it to .archetipo/bin/archetipo[.exe].
 archives:
   - id: bare
     formats: [binary]

@@ -338,8 +338,13 @@ function Install-Cli {
   )
   $binDir = ".archetipo\bin"
   $binPath = Join-Path $binDir "archetipo.exe"
+  $shimPath = Join-Path $binDir "archetipo.cmd"
   if (-not (Test-Path $binDir)) {
     New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+  }
+
+  function Write-ArchetipoShim {
+    Set-Content -Path $shimPath -Value "@echo off`r`n`"%~dp0archetipo.exe`" %*`r`n" -NoNewline -Encoding ASCII
   }
 
   if ($UseLocal) {
@@ -370,10 +375,24 @@ function Install-Cli {
     Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
     Write-Host ".archetipo\bin\archetipo.exe " -ForegroundColor White -NoNewline
     Write-Host "(local build)" -ForegroundColor DarkGray
+    Write-ArchetipoShim
+    Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
+    Write-Host ".archetipo\bin\archetipo.cmd " -ForegroundColor White -NoNewline
+    Write-Host "(shim)" -ForegroundColor DarkGray
     return
   }
 
-  $arch = if ([Environment]::Is64BitOperatingSystem) { "amd64" } else { "" }
+  try {
+    $osArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+  } catch {
+    $osArch = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
+  }
+  $normalizedArch = if ($osArch) { $osArch.ToString().ToLowerInvariant() } else { "" }
+  $arch = switch -Regex ($normalizedArch) {
+    "^(x64|amd64)$" { "amd64" }
+    "^(arm64|aarch64)$" { "arm64" }
+    default { "" }
+  }
   if (-not $arch) {
     Write-Host "  $([char]0x2013) unsupported arch for prebuilt binary; rerun with -Local" -ForegroundColor Yellow
     return
@@ -387,6 +406,10 @@ function Install-Cli {
     Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
     Write-Host ".archetipo\bin\archetipo.exe " -ForegroundColor White -NoNewline
     Write-Host "(release download)" -ForegroundColor DarkGray
+    Write-ArchetipoShim
+    Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline
+    Write-Host ".archetipo\bin\archetipo.cmd " -ForegroundColor White -NoNewline
+    Write-Host "(shim)" -ForegroundColor DarkGray
   } catch {
     Write-Host "  $([char]0x2013) " -ForegroundColor Yellow -NoNewline
     Write-Host "Could not fetch $assetName. Re-run with -Local to compile from source." -ForegroundColor White

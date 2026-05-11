@@ -1,1 +1,8 @@
-{}
+{
+  "scripts": {
+    "test": "npm run test:cli",
+    "build:cli": "cd cli && go run github.com/goreleaser/goreleaser/v2@v2.15.4 release --snapshot --clean",
+    "release:cli": "cd cli && go run github.com/goreleaser/goreleaser/v2@v2.15.4 release --clean",
+    "test:cli": "cd cli && go test ./..."
+  }
+}
