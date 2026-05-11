@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/connector"
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/domain"
@@ -40,15 +42,19 @@ type storiesPayload struct {
 }
 
 func newStoryAddCmd(s streams) *cobra.Command {
-	return &cobra.Command{
+	var filePath string
+	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add stories to the backlog (idempotent: skips duplicate codes)",
-		Long: "Reads {\"stories\":[...]} from stdin and writes them to the backlog. " +
+		Long: "Reads a YAML or JSON payload from --file and writes the stories to the backlog. " +
 			"Creates the backlog when missing, appends otherwise. Stories whose code is " +
 			"already present are skipped and reported in data.skipped.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			payload, err := readStoriesPayload(s.in)
+			if filePath == "" {
+				return errInvalidUsage("missing input file", "pass --file path/to/stories.yaml or --file -")
+			}
+			payload, err := readStoriesPayload(s.in, filePath)
 			if err != nil {
 				return err
 			}
@@ -57,15 +63,17 @@ func newStoryAddCmd(s streams) *cobra.Command {
 			})
 		},
 	}
+	cmd.Flags().StringVar(&filePath, "file", "", "path to a YAML or JSON payload file, or - for stdin")
+	return cmd
 }
 
-func readStoriesPayload(r io.Reader) (storiesPayload, error) {
+func readStoriesPayload(stdin io.Reader, path string) (storiesPayload, error) {
 	var p storiesPayload
-	if err := iox.ReadJSON(r, &p); err != nil {
+	if err := readStructuredInput(stdin, path, &p); err != nil {
 		return storiesPayload{}, err
 	}
 	if len(p.Stories) == 0 {
-		return storiesPayload{}, iox.NewInvalidInput("no stories on stdin", "expected {\"stories\":[...]}", nil)
+		return storiesPayload{}, iox.NewInvalidInput("no stories in input payload", "expected {stories:[...]}", nil)
 	}
 	return p, nil
 }
@@ -165,10 +173,11 @@ func newStoryShowCmd(s streams) *cobra.Command {
 }
 
 func newStoryPlanCmd(s streams) *cobra.Command {
-	return &cobra.Command{
+	var filePath string
+	cmd := &cobra.Command{
 		Use:   "plan US-XXX",
 		Short: "Save the implementation plan for a story and transition to PLANNED",
-		Long: "Reads {\"plan_body\":\"...\",\"tasks\":[...]} from stdin. " +
+		Long: "Reads a YAML or JSON payload from --file. " +
 			"Idempotent: re-running on a PLANNED story upserts the plan body without erroring. " +
 			"Errors with E_CONFLICT when the story is past PLANNED.",
 		Args: cobra.ExactArgs(1),
@@ -177,8 +186,11 @@ func newStoryPlanCmd(s streams) *cobra.Command {
 			if ref == "" {
 				return errInvalidUsage("missing story code", "pass US-XXX as positional argument")
 			}
+			if filePath == "" {
+				return errInvalidUsage("missing input file", "pass --file path/to/plan.yaml or --file -")
+			}
 			var input domain.PlanInput
-			if err := iox.ReadJSON(s.in, &input); err != nil {
+			if err := readStructuredInput(s.in, filePath, &input); err != nil {
 				return err
 			}
 			return withConnector(cmd, s, "write_result", func(ctx context.Context, c connector.Connector) (any, error) {
@@ -206,6 +218,8 @@ func newStoryPlanCmd(s streams) *cobra.Command {
 			})
 		},
 	}
+	cmd.Flags().StringVar(&filePath, "file", "", "path to a YAML or JSON payload file, or - for stdin")
+	return cmd
 }
 
 func newStoryStartCmd(s streams) *cobra.Command {
@@ -274,4 +288,24 @@ func transitionWithValidation(ctx context.Context, c connector.Connector, ref, v
 			nil)
 	}
 	return c.TransitionStatus(ctx, ref, target)
+}
+
+func readStructuredInput(stdin io.Reader, path string, v any) error {
+	var raw []byte
+	var err error
+	if path == "-" {
+		raw, err = io.ReadAll(stdin)
+		if err != nil {
+			return iox.NewInvalidInput("reading stdin", "", err)
+		}
+	} else {
+		raw, err = os.ReadFile(path)
+		if err != nil {
+			return iox.NewInvalidInput(fmt.Sprintf("reading input file %s", path), "", err)
+		}
+	}
+	if err := yaml.Unmarshal(raw, v); err != nil {
+		return iox.NewInvalidInput("invalid structured input", "expected YAML or JSON payload", err)
+	}
+	return nil
 }

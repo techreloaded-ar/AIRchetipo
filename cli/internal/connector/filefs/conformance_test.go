@@ -17,8 +17,8 @@ func TestFilefsConformance(t *testing.T) {
 		cfg := config.Default()
 		cfg.ProjectRoot = dir
 		// Use absolute paths so writes land inside the temp dir.
-		cfg.Paths.Backlog = filepath.Join(dir, "BACKLOG.md")
-		cfg.Paths.Planning = filepath.Join(dir, "planning")
+		cfg.Paths.Backlog = filepath.Join(dir, ".archetipo", "backlog.yaml")
+		cfg.Paths.Planning = filepath.Join(dir, ".archetipo", "plans")
 		cfg.Paths.PRD = filepath.Join(dir, "PRD.md")
 		return filefs.New(cfg)
 	})

@@ -152,7 +152,7 @@ Proceed with adding them? Or tell me what to change.
 
 ## Phase 3 - Output
 
-Pipe a JSON payload into `.archetipo/bin/archetipo story add`:
+Write the payload to a YAML or JSON file, then call `.archetipo/bin/archetipo story add --file <path>`:
 
 ```json
 {"stories":[{"code":"US-NNN","title":"...", ...}]}

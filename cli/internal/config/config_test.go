@@ -16,7 +16,7 @@ func TestDefaultWhenConfigMissing(t *testing.T) {
 	if c.Connector != ConnectorFile {
 		t.Errorf("expected default connector %q, got %q", ConnectorFile, c.Connector)
 	}
-	if c.Paths.Backlog != "docs/BACKLOG.md" {
+	if c.Paths.Backlog != ".archetipo/backlog.yaml" {
 		t.Errorf("default backlog path: %q", c.Paths.Backlog)
 	}
 }
@@ -49,6 +49,9 @@ workflow:
 	// Defaults preserved for unspecified path keys.
 	if c.Paths.PRD != "docs/PRD.md" {
 		t.Errorf("PRD default lost: %q", c.Paths.PRD)
+	}
+	if c.Paths.Planning != ".archetipo/plans/" {
+		t.Errorf("planning default lost: %q", c.Paths.Planning)
 	}
 	if c.Workflow.Statuses.Todo != "A_FARE" {
 		t.Errorf("status override lost: %q", c.Workflow.Statuses.Todo)

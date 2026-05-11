@@ -160,8 +160,8 @@ func (c *Connector) ReadExistingBacklog(ctx context.Context) (domain.BacklogSumm
 		return domain.BacklogSummary{}, err
 	}
 	var raw []struct {
-		Number int      `json:"number"`
-		Title  string   `json:"title"`
+		Number int    `json:"number"`
+		Title  string `json:"title"`
 		Labels []struct {
 			Name string `json:"name"`
 		} `json:"labels"`
@@ -371,6 +371,34 @@ func (c *Connector) PostComment(ctx context.Context, storyRef, body string) (dom
 	return domain.WriteResult{OK: true, Refs: []domain.Ref{{Code: storyRef, Number: num}}}, nil
 }
 
+func (c *Connector) ReorderBacklog(ctx context.Context, storyRef string, anchor domain.ReorderAnchor) (domain.WriteResult, error) {
+	return domain.WriteResult{}, iox.NewConnector(
+		iox.CodeConnectorBackend,
+		"backlog reorder is not supported by the github connector yet",
+		"use the project board order directly on GitHub for now",
+		nil,
+	)
+}
+
+func (c *Connector) MoveBoardCard(ctx context.Context, storyRef, targetColumn string, anchor domain.ReorderAnchor) (domain.WriteResult, error) {
+	statusByColumn := map[string]domain.Status{
+		"todo":        domain.StatusTodo,
+		"planned":     domain.StatusPlanned,
+		"in_progress": domain.StatusInProgress,
+		"review":      domain.StatusReview,
+		"done":        domain.StatusDone,
+	}
+	status, ok := statusByColumn[targetColumn]
+	if !ok {
+		return domain.WriteResult{}, iox.NewInvalidInput(
+			fmt.Sprintf("unknown board column %q", targetColumn),
+			"allowed: todo, planned, in_progress, review, done",
+			nil,
+		)
+	}
+	return c.TransitionStatus(ctx, storyRef, status)
+}
+
 // internal helpers below
 
 func (c *Connector) ensureSetup(ctx context.Context) error {
@@ -388,8 +416,8 @@ func (c *Connector) detectRepo(ctx context.Context) (*domain.RepoInfo, error) {
 		Owner struct {
 			Login string `json:"login"`
 		} `json:"owner"`
-		Name           string `json:"name"`
-		NameWithOwner  string `json:"nameWithOwner"`
+		Name          string `json:"name"`
+		NameWithOwner string `json:"nameWithOwner"`
 	}
 	if err := runJSON(ctx, c.runner, &raw,
 		"repo", "view", "--json", "id,owner,name,nameWithOwner",
@@ -462,9 +490,9 @@ func (c *Connector) loadProjectFields(ctx context.Context, repo *domain.RepoInfo
 func (c *Connector) listProjectItems(ctx context.Context) ([]domain.Story, error) {
 	var raw struct {
 		Items []struct {
-			ID     string `json:"id"`
-			Status string `json:"status"`
-			Title  string `json:"title"`
+			ID      string `json:"id"`
+			Status  string `json:"status"`
+			Title   string `json:"title"`
 			Content struct {
 				Number int    `json:"number"`
 				URL    string `json:"url"`
@@ -764,4 +792,3 @@ func (c *Connector) ensureLabel(ctx context.Context, name, description, color st
 	c.state.labels[name] = struct{}{}
 	return nil
 }
-

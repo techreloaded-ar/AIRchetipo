@@ -32,7 +32,7 @@ The skill should never branch on `message` (free-text); branch on `code`.
 |---|---|
 | `0` | success |
 | `1` | generic error (includes `E_NOT_FOUND`, `E_CONFLICT`, `E_INTERNAL`) |
-| `2` | invalid input (bad flag, malformed stdin JSON) |
+| `2` | invalid input (bad flag, malformed structured input) |
 | `3` | connector failure (auth, network, gh, fs) |
 | `4` | precondition missing (e.g. backlog absent) |
 
@@ -40,7 +40,7 @@ The skill should never branch on `message` (free-text); branch on `code`.
 
 | Code | Used when |
 |---|---|
-| `E_INVALID_INPUT` | Bad flag combination or malformed stdin JSON |
+| `E_INVALID_INPUT` | Bad flag combination or malformed structured input |
 | `E_AUTH_SCOPE` | `gh` is missing the required scopes |
 | `E_NETWORK` | Transient network failure talking to GitHub |
 | `E_CONNECTOR` | Backend (filesystem, gh) reported an unexpected failure |
@@ -57,8 +57,8 @@ The CLI reads `.archetipo/config.yaml` from the project root (walks up if invoke
 connector: file | github
 paths:
   prd: docs/PRD.md
-  backlog: docs/BACKLOG.md
-  planning: docs/planning/
+  backlog: .archetipo/backlog.yaml
+  planning: .archetipo/plans/
   mockups: docs/mockups/
   test_results: docs/test-results/
 workflow:
@@ -74,7 +74,7 @@ workflow:
 
 ## Operation Catalog
 
-The CLI exposes 9 operations grouped by entity. Every command emits an envelope with `schema: archetipo/v1`. The `kind` of each envelope is listed below; `data.*` fields follow the schemas in [domain types](#domain-types).
+The CLI exposes workflow and board operations grouped by entity. Every command emits an envelope with `schema: archetipo/v1`. The `kind` of each envelope is listed below; `data.*` fields follow the schemas in [domain types](#domain-types).
 
 ### `archetipo init`
 
@@ -120,12 +120,14 @@ Aggregated read of the backlog: filtered items + idempotency summary in a single
 Idempotent create-or-append on the backlog. Replaces both `backlog save` and `backlog append`: stories whose `code` is already present are skipped and reported in `data.skipped`.
 
 - **Args:** none
-- **Stdin JSON:** `{"stories":[Story, ...]}`.
+- **Args:** `--file <path|->` required. `-` means stdin.
+- **Input file:** YAML or JSON payload `{"stories":[Story, ...]}`.
 - **Stdout kind:** `write_result` — `data.skipped: string[]` lists codes that were not written because they already existed.
-- **Errors:** `E_INVALID_INPUT` (no stories on stdin), `E_CONNECTOR` (filesystem/gh failure).
+- **Errors:** `E_INVALID_INPUT` (no stories in input payload), `E_CONNECTOR` (filesystem/gh failure).
 
 ```bash
-cat stories.json | .archetipo/bin/archetipo story add
+.archetipo/bin/archetipo story add --file stories.yaml
+.archetipo/bin/archetipo story add --file - < stories.json
 ```
 
 ### `archetipo story show`
@@ -150,15 +152,44 @@ If both `<US-XXX>` and `--status` are passed (or neither), the CLI returns `E_IN
 Save the implementation plan and transition the story to `PLANNED`. Atomic from the skill's perspective.
 
 - **Args:** `<US-XXX>` (positional, required).
-- **Stdin JSON:** `{"plan_body":"<markdown>","tasks":[Task, ...]}`.
+- **Args:** `--file <path|->` required. `-` means stdin.
+- **Input file:** YAML or JSON payload `{"plan_body":"<markdown>","tasks":[Task, ...]}`.
 - **Stdout kind:** `write_result`.
-- **Effect (file):** writes `{paths.planning}/{US-XXX}.md` with the canonical layout, then updates the status of `US-XXX` in `BACKLOG.md` to `PLANNED`.
+- **Effect (file):** writes `{paths.planning}/{US-XXX}.yaml` with schema `archetipo/plan/v2`, updates `.archetipo/stories/{US-XXX}.yaml`, and synchronizes `.archetipo/backlog.yaml` board order to `PLANNED`.
 - **Effect (github):** appends the plan body to the parent issue, creates one sub-issue per task, then moves the project card to `PLANNED`.
 - **Idempotent:** re-running on a `PLANNED` story upserts the plan body without erroring.
 - **Errors:** `E_CONFLICT` when the story is past `PLANNED` (e.g. `IN PROGRESS`, `REVIEW`, `DONE`); `E_PRECONDITION` (story not found).
 
 ```bash
-cat plan.json | .archetipo/bin/archetipo story plan US-005
+.archetipo/bin/archetipo story plan US-005 --file plan.yaml
+.archetipo/bin/archetipo story plan US-005 --file - < plan.json
+```
+
+### `archetipo backlog reorder US-XXX`
+
+Move a story within the linear backlog order without changing its status.
+
+- **Args:** `<US-XXX>` (positional, required).
+- **Flags:** one of `--before <US-YYY>` or `--after <US-YYY>` optional. With no anchor, the story moves to the end.
+- **Stdout kind:** `write_result`.
+- **Effect (file):** updates `.archetipo/backlog.yaml` `orders.backlog`.
+
+```bash
+.archetipo/bin/archetipo backlog reorder US-010 --before US-005
+```
+
+### `archetipo board move US-XXX`
+
+Move a story inside the board order, optionally changing workflow column and story status.
+
+- **Args:** `<US-XXX>` (positional, required).
+- **Flags:** `--to <todo|planned|in_progress|review|done>` required; one of `--before` / `--after` optional.
+- **Stdout kind:** `write_result`.
+- **Effect (file):** updates `.archetipo/backlog.yaml` `orders.board`; when the target column maps to a different workflow status it also updates `.archetipo/stories/{US-XXX}.yaml`.
+
+```bash
+.archetipo/bin/archetipo board move US-010 --to review
+.archetipo/bin/archetipo board move US-010 --to planned --after US-003
 ```
 
 ### `archetipo story start US-XXX`
@@ -214,7 +245,7 @@ Mark a single task within a story's plan as completed.
                     │                         │
          (PRD)──────┘                         │
                                               ▼
-              ┌─ archetipo story add ──────► BACKLOG (TODO stories)
+              ┌─ archetipo story add ──────► YAML backlog store (TODO stories)
               │                                  │
               │                                  ▼
               │             ┌── archetipo story show <code | --status TODO>
@@ -228,6 +259,10 @@ Mark a single task within a story's plan as completed.
               │             ├── archetipo task done US-XXX TASK-NN  (per task)
               │             ▼
               │   archetipo story review US-XXX  →  REVIEW
+              │
+              ├─ archetipo backlog reorder US-XXX    (linear backlog order)
+              │
+              ├─ archetipo board move US-XXX         (board order / status-aware move)
               │
               └─ archetipo backlog show [--status]   (read-only, any time)
 ```
@@ -276,7 +311,7 @@ All field names in JSON are `snake_case`.
 ### `Ref`
 
 ```jsonc
-{"code": "US-001", "number": 42, "path": "docs/BACKLOG.md", "url": "https://..."}
+{"code": "US-001", "number": 42, "path": ".archetipo/backlog.yaml", "url": "https://..."}
 ```
 
 `number`, `path`, `url` are populated only when the connector has one.
@@ -286,7 +321,7 @@ All field names in JSON are `snake_case`.
 ```jsonc
 {
   "ok": true,
-  "refs": [{"code": "US-003", "path": "docs/BACKLOG.md"}],
+  "refs": [{"code": "US-003", "path": ".archetipo/backlog.yaml"}],
   "skipped": ["US-001"]          // optional; populated by `story add` for codes already present
 }
 ```
@@ -323,6 +358,6 @@ All field names in JSON are `snake_case`.
 - **Idempotent transitions.** Re-running `story plan / start / review` on a story that is already at the target state is a no-op success. This means a skill can safely retry a step without conditional logic. Calling a verb from a wrong source state returns `E_CONFLICT`.
 - **`story add` is idempotent.** Skills that extend the backlog don't need to inspect existing codes first: they pass the full set and the CLI skips duplicates, reporting them in `data.skipped`.
 - **`story show` covers both lookup and auto-pick.** Use the positional code form when you know which story to read; use `--status` when you want the next eligible story by priority.
-- **Content templates belong to the skill, not to the CLI.** The skill produces the markdown body of stories, plans, comments and PRDs. The CLI persists what the skill emits and adds machine-readable markers around it.
+- **Content templates belong to the skill, not to the CLI.** The skill produces the markdown body of stories, plans, comments and PRDs. The file connector persists those bodies inside YAML v2 documents rather than Markdown wrappers.
 - **Branch on error `code`, not on `message`.** The CLI guarantees stable codes; messages are human-readable and may change.
 - **Compose with stdin/stdout.** Every command that takes content reads it from stdin; every command that returns data writes a single JSON envelope to stdout. Pipe and parse.

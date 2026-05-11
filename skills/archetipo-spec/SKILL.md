@@ -71,10 +71,6 @@ Run `.archetipo/bin/archetipo backlog show` and parse the JSON envelope. The CLI
 If `data.summary.codes` is non-empty, use the existing stories as the source of truth for backlog extension.
 If `data.summary.codes` is empty, treat the project as backlog-less and route to initial backlog creation.
 
-**Fallback search** (only when the CLI reports no backlog and `connector: file`):
-1. Search markdown files in `docs/` — prefer files whose name or content indicates they are a backlog
-2. If still not found, search for `BACKLOG*` files anywhere in the project
-
 ## PRD Discovery
 
 Use this routine whenever initial backlog creation needs a PRD or when story extension needs extra product context:

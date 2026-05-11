@@ -32,10 +32,10 @@ const (
 
 // Config is the parsed shape of .archetipo/config.yaml.
 type Config struct {
-	Connector string             `yaml:"connector" json:"connector"`
-	Paths     domain.ConfigPaths `yaml:"paths" json:"paths"`
+	Connector string                `yaml:"connector" json:"connector"`
+	Paths     domain.ConfigPaths    `yaml:"paths" json:"paths"`
 	Workflow  domain.WorkflowConfig `yaml:"workflow" json:"workflow"`
-	GitHub    GitHubConfig       `yaml:"github" json:"github,omitempty"`
+	GitHub    GitHubConfig          `yaml:"github" json:"github,omitempty"`
 	// ProjectRoot is the absolute path of the directory that contains
 	// .archetipo/. Set by Load; not present in the YAML file.
 	ProjectRoot string `yaml:"-" json:"project_root"`
@@ -55,8 +55,8 @@ func Default() Config {
 		Connector: ConnectorFile,
 		Paths: domain.ConfigPaths{
 			PRD:         "docs/PRD.md",
-			Backlog:     "docs/BACKLOG.md",
-			Planning:    "docs/planning/",
+			Backlog:     ".archetipo/backlog.yaml",
+			Planning:    ".archetipo/plans/",
 			Mockups:     "docs/mockups/",
 			TestResults: "docs/test-results/",
 		},

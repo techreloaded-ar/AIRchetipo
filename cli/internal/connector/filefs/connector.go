@@ -4,12 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/config"
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/connector"
@@ -34,7 +31,7 @@ func Register() {
 	})
 }
 
-// SETUP
+var errBacklogMissing = errors.New("backlog missing")
 
 func (c *Connector) InitializeConnector(ctx context.Context) (domain.SetupInfo, error) {
 	return domain.SetupInfo{
@@ -44,116 +41,111 @@ func (c *Connector) InitializeConnector(ctx context.Context) (domain.SetupInfo, 
 	}, nil
 }
 
-// READ
-
 func (c *Connector) FetchBacklogItems(ctx context.Context, statusFilter domain.Status) ([]domain.Story, error) {
-	stories, err := c.readBacklog()
+	store, err := c.loadStore()
 	if err != nil {
 		return nil, err
 	}
-	if statusFilter == "" {
-		return stories, nil
-	}
-	out := make([]domain.Story, 0, len(stories))
-	for _, s := range stories {
-		if s.Status == statusFilter {
-			out = append(out, s)
+	out := make([]domain.Story, 0, len(store.Backlog.Orders.Backlog))
+	for _, code := range store.Backlog.Orders.Backlog {
+		story, ok := store.Stories[code]
+		if !ok {
+			continue
 		}
+		if statusFilter != "" && story.Status != statusFilter {
+			continue
+		}
+		out = append(out, story)
 	}
 	return out, nil
 }
 
 func (c *Connector) SelectStory(ctx context.Context, q domain.SelectQuery) (domain.Story, error) {
-	stories, err := c.readBacklog()
+	stories, err := c.FetchBacklogItems(ctx, "")
 	if err != nil {
 		return domain.Story{}, err
 	}
 	if q.StoryCode != "" {
-		for _, s := range stories {
-			if s.Code == q.StoryCode {
-				return s, nil
+		for _, story := range stories {
+			if story.Code == q.StoryCode {
+				return story, nil
 			}
 		}
 		return domain.Story{}, iox.NewPrecondition(
 			fmt.Sprintf("story %s not found in backlog", q.StoryCode),
-			"check the backlog or run `archetipo backlog list`", nil)
+			"check the backlog or run `archetipo backlog show`", nil,
+		)
 	}
 	eligible := map[domain.Status]struct{}{}
-	for _, st := range q.EligibleStatuses {
-		eligible[st] = struct{}{}
+	for _, status := range q.EligibleStatuses {
+		eligible[status] = struct{}{}
 	}
 	candidates := make([]domain.Story, 0, len(stories))
-	for _, s := range stories {
-		if _, ok := eligible[s.Status]; ok {
-			candidates = append(candidates, s)
+	for _, story := range stories {
+		if _, ok := eligible[story.Status]; ok {
+			candidates = append(candidates, story)
 		}
 	}
 	if len(candidates) == 0 {
 		return domain.Story{}, iox.NewPrecondition(
 			"no eligible stories in backlog",
-			"check --eligible or status of stories", nil)
+			"check the backlog status distribution", nil,
+		)
 	}
 	sortByPriorityThenCode(candidates)
 	return candidates[0], nil
 }
 
 func (c *Connector) ReadStoryDetail(ctx context.Context, ref string) (domain.Story, error) {
-	stories, err := c.readBacklog()
+	store, err := c.loadStore()
 	if err != nil {
 		return domain.Story{}, err
 	}
-	for _, s := range stories {
-		if s.Code == ref {
-			return s, nil
-		}
+	story, ok := store.Stories[ref]
+	if !ok {
+		return domain.Story{}, iox.NewPrecondition(fmt.Sprintf("story %s not found in backlog", ref), "", nil)
 	}
-	return domain.Story{}, iox.NewPrecondition(
-		fmt.Sprintf("story %s not found in backlog", ref), "", nil)
+	return story, nil
 }
 
 func (c *Connector) ReadStoryTasks(ctx context.Context, parentRef string) ([]domain.Task, error) {
-	planPath := c.planPath(parentRef)
-	raw, err := os.ReadFile(planPath)
+	plan, err := c.readPlan(parentRef)
 	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, iox.NewPrecondition(
-				fmt.Sprintf("planning file for %s not found", parentRef),
-				"run `archetipo plan save` first", err)
-		}
-		return nil, fmt.Errorf("reading plan: %w", err)
+		return nil, err
 	}
-	_, tasks, err := parsePlan(string(raw))
-	return tasks, err
+	return append([]domain.Task(nil), plan.Tasks...), nil
 }
 
 func (c *Connector) ReadExistingBacklog(ctx context.Context) (domain.BacklogSummary, error) {
-	stories, err := c.readBacklog()
+	store, err := c.loadStore()
 	if err != nil {
 		return domain.BacklogSummary{}, err
 	}
 	out := domain.BacklogSummary{}
 	seenEpics := map[string]domain.Epic{}
-	for _, s := range stories {
-		out.Codes = append(out.Codes, s.Code)
-		out.Titles = append(out.Titles, s.Title)
-		if s.Epic.Code != "" {
-			if existing, ok := seenEpics[s.Epic.Code]; !ok || (existing.Title == "" && s.Epic.Title != "") {
-				seenEpics[s.Epic.Code] = s.Epic
-			}
+	for _, code := range store.Backlog.Orders.Backlog {
+		story, ok := store.Stories[code]
+		if !ok {
+			continue
+		}
+		out.Codes = append(out.Codes, story.Code)
+		out.Titles = append(out.Titles, story.Title)
+		if story.Epic.Code != "" {
+			seenEpics[story.Epic.Code] = story.Epic
 		}
 	}
-	sort.Strings(out.Codes)
+	sortedCodes := append([]string(nil), out.Codes...)
+	sort.Strings(sortedCodes)
+	out.Codes = sortedCodes
 	if len(out.Codes) > 0 {
 		out.LastCode = highestCode(out.Codes)
 	}
-	for _, e := range seenEpics {
-		out.Epics = append(out.Epics, e)
+	for _, epic := range seenEpics {
+		out.Epics = append(out.Epics, epic)
 	}
 	sort.Slice(out.Epics, func(i, j int) bool { return out.Epics[i].Code < out.Epics[j].Code })
 	return out, nil
 }
-
-// WRITE
 
 func (c *Connector) SavePRD(ctx context.Context, content string) (domain.WriteResult, error) {
 	path := c.cfg.AbsPath(c.cfg.Paths.PRD)
@@ -165,161 +157,253 @@ func (c *Connector) SavePRD(ctx context.Context, content string) (domain.WriteRe
 
 func (c *Connector) SaveInitialBacklog(ctx context.Context, stories []domain.Story) (domain.WriteResult, error) {
 	if len(stories) == 0 {
-		return domain.WriteResult{}, iox.NewInvalidInput(
-			"no stories to write", "stdin must contain a non-empty stories array", nil)
+		return domain.WriteResult{}, iox.NewInvalidInput("no stories to write", "stdin must contain a non-empty stories array", nil)
 	}
-	path := c.cfg.AbsPath(c.cfg.Paths.Backlog)
-	if exists(path) {
-		// Idempotency: if the existing backlog has stories, refuse to overwrite.
-		existing, _ := c.readBacklog()
-		if len(existing) > 0 {
-			return domain.WriteResult{}, iox.NewConnector(iox.CodeConflict,
+	if store, err := c.loadStore(); err == nil {
+		if len(store.Stories) > 0 {
+			return domain.WriteResult{}, iox.NewConnector(
+				iox.CodeConflict,
 				"backlog already exists with stories",
-				"use `archetipo backlog append` to add to it, or remove the file to recreate", nil)
+				"use `archetipo story add` to extend it",
+				nil,
+			)
+		}
+	} else {
+		var ce *iox.CodedError
+		if !errors.As(err, &ce) || ce.Code != iox.CodePreconditionMissing {
+			return domain.WriteResult{}, err
 		}
 	}
-	content := renderBacklog(stories)
-	if err := writeFile(path, []byte(content)); err != nil {
+
+	store := yamlStore{
+		Backlog: c.normalizeBacklog(backlogDoc{
+			Schema:   backlogSchema,
+			Version:  2,
+			Workflow: c.cfg.Workflow,
+			Orders:   ordersDoc{Backlog: []string{}, Board: map[string][]string{}},
+		}, map[string]domain.Story{}),
+		Stories: map[string]domain.Story{},
+	}
+	for _, story := range stories {
+		story.Ref = story.Code
+		store.Stories[story.Code] = story
+		store.Backlog.Orders.Backlog = append(store.Backlog.Orders.Backlog, story.Code)
+	}
+	if err := c.writeStore(store); err != nil {
 		return domain.WriteResult{}, err
 	}
-	return domain.WriteResult{OK: true, Refs: refsFromStories(stories, path)}, nil
+	return domain.WriteResult{OK: true, Refs: refsFromStories(stories, c.backlogPath())}, nil
 }
 
 func (c *Connector) AppendStories(ctx context.Context, stories []domain.Story) (domain.WriteResult, error) {
 	if len(stories) == 0 {
-		return domain.WriteResult{}, iox.NewInvalidInput(
-			"no stories to append", "stdin must contain a non-empty stories array", nil)
+		return domain.WriteResult{}, iox.NewInvalidInput("no stories to append", "stdin must contain a non-empty stories array", nil)
 	}
-	path := c.cfg.AbsPath(c.cfg.Paths.Backlog)
-	existing, err := c.readBacklog()
-	if err != nil && !errors.Is(err, errBacklogMissing) {
+	store, err := c.loadStore()
+	if err != nil {
+		var ce *iox.CodedError
+		if errors.As(err, &ce) && ce.Code == iox.CodePreconditionMissing {
+			return c.SaveInitialBacklog(ctx, stories)
+		}
 		return domain.WriteResult{}, err
-	}
-	// Skip stories whose code already exists.
-	known := map[string]struct{}{}
-	for _, s := range existing {
-		known[s.Code] = struct{}{}
 	}
 	added := make([]domain.Story, 0, len(stories))
-	for _, s := range stories {
-		if _, ok := known[s.Code]; ok {
+	for _, story := range stories {
+		if _, exists := store.Stories[story.Code]; exists {
 			continue
 		}
-		added = append(added, s)
+		story.Ref = story.Code
+		store.Stories[story.Code] = story
+		store.Backlog.Orders.Backlog = append(store.Backlog.Orders.Backlog, story.Code)
+		added = append(added, story)
 	}
-	merged := append(existing, added...)
-	content := renderBacklog(merged)
-	if err := writeFile(path, []byte(content)); err != nil {
+	if err := c.writeStore(store); err != nil {
 		return domain.WriteResult{}, err
 	}
-	return domain.WriteResult{OK: true, Refs: refsFromStories(added, path)}, nil
+	return domain.WriteResult{OK: true, Refs: refsFromStories(added, c.backlogPath())}, nil
 }
 
 func (c *Connector) SavePlan(ctx context.Context, storyRef string, plan domain.PlanInput) (domain.WriteResult, error) {
 	if storyRef == "" {
-		return domain.WriteResult{}, iox.NewInvalidInput(
-			"missing story ref", "pass --ref US-XXX", nil)
+		return domain.WriteResult{}, iox.NewInvalidInput("missing story ref", "pass US-XXX as positional argument", nil)
 	}
-	path := c.planPath(storyRef)
-	content := renderPlan(storyRef, plan)
-	if err := writeFile(path, []byte(content)); err != nil {
+	if _, err := c.ReadStoryDetail(ctx, storyRef); err != nil {
 		return domain.WriteResult{}, err
 	}
-	refs := []domain.Ref{{Code: storyRef, Path: path}}
-	for _, t := range plan.Tasks {
-		refs = append(refs, domain.Ref{Code: t.ID})
+	if err := c.writePlan(storyRef, plan); err != nil {
+		return domain.WriteResult{}, err
+	}
+	refs := []domain.Ref{{Code: storyRef, Path: c.planPath(storyRef)}}
+	for _, task := range plan.Tasks {
+		refs = append(refs, domain.Ref{Code: task.ID, Path: c.planPath(storyRef)})
 	}
 	return domain.WriteResult{OK: true, Refs: refs}, nil
 }
 
 func (c *Connector) TransitionStatus(ctx context.Context, storyRef string, newStatus domain.Status) (domain.WriteResult, error) {
-	stories, err := c.readBacklog()
+	store, err := c.loadStore()
 	if err != nil {
 		return domain.WriteResult{}, err
 	}
-	idx := -1
-	for i := range stories {
-		if stories[i].Code == storyRef {
-			idx = i
-			break
-		}
+	story, ok := store.Stories[storyRef]
+	if !ok {
+		return domain.WriteResult{}, iox.NewPrecondition(fmt.Sprintf("story %s not found", storyRef), "", nil)
 	}
-	if idx == -1 {
-		return domain.WriteResult{}, iox.NewPrecondition(
-			fmt.Sprintf("story %s not found", storyRef), "", nil)
+	colID, ok := columnIDForStatus(store.Backlog.Board.Columns, newStatus)
+	if !ok {
+		return domain.WriteResult{}, iox.NewConflict(fmt.Sprintf("status %s is not mapped to a board column", newStatus), "", nil)
 	}
-	stories[idx].Status = newStatus
-	path := c.cfg.AbsPath(c.cfg.Paths.Backlog)
-	if err := writeFile(path, []byte(renderBacklog(stories))); err != nil {
+	story.Status = newStatus
+	store.Stories[storyRef] = story
+	for id, order := range store.Backlog.Orders.Board {
+		store.Backlog.Orders.Board[id] = removeCode(order, storyRef)
+	}
+	store.Backlog.Orders.Board[colID] = append(store.Backlog.Orders.Board[colID], storyRef)
+	if err := c.writeStore(store); err != nil {
 		return domain.WriteResult{}, err
 	}
-	return domain.WriteResult{OK: true, Refs: []domain.Ref{{Code: storyRef, Path: path}}}, nil
+	return domain.WriteResult{
+		OK: true,
+		Refs: []domain.Ref{
+			{Code: storyRef, Path: c.backlogPath()},
+			{Code: storyRef, Path: c.storyPath(storyRef)},
+		},
+	}, nil
 }
 
 func (c *Connector) CompleteTask(ctx context.Context, parentRef, taskRef string) (domain.WriteResult, error) {
 	if parentRef == "" || taskRef == "" {
-		return domain.WriteResult{}, iox.NewInvalidInput(
-			"missing parent or task ref", "pass --parent US-XXX --ref TASK-NN", nil)
+		return domain.WriteResult{}, iox.NewInvalidInput("missing parent or task ref", "usage: archetipo task done US-XXX TASK-NN", nil)
 	}
-	planPath := c.planPath(parentRef)
-	raw, err := os.ReadFile(planPath)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return domain.WriteResult{}, iox.NewPrecondition(
-				fmt.Sprintf("planning file for %s not found", parentRef),
-				"run `archetipo plan save` first", err)
-		}
-		return domain.WriteResult{}, fmt.Errorf("reading plan: %w", err)
-	}
-	body, tasks, err := parsePlan(string(raw))
+	plan, err := c.readPlan(parentRef)
 	if err != nil {
 		return domain.WriteResult{}, err
 	}
 	hit := false
-	for i := range tasks {
-		if tasks[i].ID == taskRef {
-			tasks[i].Status = domain.StatusDone
+	for i := range plan.Tasks {
+		if plan.Tasks[i].ID == taskRef {
+			plan.Tasks[i].Status = domain.StatusDone
 			hit = true
 			break
 		}
 	}
 	if !hit {
 		return domain.WriteResult{}, iox.NewPrecondition(
-			fmt.Sprintf("task %s not found in plan %s", taskRef, parentRef), "", nil)
+			fmt.Sprintf("task %s not found in plan %s", taskRef, parentRef),
+			"", nil,
+		)
 	}
-	updated := renderPlan(parentRef, domain.PlanInput{PlanBody: body, Tasks: tasks})
-	if err := writeFile(planPath, []byte(updated)); err != nil {
+	if err := writeYAML(c.planPath(parentRef), plan); err != nil {
 		return domain.WriteResult{}, err
 	}
-	return domain.WriteResult{OK: true, Refs: []domain.Ref{{Code: taskRef, Path: planPath}}}, nil
+	return domain.WriteResult{OK: true, Refs: []domain.Ref{{Code: taskRef, Path: c.planPath(parentRef)}}}, nil
+}
+
+func (c *Connector) ReorderBacklog(ctx context.Context, storyRef string, anchor domain.ReorderAnchor) (domain.WriteResult, error) {
+	store, err := c.loadStore()
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+	if _, ok := store.Stories[storyRef]; !ok {
+		return domain.WriteResult{}, iox.NewPrecondition(fmt.Sprintf("story %s not found", storyRef), "", nil)
+	}
+	order, err := insertRelative(store.Backlog.Orders.Backlog, storyRef, anchor)
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+	store.Backlog.Orders.Backlog = order
+	if err := c.writeStore(store); err != nil {
+		return domain.WriteResult{}, err
+	}
+	return domain.WriteResult{OK: true, Refs: []domain.Ref{{Code: storyRef, Path: c.backlogPath()}}}, nil
+}
+
+func (c *Connector) MoveBoardCard(ctx context.Context, storyRef, targetColumn string, anchor domain.ReorderAnchor) (domain.WriteResult, error) {
+	store, err := c.loadStore()
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+	story, ok := store.Stories[storyRef]
+	if !ok {
+		return domain.WriteResult{}, iox.NewPrecondition(fmt.Sprintf("story %s not found", storyRef), "", nil)
+	}
+	targetStatus, ok := columnStatus(store.Backlog.Board.Columns, targetColumn)
+	if !ok {
+		return domain.WriteResult{}, iox.NewInvalidInput(
+			fmt.Sprintf("unknown board column %q", targetColumn),
+			"allowed: todo, planned, in_progress, review, done",
+			nil,
+		)
+	}
+	for id, order := range store.Backlog.Orders.Board {
+		store.Backlog.Orders.Board[id] = removeCode(order, storyRef)
+	}
+	newOrder, err := insertRelative(store.Backlog.Orders.Board[targetColumn], storyRef, anchor)
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+	store.Backlog.Orders.Board[targetColumn] = newOrder
+	refs := []domain.Ref{{Code: storyRef, Path: c.backlogPath()}}
+	if story.Status != targetStatus {
+		story.Status = targetStatus
+		store.Stories[storyRef] = story
+		refs = append(refs, domain.Ref{Code: storyRef, Path: c.storyPath(storyRef)})
+	}
+	if err := c.writeStore(store); err != nil {
+		return domain.WriteResult{}, err
+	}
+	return domain.WriteResult{OK: true, Refs: refs}, nil
 }
 
 func (c *Connector) PostComment(ctx context.Context, storyRef, body string) (domain.WriteResult, error) {
-	// File connector: comments are not modeled. Skill should skip; return ok.
 	return domain.WriteResult{OK: true}, nil
 }
 
-// helpers
-
-var errBacklogMissing = errors.New("backlog missing")
-
-func (c *Connector) readBacklog() ([]domain.Story, error) {
-	path := c.cfg.AbsPath(c.cfg.Paths.Backlog)
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, iox.NewPrecondition(
-				fmt.Sprintf("backlog not found at %s", path),
-				"run `archetipo backlog save` first or `archetipo-spec` skill", errBacklogMissing)
-		}
-		return nil, fmt.Errorf("reading backlog: %w", err)
+func refsFromStories(stories []domain.Story, path string) []domain.Ref {
+	out := make([]domain.Ref, 0, len(stories))
+	for _, story := range stories {
+		out = append(out, domain.Ref{Code: story.Code, Path: path})
 	}
-	return parseBacklog(string(raw))
+	return out
 }
 
-func (c *Connector) planPath(storyRef string) string {
-	dir := c.cfg.AbsPath(c.cfg.Paths.Planning)
-	return filepath.Join(dir, storyRef+".md")
+func sortByPriorityThenCode(stories []domain.Story) {
+	rank := map[domain.Priority]int{
+		domain.PriorityHigh:   0,
+		domain.PriorityMedium: 1,
+		domain.PriorityLow:    2,
+	}
+	sort.SliceStable(stories, func(i, j int) bool {
+		ri, rj := rank[stories[i].Priority], rank[stories[j].Priority]
+		if ri != rj {
+			return ri < rj
+		}
+		return numericTail(stories[i].Code) < numericTail(stories[j].Code)
+	})
+}
+
+func highestCode(codes []string) string {
+	best := ""
+	bestN := -1
+	for _, code := range codes {
+		if n := numericTail(code); n > bestN {
+			best, bestN = code, n
+		}
+	}
+	return best
+}
+
+func numericTail(code string) int {
+	value := 0
+	multiplier := 1
+	for i := len(code) - 1; i >= 0; i-- {
+		if code[i] < '0' || code[i] > '9' {
+			break
+		}
+		value += int(code[i]-'0') * multiplier
+		multiplier *= 10
+	}
+	return value
 }
 
 func writeFile(path string, content []byte) error {
@@ -330,58 +414,4 @@ func writeFile(path string, content []byte) error {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
 	return nil
-}
-
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-func refsFromStories(stories []domain.Story, path string) []domain.Ref {
-	out := make([]domain.Ref, 0, len(stories))
-	for _, s := range stories {
-		out = append(out, domain.Ref{Code: s.Code, Path: path})
-	}
-	return out
-}
-
-func sortByPriorityThenCode(s []domain.Story) {
-	rank := map[domain.Priority]int{
-		domain.PriorityHigh:   0,
-		domain.PriorityMedium: 1,
-		domain.PriorityLow:    2,
-	}
-	sort.SliceStable(s, func(i, j int) bool {
-		ri, rj := rank[s[i].Priority], rank[s[j].Priority]
-		if ri != rj {
-			return ri < rj
-		}
-		return numericTail(s[i].Code) < numericTail(s[j].Code)
-	})
-}
-
-func numericTail(code string) int {
-	idx := strings.LastIndex(code, "-")
-	if idx == -1 || idx == len(code)-1 {
-		return 0
-	}
-	n, err := strconv.Atoi(code[idx+1:])
-	if err != nil {
-		return 0
-	}
-	return n
-}
-
-// highestCode returns the lexically last US-XXX code (assumes zero-padded).
-func highestCode(codes []string) string {
-	max := ""
-	maxN := -1
-	for _, c := range codes {
-		n := numericTail(c)
-		if n > maxN {
-			maxN = n
-			max = c
-		}
-	}
-	return max
 }

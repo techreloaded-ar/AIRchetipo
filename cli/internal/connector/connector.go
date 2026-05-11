@@ -11,7 +11,7 @@ import (
 
 // Connector is the abstract backend behind the CLI. Implementations:
 //
-//   - filefs.Connector: stores PRD, backlog and plans as markdown files.
+//   - filefs.Connector: stores PRD, backlog and plans as YAML files.
 //   - github.Connector: stores backlog and plans as GitHub issues + Projects v2.
 //
 // Operations match the contract catalog. Methods take a context.Context so
@@ -66,6 +66,13 @@ type Connector interface {
 
 	// CompleteTask marks a single task as completed.
 	CompleteTask(ctx context.Context, parentRef, taskRef string) (domain.WriteResult, error)
+
+	// ReorderBacklog repositions a story within the linear backlog order.
+	ReorderBacklog(ctx context.Context, storyRef string, anchor domain.ReorderAnchor) (domain.WriteResult, error)
+
+	// MoveBoardCard repositions a story inside the board, optionally changing
+	// its status when the target column maps to a different workflow step.
+	MoveBoardCard(ctx context.Context, storyRef, targetColumn string, anchor domain.ReorderAnchor) (domain.WriteResult, error)
 
 	// PostComment posts a comment on a story. No-op for connectors without
 	// comment support (e.g. filefs); the implementation must return ok=true.
