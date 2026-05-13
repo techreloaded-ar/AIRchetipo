@@ -35,7 +35,12 @@ const adapters = {
     },
     buildSpecInvocation(ctx) {
       const prompt = buildSpecPrompt();
+      const finalMessagePath = ctx.messagePath("spec");
       return {
+        kind: "prompt",
+        skill: prompt,
+        prompt,
+        finalMessagePath,
         command: ctx.backend.command,
         args: [
           "exec",
@@ -46,14 +51,19 @@ const adapters = {
           "--model",
           ctx.backend.model,
           "--output-last-message",
-          ctx.messagePath("spec"),
+          finalMessagePath,
           prompt,
         ],
       };
     },
     buildPlanInvocation(ctx, storyCode) {
       const prompt = buildPlanPrompt(storyCode);
+      const finalMessagePath = ctx.messagePath("plan");
       return {
+        kind: "prompt",
+        skill: "/archetipo-plan",
+        prompt,
+        finalMessagePath,
         command: ctx.backend.command,
         args: [
           "exec",
@@ -64,7 +74,7 @@ const adapters = {
           "--model",
           ctx.backend.model,
           "--output-last-message",
-          ctx.messagePath("plan"),
+          finalMessagePath,
           prompt,
         ],
       };
@@ -77,6 +87,9 @@ const adapters = {
     buildSpecInvocation(ctx) {
       const prompt = buildSpecPrompt();
       return {
+        kind: "prompt",
+        skill: prompt,
+        prompt,
         command: ctx.backend.command,
         args: [
           "-p",
@@ -92,6 +105,9 @@ const adapters = {
     buildPlanInvocation(ctx, storyCode) {
       const prompt = buildPlanPrompt(storyCode);
       return {
+        kind: "prompt",
+        skill: "/archetipo-plan",
+        prompt,
         command: ctx.backend.command,
         args: [
           "-p",
@@ -123,7 +139,7 @@ const adapters = {
         args.push("--thinking", ctx.backend.thinking);
       }
       args.push(prompt);
-      return { command: ctx.backend.command, args };
+      return { kind: "prompt", skill: prompt, prompt, command: ctx.backend.command, args };
     },
     buildPlanInvocation(ctx, storyCode) {
       const prompt = buildPlanPrompt(storyCode);
@@ -139,7 +155,7 @@ const adapters = {
         args.push("--thinking", ctx.backend.thinking);
       }
       args.push(prompt);
-      return { command: ctx.backend.command, args };
+      return { kind: "prompt", skill: "/archetipo-plan", prompt, command: ctx.backend.command, args };
     },
   },
 };
@@ -280,36 +296,50 @@ async function runBackendScenario({ backend, connector, scenarioName, scenario, 
   logBackendStepStart(backend.id, "workspace", `Resetting sandbox at ${workspaceRoot}`);
   const workspaceReset = await resetWorkspace(workspaceRoot);
   const sandboxDir = path.join(workspaceRoot, workspaceReset.sandboxName);
-  const artifactsDir = path.join(workspaceRoot, "artifacts");
+  const reportPath = path.join(workspaceRoot, "report.html");
 
   await fs.mkdir(path.join(sandboxDir, "docs"), { recursive: true });
-  await fs.mkdir(artifactsDir, { recursive: true });
 
   const prdSource = path.resolve(repoRoot, scenario.prd_source);
   await fs.copyFile(prdSource, path.join(sandboxDir, "docs", "PRD.md"));
   logBackendStepDone(backend.id, "workspace", `Sandbox ready in ${sandboxDir}`);
 
+  const report = createRunReport({
+    backend,
+    connector,
+    scenarioName,
+    sandboxDir,
+    reportPath,
+  });
   const context = {
     backend,
     connector,
     scenarioName,
     sandboxDir,
-    artifactsDir,
+    report,
+    reportPath,
     timeoutMs,
     toolSkillRoot,
     messagePath(step) {
-      return path.join(artifactsDir, `${step}-last-message.txt`);
+      return path.join(workspaceRoot, `${step}-last-message.tmp`);
     },
     skillRoot(skillName) {
       return path.join(sandboxDir, toolSkillRoot, skillName);
     },
   };
 
+  async function finish(result) {
+    const finalResult = finalizeResult(context, result);
+    report.result = finalResult;
+    await writeHtmlReport(context);
+    return finalResult;
+  }
+
   try {
     logBackendStepStart(backend.id, "prepare", `Checking local command '${backend.command}'`);
     const prep = await adapter.prepare(context);
     if (prep?.skip) {
-      return finalizeResult(context, {
+      return finish({
         status: "skip",
         reason: prep.reason,
       });
@@ -345,13 +375,13 @@ async function runBackendScenario({ backend, connector, scenarioName, scenario, 
 
     const specInvocation = adapter.buildSpecInvocation(context);
     logBackendStepStart(backend.id, "spec", "Running archetipo-spec against docs/PRD.md");
-    const specRun = await runLoggedCommand({
+    const specRun = await runReportedCommand({
       ...context,
       step: "spec",
       ...specInvocation,
     });
     if (!specRun.ok) {
-      return finalizeResult(context, classifyBackendFailure(context, "spec", specRun));
+      return finish(classifyBackendFailure(context, "spec", specRun));
     }
     logBackendStepDone(backend.id, "spec", "Spec generation completed");
 
@@ -374,13 +404,13 @@ async function runBackendScenario({ backend, connector, scenarioName, scenario, 
 
     const planInvocation = adapter.buildPlanInvocation(context, firstTodo.code);
     logBackendStepStart(backend.id, "plan", `Running archetipo-plan for ${firstTodo.code}`);
-    const planRun = await runLoggedCommand({
+    const planRun = await runReportedCommand({
       ...context,
       step: "plan",
       ...planInvocation,
     });
     if (!planRun.ok) {
-      return finalizeResult(context, classifyBackendFailure(context, "plan", planRun));
+      return finish(classifyBackendFailure(context, "plan", planRun));
     }
     logBackendStepDone(backend.id, "plan", `Plan saved for ${firstTodo.code}`);
 
@@ -403,68 +433,18 @@ async function runBackendScenario({ backend, connector, scenarioName, scenario, 
       `Final state verified (${verification.taskCount} tasks, story ${verification.selectedStoryCode})`,
     );
 
-    await fs.writeFile(
-      path.join(artifactsDir, "result.json"),
-      JSON.stringify(
-        {
-          backend: backend.id,
-          connector: context.connector,
-          githubRepo: context.githubRepo,
-          model: backend.model,
-          status: "pass",
-          story: firstTodo.code,
-          sandboxDir,
-          verification,
-        },
-        null,
-        2,
-      ),
-    );
-
-    return finalizeResult(context, {
+    report.verification = verification;
+    return finish({
       status: "pass",
       story: firstTodo.code,
       sandboxDir,
     });
   } catch (error) {
     if (error instanceof SkipError) {
-      await fs.writeFile(
-        path.join(artifactsDir, "result.json"),
-        JSON.stringify(
-          {
-            backend: backend.id,
-            connector: context.connector,
-            githubRepo: context.githubRepo,
-            model: backend.model,
-            status: "skip",
-            reason: error.message,
-            sandboxDir,
-          },
-          null,
-          2,
-        ),
-      );
-      return finalizeResult(context, error);
+      return finish(error);
     }
 
-    await fs.writeFile(
-      path.join(artifactsDir, "result.json"),
-      JSON.stringify(
-        {
-          backend: backend.id,
-          connector: context.connector,
-          githubRepo: context.githubRepo,
-          model: backend.model,
-          status: "fail",
-          reason: error.message,
-          sandboxDir,
-        },
-        null,
-        2,
-      ),
-    );
-
-    return finalizeResult(context, {
+    return finish({
       status: "fail",
       reason: error.message,
       sandboxDir,
@@ -536,7 +516,7 @@ async function prepareWorkspace(context) {
 
 async function installWorkspace(context) {
   const invocation = getInstallerInvocation(context);
-  const install = await runLoggedCommand({
+  const install = await runReportedCommand({
     ...context,
     step: "install",
     command: invocation.command,
@@ -572,7 +552,7 @@ async function verifyInstallation(context) {
 
 async function readCliEnvelope(context, step, cliArgs) {
   const archetipoPath = getCliBinaryPath(context.sandboxDir);
-  const result = await runLoggedCommand({
+  const result = await runReportedCommand({
     ...context,
     step,
     command: archetipoPath,
@@ -591,7 +571,7 @@ async function readCliEnvelope(context, step, cliArgs) {
 
 async function readOptionalBacklog(context) {
   const archetipoPath = getCliBinaryPath(context.sandboxDir);
-  const result = await runLoggedCommand({
+  const result = await runReportedCommand({
     ...context,
     step: "backlog-before",
     command: archetipoPath,
@@ -610,10 +590,7 @@ async function readOptionalBacklog(context) {
   }
 
   if (envelope?.error?.code === "E_PRECONDITION") {
-    await fs.appendFile(
-      path.join(context.artifactsDir, "backlog-before.log"),
-      "\nexpected_precondition=true\nnote=Missing backlog before archetipo-spec is expected in this preflight check.\n",
-    );
+    annotateLastReportEvent(context, "Missing backlog before archetipo-spec is expected in this preflight check.");
     return null;
   }
 
@@ -728,12 +705,34 @@ function getCliBinaryPath(sandboxDir) {
   return path.join(sandboxDir, ".archetipo", "bin", executable);
 }
 
-async function runLoggedCommand({ sandboxDir, artifactsDir, step, command, args, timeoutMs, acceptedExitCodes = [0] }) {
+async function runReportedCommand({
+  sandboxDir,
+  report,
+  step,
+  command,
+  args,
+  timeoutMs,
+  acceptedExitCodes = [0],
+  kind,
+  skill,
+  prompt,
+  finalMessagePath,
+}) {
   const startedAt = Date.now();
   const stdoutChunks = [];
   const stderrChunks = [];
-  const prettyCommand = [command, ...args].join(" ");
   const heartbeatLabel = `${step} (${path.basename(command)})`;
+  const event = {
+    step,
+    kind: kind ?? inferCommandKind({ sandboxDir, command }),
+    skill,
+    prompt,
+    command,
+    args,
+    cwd: sandboxDir,
+    startedAt,
+  };
+  report.events.push(event);
 
   const child = spawn(command, args, {
     cwd: sandboxDir,
@@ -755,35 +754,34 @@ async function runLoggedCommand({ sandboxDir, artifactsDir, step, command, args,
     console.log(`   ... ${heartbeatLabel} still running (${elapsedSeconds})`);
   }, LONG_RUNNING_STEP_HEARTBEAT_MS);
 
-  const code = await new Promise((resolve, reject) => {
-    child.on("error", reject);
-    child.on("close", resolve);
+  const { code, spawnError } = await new Promise((resolve) => {
+    child.on("error", (error) => resolve({ code: 1, spawnError: error }));
+    child.on("close", (code) => resolve({ code, spawnError: null }));
   }).finally(() => {
     clearTimeout(timeout);
     clearInterval(heartbeat);
   });
 
   const stdout = Buffer.concat(stdoutChunks).toString("utf8");
-  const stderr = Buffer.concat(stderrChunks).toString("utf8");
-  await fs.writeFile(
-    path.join(artifactsDir, `${step}.log`),
-    [
-      `$ ${[command, ...args].join(" ")}`,
-      "",
-      "=== STDOUT ===",
-      stdout,
-      "",
-      "=== STDERR ===",
-      stderr,
-      "",
-      `exit_code=${code}`,
-      `timed_out=${timedOut}`,
-      `duration_ms=${Date.now() - startedAt}`,
-    ].join("\n"),
-  );
+  const stderr = [Buffer.concat(stderrChunks).toString("utf8"), spawnError?.message ?? ""]
+    .filter(Boolean)
+    .join("\n");
+  const endedAt = Date.now();
+  const finalMessage = finalMessagePath ? await readAndRemoveIfPresent(finalMessagePath) : "";
 
   const accepted = acceptedExitCodes.includes(code);
-  const duration = formatDurationMs(Date.now() - startedAt);
+  const duration = formatDurationMs(endedAt - startedAt);
+  Object.assign(event, {
+    endedAt,
+    durationMs: endedAt - startedAt,
+    exitCode: code,
+    timedOut,
+    accepted,
+    ok: accepted && !timedOut,
+    stdout,
+    stderr,
+    finalMessage,
+  });
   if (accepted && !timedOut) {
     console.log(`   done ${step} in ${duration}`);
   } else if (timedOut) {
@@ -798,7 +796,218 @@ async function runLoggedCommand({ sandboxDir, artifactsDir, step, command, args,
     stdout,
     stderr,
     timedOut,
+    finalMessage,
   };
+}
+
+function createRunReport({ backend, connector, scenarioName, sandboxDir, reportPath }) {
+  return {
+    startedAt: Date.now(),
+    backend: backend.id,
+    connector,
+    githubRepo: null,
+    model: backend.model,
+    scenarioName,
+    sandboxDir,
+    reportPath,
+    events: [],
+    result: null,
+    verification: null,
+  };
+}
+
+function inferCommandKind({ sandboxDir, command }) {
+  return path.resolve(command) === path.resolve(getCliBinaryPath(sandboxDir)) ? "cli" : "command";
+}
+
+function annotateLastReportEvent(context, note) {
+  const lastEvent = context.report.events.at(-1);
+  if (!lastEvent) {
+    return;
+  }
+  lastEvent.note = note;
+}
+
+async function readAndRemoveIfPresent(filePath) {
+  try {
+    const content = await fs.readFile(filePath, "utf8");
+    await fs.rm(filePath, { force: true }).catch(() => {});
+    return content;
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return "";
+    }
+    throw error;
+  }
+}
+
+async function writeHtmlReport(context) {
+  context.report.githubRepo = context.githubRepo ?? null;
+  context.report.endedAt = Date.now();
+  const html = renderHtmlReport(context.report);
+  await fs.writeFile(context.reportPath, html);
+  console.log(`   report ${context.reportPath}`);
+}
+
+function renderHtmlReport(report) {
+  const result = report.result ?? {};
+  const events = report.events ?? [];
+  const promptEvents = events.filter((event) => event.kind === "prompt");
+  const cliEvents = events.filter((event) => event.kind === "cli");
+  const otherEvents = events.filter((event) => event.kind !== "prompt" && event.kind !== "cli");
+  const skillNames = [...new Set(promptEvents.map((event) => event.skill).filter(Boolean))];
+  const durationMs = (report.endedAt ?? Date.now()) - report.startedAt;
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARchetipo E2E Report - ${escapeHtml(report.backend)}</title>
+  <style>
+    :root { color-scheme: light; --bg: #f6f7f9; --panel: #ffffff; --ink: #172026; --muted: #61707d; --line: #d8dee6; --ok: #18794e; --fail: #c93a2f; --skip: #8a5a00; --prompt: #2457a7; --cli: #386a20; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+    header { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+    h1 { margin: 0 0 14px; font-size: 22px; letter-spacing: 0; }
+    h2 { margin: 28px 0 12px; font-size: 18px; letter-spacing: 0; }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .meta div { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #fbfcfd; min-width: 0; }
+    .label { display: block; color: var(--muted); font-size: 12px; }
+    .value { overflow-wrap: anywhere; }
+    .skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 650; border: 1px solid var(--line); background: #fff; color: var(--muted); }
+    .badge.prompt { border-color: #b7c9ee; background: #eef4ff; color: var(--prompt); }
+    .badge.cli { border-color: #c4deb9; background: #f0faeb; color: var(--cli); }
+    .badge.command { background: #f4f5f6; color: #53606b; }
+    .badge.pass { border-color: #b7dec9; background: #eefaf3; color: var(--ok); }
+    .badge.fail { border-color: #f0bbb6; background: #fff0ef; color: var(--fail); }
+    .badge.skip { border-color: #e8d4a6; background: #fff8e5; color: var(--skip); }
+    .badge.timeout { border-color: #f0bbb6; background: #fff0ef; color: var(--fail); }
+    .timeline { display: grid; gap: 14px; }
+    .event { border: 1px solid var(--line); border-left-width: 5px; border-radius: 8px; background: var(--panel); padding: 16px; box-shadow: 0 1px 2px rgba(20, 31, 43, 0.04); }
+    .event.prompt { border-left-color: var(--prompt); }
+    .event.cli { border-left-color: var(--cli); }
+    .event.command { border-left-color: #8b98a5; }
+    .event-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+    .event-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .step { font-size: 16px; font-weight: 750; }
+    .time { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .command-line, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .command-line { margin-top: 10px; padding: 9px 10px; border-radius: 6px; background: #f2f4f7; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .prompt-text { margin-top: 12px; border: 1px solid #b7c9ee; background: #f8fbff; border-radius: 6px; padding: 10px; }
+    .prompt-text strong { display: block; margin-bottom: 4px; color: var(--prompt); }
+    details { margin-top: 10px; border: 1px solid var(--line); border-radius: 6px; background: #fbfcfd; }
+    summary { cursor: pointer; padding: 8px 10px; color: var(--muted); font-weight: 650; }
+    pre { margin: 0; padding: 10px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 520px; }
+    .empty { color: var(--muted); padding: 12px; border: 1px dashed var(--line); border-radius: 8px; background: #fff; }
+    .index { display: grid; gap: 8px; }
+    .index-row { display: grid; grid-template-columns: 130px 1fr auto; gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 9px 10px; }
+    @media (max-width: 720px) { main { padding: 16px; } .index-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>ARchetipo E2E Report</h1>
+      <div class="meta">
+        ${renderMeta("Scenario", report.scenarioName)}
+        ${renderMeta("Connector", report.connector)}
+        ${renderMeta("Backend", report.backend)}
+        ${renderMeta("Model", report.model)}
+        ${renderMeta("Status", result.status ?? "unknown")}
+        ${renderMeta("Duration", formatDurationMs(durationMs))}
+        ${renderMeta("Sandbox", report.sandboxDir)}
+      </div>
+      <div class="skills">
+        <span class="badge ${escapeHtml(result.status ?? "skip")}">status ${escapeHtml(result.status ?? "unknown")}</span>
+        ${skillNames.map((skill) => `<span class="badge prompt">skill ${escapeHtml(skill)}</span>`).join("")}
+      </div>
+    </header>
+
+    <h2>Timeline</h2>
+    <section class="timeline">
+      ${events.length > 0 ? events.map((event, index) => renderEvent(event, index, report.startedAt)).join("") : `<div class="empty">No commands were recorded.</div>`}
+    </section>
+
+    <h2>CLI Invocations</h2>
+    <section class="index">
+      ${cliEvents.length > 0 ? cliEvents.map((event) => renderIndexRow(event, report.startedAt)).join("") : `<div class="empty">No CLI invocations were recorded.</div>`}
+    </section>
+
+    <h2>Other Commands</h2>
+    <section class="index">
+      ${otherEvents.length > 0 ? otherEvents.map((event) => renderIndexRow(event, report.startedAt)).join("") : `<div class="empty">No other commands were recorded.</div>`}
+    </section>
+  </main>
+</body>
+</html>`;
+}
+
+function renderMeta(label, value) {
+  return `<div><span class="label">${escapeHtml(label)}</span><span class="value">${escapeHtml(value ?? "")}</span></div>`;
+}
+
+function renderEvent(event, index, runStartedAt) {
+  const status = event.timedOut ? "timeout" : event.ok ? "pass" : event.endedAt ? "fail" : "running";
+  return `<article class="event ${escapeHtml(event.kind ?? "command")}" id="event-${index + 1}">
+    <div class="event-head">
+      <div class="event-title">
+        <span class="step">${escapeHtml(event.step)}</span>
+        <span class="badge ${escapeHtml(event.kind ?? "command")}">${escapeHtml(event.kind ?? "command")}</span>
+        ${event.skill ? `<span class="badge prompt">skill ${escapeHtml(event.skill)}</span>` : ""}
+        <span class="badge ${escapeHtml(status)}">${escapeHtml(status)}</span>
+      </div>
+      <div class="time">+${formatDurationMs(event.startedAt - runStartedAt)} · ${formatDurationMs(event.durationMs ?? 0)}</div>
+    </div>
+    <div class="command-line">$ ${escapeHtml(formatCommand(event.command, event.args ?? []))}</div>
+    ${event.prompt ? `<div class="prompt-text"><strong>Prompt passed to backend</strong><pre>${escapeHtml(event.prompt)}</pre></div>` : ""}
+    ${event.note ? `<div class="prompt-text"><strong>Note</strong><pre>${escapeHtml(event.note)}</pre></div>` : ""}
+    ${renderOutputDetails("Final message", event.finalMessage)}
+    ${renderOutputDetails("STDOUT", event.stdout)}
+    ${renderOutputDetails("STDERR", event.stderr)}
+    <details><summary>Execution metadata</summary><pre>${escapeHtml(JSON.stringify({
+      exitCode: event.exitCode,
+      timedOut: event.timedOut,
+      durationMs: event.durationMs,
+      cwd: event.cwd,
+    }, null, 2))}</pre></details>
+  </article>`;
+}
+
+function renderIndexRow(event, runStartedAt) {
+  const status = event.timedOut ? "timeout" : event.ok ? "pass" : event.endedAt ? "fail" : "running";
+  return `<div class="index-row">
+    <span class="time">+${formatDurationMs(event.startedAt - runStartedAt)}</span>
+    <span class="command-line">$ ${escapeHtml(formatCommand(event.command, event.args ?? []))}</span>
+    <span class="badge ${escapeHtml(status)}">${escapeHtml(status)}</span>
+  </div>`;
+}
+
+function renderOutputDetails(label, value) {
+  if (!value) {
+    return "";
+  }
+  return `<details><summary>${escapeHtml(label)}</summary><pre>${escapeHtml(value)}</pre></details>`;
+}
+
+function formatCommand(command, args) {
+  return [command, ...args].map(shellDisplayValue).join(" ");
+}
+
+function shellDisplayValue(value) {
+  const text = String(value);
+  return /[\s"'$`\\]/.test(text) ? JSON.stringify(text) : text;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 async function terminateChildProcess(child) {
@@ -896,7 +1105,7 @@ async function bootstrapSandboxGit(context) {
     throw new Error("GitHub sandbox bootstrap is missing the provisioned remote repository URL.");
   }
 
-  const gitInit = await runLoggedCommand({
+  const gitInit = await runReportedCommand({
     ...context,
     step: "git-init",
     command: "git",
@@ -906,7 +1115,7 @@ async function bootstrapSandboxGit(context) {
     throw new Error(`Sandbox git init failed: ${gitInit.stderr || gitInit.stdout || `exit ${gitInit.code}`}`);
   }
 
-  const gitRemote = await runLoggedCommand({
+  const gitRemote = await runReportedCommand({
     ...context,
     step: "git-remote",
     command: "git",
@@ -1066,15 +1275,16 @@ function classifyBackendFailure(context, step, commandResult) {
   if (commandResult.timedOut) {
     return {
       status: "fail",
-      reason: `${step} timed out after ${context.timeoutMs}ms. See ${path.join(context.artifactsDir, `${step}.log`)}`,
+      reason: `${step} timed out after ${context.timeoutMs}ms. See ${context.reportPath}`,
       sandboxDir: context.sandboxDir,
     };
   }
 
   return {
     status: "fail",
-    reason: `${step} failed with exit code ${commandResult.code}. See ${path.join(context.artifactsDir, `${step}.log`)}`,
+    reason: `${step} failed with exit code ${commandResult.code}. See ${context.reportPath}`,
     sandboxDir: context.sandboxDir,
+    reportPath: context.reportPath,
   };
 }
 
@@ -1088,6 +1298,7 @@ function finalizeResult(context, result) {
       status: "skip",
       reason: result.message,
       sandboxDir: context.sandboxDir,
+      reportPath: context.reportPath,
     };
   }
 
@@ -1100,6 +1311,7 @@ function finalizeResult(context, result) {
     reason: result.reason,
     story: result.story,
     sandboxDir: result.sandboxDir ?? context.sandboxDir,
+    reportPath: context.reportPath,
   };
 }
 
