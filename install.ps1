@@ -1,4 +1,4 @@
-﻿# ─── ARchetipo Installer ─────────────────────────────────────────────────────
+# ─── ARchetipo Installer ─────────────────────────────────────────────────────
 # Installs ARchetipo skills + config for Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot
 # Usage: irm https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.ps1 | iex
 #        .\install.ps1 [-Local] [-Cleanup] [-Tool codex] [-Connector file] [-Yes] [-Help]

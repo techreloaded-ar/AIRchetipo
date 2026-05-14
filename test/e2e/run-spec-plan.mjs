@@ -515,15 +515,24 @@ async function prepareWorkspace(context) {
 }
 
 async function installWorkspace(context) {
-  const invocation = getInstallerInvocation(context);
-  const install = await runReportedCommand({
-    ...context,
-    step: "install",
-    command: invocation.command,
-    args: invocation.args,
-  });
-  if (!install.ok) {
-    throw new Error(`Installer failed: ${install.stderr || install.stdout || `exit ${install.code}`}`);
+  const invocations = getInstallerInvocations(context);
+  for (let index = 0; index < invocations.length; index += 1) {
+    const invocation = invocations[index];
+    if (index > 0) {
+      await resetInstalledArtifacts(context);
+    }
+    const install = await runReportedCommand({
+      ...context,
+      step: invocation.step,
+      command: invocation.command,
+      args: invocation.args,
+    });
+    if (!install.ok) {
+      throw new Error(
+        `Installer failed (${invocation.label}): ${install.stderr || install.stdout || `exit ${install.code}`}`,
+      );
+    }
+    await verifyInstallation(context);
   }
 }
 
@@ -547,6 +556,21 @@ async function verifyInstallation(context) {
   const connectorPattern = new RegExp(`^connector:\\s*${context.connector}\\b`, "m");
   if (!connectorPattern.test(configText)) {
     throw new Error(`Installed config.yaml does not use connector: ${context.connector}.`);
+  }
+}
+
+async function resetInstalledArtifacts(context) {
+  const installRoots = [
+    path.join(context.sandboxDir, ".archetipo"),
+    path.join(context.sandboxDir, context.toolSkillRoot),
+  ];
+  for (const installRoot of installRoots) {
+    await fs.rm(installRoot, {
+      recursive: true,
+      force: true,
+      maxRetries: process.platform === "win32" ? 10 : 3,
+      retryDelay: 250,
+    });
   }
 }
 
@@ -664,40 +688,54 @@ function resolveProjectPath(projectRoot, maybeRelative) {
   return path.join(projectRoot, maybeRelative);
 }
 
-function getInstallerInvocation(context) {
+function getInstallerInvocations(context) {
   if (process.platform === "win32") {
     const installScript = path.join(repoRoot, "install.ps1");
-    return {
-      command: "powershell",
-      args: [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        installScript,
-        "-Local",
-        "-Tool",
-        context.backend.tool,
-        "-Connector",
-        context.connector,
-        "-Yes",
-      ],
-    };
+    const commonArgs = ["-Local", "-Tool", context.backend.tool, "-Connector", context.connector, "-Yes"];
+    return [
+      {
+        label: "powershell -File",
+        step: "install-file",
+        command: "powershell",
+        args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", installScript, ...commonArgs],
+      },
+      {
+        label: "Invoke-Expression",
+        step: "install-iex",
+        command: "powershell",
+        args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", buildInstallerEncodedCommand({
+          installScript,
+          tool: context.backend.tool,
+          connector: context.connector,
+        })],
+      },
+    ];
   }
 
   const installScript = path.join(repoRoot, "install.sh");
-  return {
-    command: "bash",
-    args: [
-      installScript,
-      "--local",
-      "--tool",
-      context.backend.tool,
-      "--connector",
-      context.connector,
-      "--yes",
-    ],
-  };
+  return [
+    {
+      label: "bash --local",
+      step: "install",
+      command: "bash",
+      args: [installScript, "--local", "--tool", context.backend.tool, "--connector", context.connector, "--yes"],
+    },
+  ];
+}
+
+function buildInstallerEncodedCommand({ installScript, tool, connector }) {
+  const psScript = [
+    `$scriptPath = ${toPowerShellSingleQuotedString(installScript)}`,
+    `$scriptContent = Get-Content -Raw -LiteralPath $scriptPath`,
+    `Invoke-Expression "& ([scriptblock]::Create($scriptContent)) -Local -Tool ${toPowerShellSingleQuotedString(
+      tool,
+    )} -Connector ${toPowerShellSingleQuotedString(connector)} -Yes"`,
+  ].join("\n");
+  return Buffer.from(psScript, "utf16le").toString("base64");
+}
+
+function toPowerShellSingleQuotedString(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
 }
 
 function getCliBinaryPath(sandboxDir) {
