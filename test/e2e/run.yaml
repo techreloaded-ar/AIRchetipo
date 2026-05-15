@@ -1,5 +1,5 @@
 agents:
-  pi-cli-olmx:
+  pi-olmx-qwen36:
     tool: pi
     command: pi
     model: olmx/Qwen3.6-35B-A3B-4bit
@@ -10,10 +10,27 @@ agents:
       - "{model}"
       - "{prompt}"
 
+  pi-go-ds4-flash:
+    tool: pi
+    command: pi
+    model: opencode-go/deepseek-v4-flash
+    args:
+      - --print
+      - --verbose
+      - --model
+      - "{model}"
+      - "{prompt}"
+
 scenarios:
   spec-plan:
-    agent: pi-cli-olmx
+    agent: pi-olmx-qwen36
     prd: ../PRD.md
     prompts:
       - /archetipo-spec
       - /archetipo-plan US-001
+
+  spec:
+    agent: pi-olmx-qwen36
+    prd: ../PRD.md
+    prompts:
+      - /archetipo-spec
