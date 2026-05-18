@@ -194,7 +194,6 @@ body {
     font-family: var(--font-mono);
     color: var(--text-muted);
     font-size: 10px;
-    text-transform: lowercase;
     letter-spacing: 0.15em;
     margin-top: 2px;
 }
