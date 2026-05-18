@@ -657,28 +657,80 @@
 
     function renderMockupsMenu() {
         const appMockups = mockupsCache.filter((m) => !m.story_code);
+        const storyMockups = mockupsCache.filter((m) => !!m.story_code);
         mockupsMenu.innerHTML = '';
+
+        const appSection = document.createElement('div');
+        appSection.className = 'mockups-section';
         if (appMockups.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'dropdown-empty';
             empty.textContent = 'No app mockups';
-            mockupsMenu.appendChild(empty);
-            return;
+            appSection.appendChild(empty);
+        } else {
+            appMockups.forEach((m) => appSection.appendChild(createMockupItem(m)));
         }
-        appMockups.forEach((m) => {
-            const a = document.createElement('a');
-            a.href = m.url;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.className = 'dropdown-item';
-            a.textContent = m.name;
-            mockupsMenu.appendChild(a);
+        mockupsMenu.appendChild(appSection);
+
+        if (storyMockups.length > 0) {
+            mockupsMenu.appendChild(createStoriesSection(storyMockups));
+        }
+    }
+
+    function createMockupItem(m) {
+        const a = document.createElement('a');
+        a.href = m.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.className = 'dropdown-item';
+        a.textContent = m.name;
+        return a;
+    }
+
+    function createStoriesSection(items) {
+        const section = document.createElement('div');
+        section.className = 'mockups-section mockups-section-stories collapsed';
+
+        const header = document.createElement('div');
+        header.className = 'mockups-section-header clickable';
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
+        header.innerHTML = `<span>Stories (${items.length})</span>`
+            + '<svg class="mockups-section-caret" width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">'
+            + '<path d="M1.5 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+
+        const body = document.createElement('div');
+        body.className = 'mockups-section-body hidden';
+        items.forEach((m) => body.appendChild(createMockupItem(m)));
+
+        const toggle = (e) => {
+            e.stopPropagation();
+            const collapsed = section.classList.toggle('collapsed');
+            body.classList.toggle('hidden', collapsed);
+        };
+        header.addEventListener('click', toggle);
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
         });
+
+        section.appendChild(header);
+        section.appendChild(body);
+        return section;
+    }
+
+    function collapseStoriesSection() {
+        const section = mockupsMenu.querySelector('.mockups-section-stories');
+        if (!section) return;
+        section.classList.add('collapsed');
+        const body = section.querySelector('.mockups-section-body');
+        if (body) body.classList.add('hidden');
     }
 
     function toggleMockupsMenu(e) {
         e.stopPropagation();
+        const wasHidden = mockupsMenu.classList.contains('hidden');
         mockupsMenu.classList.toggle('hidden');
+        if (wasHidden) collapseStoriesSection();
     }
 
     function escapeHtml(s) {
