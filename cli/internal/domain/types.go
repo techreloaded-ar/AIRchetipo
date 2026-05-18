@@ -192,3 +192,27 @@ type ReorderAnchor struct {
 	Before string
 	After  string
 }
+
+// MockupEntry describes a single mockup folder (one per design artifact)
+// served by the viewer. Name is the folder name under paths.mockups; URL is
+// the path the SPA can link to (served by the viewer's static handler).
+// StoryCode is non-empty when Name matches a story/epic code (US-NNN, EP-NNN).
+type MockupEntry struct {
+	Name      string `json:"name"`
+	URL       string `json:"url"`
+	StoryCode string `json:"story_code,omitempty"`
+}
+
+// StoryUpdate is a partial patch over an existing Story. Pointer fields
+// distinguish "not provided" (nil) from "set to zero value" (non-nil pointing
+// at the zero value). Connectors must only touch fields whose pointer is
+// non-nil and leave the rest untouched.
+type StoryUpdate struct {
+	Title       *string   `json:"title,omitempty"`
+	Priority    *Priority `json:"priority,omitempty"`
+	StoryPoints *int      `json:"story_points,omitempty"`
+	Scope       *Scope    `json:"scope,omitempty"`
+	BlockedBy   *[]string `json:"blocked_by,omitempty"`
+	Body        *string   `json:"body,omitempty"`
+	Epic        *Epic     `json:"epic,omitempty"`
+}
