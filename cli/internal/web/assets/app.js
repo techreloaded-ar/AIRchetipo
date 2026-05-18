@@ -38,6 +38,29 @@
     const mockupsBtn = document.getElementById('mockups-btn');
     const mockupsMenu = document.getElementById('mockups-menu');
     const mockupsDropdown = document.getElementById('mockups-dropdown');
+    const themeToggle = document.getElementById('theme-toggle');
+    const statTotal = document.getElementById('stat-total');
+    const statProgress = document.getElementById('stat-progress');
+    const statDone = document.getElementById('stat-done');
+
+    const THEME_KEY = 'archetipo.theme';
+
+    function setTheme(theme, persist) {
+        const next = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        themeToggle.setAttribute('aria-label', next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+        if (persist) {
+            try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* ignore */ }
+        }
+    }
+
+    function toggleTheme() {
+        const current = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+        setTheme(current === 'dark' ? 'light' : 'dark', true);
+    }
+
+    setTheme(document.documentElement.dataset.theme, false);
+    themeToggle.addEventListener('click', toggleTheme);
 
     const editorToolbar = [
         'bold', 'italic', 'heading', '|',
@@ -113,24 +136,50 @@
         if (!mockupsDropdown.contains(e.target)) mockupsMenu.classList.add('hidden');
     });
 
+    // Global single-key shortcuts (ignored while typing in inputs / editors).
+    document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const tag = (e.target && e.target.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (e.target && e.target.isContentEditable) return;
+        const k = e.key.toLowerCase();
+        if (k === 't') { e.preventDefault(); toggleTheme(); }
+        else if (k === 'r') { e.preventDefault(); loadBoard(); }
+    });
+
     loadBoard();
     loadMockups();
 
     async function loadBoard() {
-        boardEl.innerHTML = '<div class="empty-board">Loading...</div>';
+        boardEl.innerHTML = '<div class="empty-board">Loading…</div>';
         try {
             const view = await apiGet('/api/board');
             renderBoard(view);
+            updateStats(view);
             boardSnapshot = view;
         } catch (err) {
             boardEl.innerHTML = `<div class="empty-board">Error: ${escapeHtml(err.message || err)}</div>`;
         }
     }
 
+    function updateStats(view) {
+        const cols = view.columns || [];
+        let total = 0, progress = 0, done = 0;
+        cols.forEach((c) => {
+            const n = (c.stories || []).length;
+            total += n;
+            if (c.id === 'in_progress' || c.id === 'review') progress += n;
+            if (c.id === 'done') done += n;
+        });
+        if (statTotal) statTotal.textContent = total;
+        if (statProgress) statProgress.textContent = progress;
+        if (statDone) statDone.textContent = done;
+    }
+
     function renderBoard(view) {
         boardEl.innerHTML = '';
         if (!view.columns || view.columns.length === 0) {
-            boardEl.innerHTML = '<div class="empty-board">No backlog yet. Run <code>archetipo init</code> first.</div>';
+            boardEl.innerHTML = '<div class="empty-board">No backlog yet — run <code>archetipo init</code> to begin.</div>';
             return;
         }
         view.columns.forEach((col) => {
@@ -141,9 +190,10 @@
 
             const header = document.createElement('header');
             header.className = 'column-header';
+            const count = (col.stories || []).length;
             header.innerHTML = `
                 <span class="column-title"><span class="column-dot"></span>${escapeHtml(col.title || col.id)}</span>
-                <span class="column-count">${(col.stories || []).length}</span>
+                <span class="column-count">${count}</span>
             `;
             columnEl.appendChild(header);
 
@@ -171,15 +221,18 @@
     function renderCard(story) {
         const el = document.createElement('article');
         el.className = 'card';
+        if (story.priority) el.classList.add('prio-' + story.priority);
         el.dataset.code = story.code;
+        const excerpt = bodyExcerpt(story.body);
         el.innerHTML = `
             <div class="card-top">
                 <span class="card-code">${escapeHtml(story.code)}</span>
                 ${story.priority ? `<span class="priority-badge priority-${escapeHtml(story.priority)}">${escapeHtml(story.priority)}</span>` : ''}
             </div>
             <div class="card-title">${escapeHtml(story.title || '(untitled)')}</div>
+            ${excerpt ? `<p class="card-excerpt">${escapeHtml(excerpt)}</p>` : '<p class="card-excerpt card-excerpt--empty">(no description)</p>'}
             <div class="card-meta">
-                <span>${story.epic && story.epic.code ? escapeHtml(story.epic.code) : ''}</span>
+                <span class="card-epic">${story.epic && story.epic.code ? escapeHtml(story.epic.code) : ''}</span>
                 <span class="card-points">${Number.isFinite(story.story_points) ? story.story_points + ' pt' : ''}</span>
             </div>
         `;
@@ -187,10 +240,37 @@
         return el;
     }
 
+    // bodyExcerpt strips markdown markup and returns a short plain-text preview
+    // suitable for inline display on a card.
+    function bodyExcerpt(body) {
+        if (!body) return '';
+        const text = String(body)
+            .replace(/```[\s\S]*?```/g, ' ')          // fenced code blocks
+            .replace(/`[^`]*`/g, ' ')                  // inline code
+            .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')     // images
+            .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')   // links → label
+            .replace(/^\s{0,3}#{1,6}\s+/gm, '')        // headings
+            .replace(/^\s{0,3}>\s?/gm, '')             // blockquotes
+            .replace(/^\s*[-*+]\s+/gm, '')             // bullet markers
+            .replace(/^\s*\d+\.\s+/gm, '')             // numbered list markers
+            .replace(/\*\*([^*]+)\*\*/g, '$1')         // bold
+            .replace(/\*([^*]+)\*/g, '$1')             // italic
+            .replace(/__([^_]+)__/g, '$1')             // bold (underscore)
+            .replace(/_([^_]+)_/g, '$1')               // italic (underscore)
+            .replace(/~~([^~]+)~~/g, '$1')             // strikethrough
+            .replace(/\s+/g, ' ')
+            .trim();
+        const max = 160;
+        if (text.length <= max) return text;
+        const cut = text.slice(0, max);
+        const lastSpace = cut.lastIndexOf(' ');
+        return (lastSpace > 80 ? cut.slice(0, lastSpace) : cut) + '…';
+    }
+
     function emptyHint() {
         const e = document.createElement('div');
         e.className = 'empty-column';
-        e.textContent = 'Drop a card here';
+        e.textContent = 'drop a card here';
         return e;
     }
 
