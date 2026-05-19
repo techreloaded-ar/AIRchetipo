@@ -146,12 +146,10 @@ func (c *Config) applyDefaults() {
 	}
 }
 
+// validate performs config-level checks. Connector name validation is
+// intentionally deferred to connector.New, which already rejects unknown
+// names and can list the registered set dynamically.
 func (c *Config) validate() error {
-	switch c.Connector {
-	case ConnectorFile, ConnectorGitHub:
-	default:
-		return fmt.Errorf("unknown connector %q (allowed: file, github)", c.Connector)
-	}
 	return nil
 }
 

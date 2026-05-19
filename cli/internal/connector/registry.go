@@ -26,12 +26,21 @@ func Register(name string, b Builder) {
 func New(cfg config.Config) (Connector, error) {
 	b, ok := builders[cfg.Connector]
 	if !ok {
-		return nil, fmt.Errorf("unknown connector %q (registered: %v)", cfg.Connector, registeredNames())
+		return nil, fmt.Errorf("unknown connector %q (registered: %v)", cfg.Connector, RegisteredNames())
 	}
 	return b(cfg)
 }
 
-func registeredNames() []string {
+// IsRegistered reports whether a connector with the given name has been
+// registered. Useful for callers that need to validate connector names
+// before calling New (e.g. CLI validation, config UIs).
+func IsRegistered(name string) bool {
+	_, ok := builders[name]
+	return ok
+}
+
+// RegisteredNames returns the sorted list of registered connector names.
+func RegisteredNames() []string {
 	out := make([]string, 0, len(builders))
 	for k := range builders {
 		out = append(out, k)

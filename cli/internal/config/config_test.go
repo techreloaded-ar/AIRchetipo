@@ -78,14 +78,21 @@ func TestLoadFromSubdirectoryWalksUp(t *testing.T) {
 	}
 }
 
-func TestUnknownConnectorRejected(t *testing.T) {
+func TestUnknownConnectorPassesThroughConfig(t *testing.T) {
+	// Config intentionally does NOT validate connector names;
+	// connector.New rejects unknown names with a dynamic list
+	// of registered connectors. This avoids a circular import
+	// (config → connector) and keeps config connector-agnostic.
 	root := t.TempDir()
 	must(t, os.MkdirAll(filepath.Join(root, ".archetipo"), 0o755))
 	must(t, os.WriteFile(filepath.Join(root, RelativePath), []byte(`connector: gitlab
 `), 0o644))
-	_, err := Load(root)
-	if err == nil {
-		t.Fatal("expected error for unknown connector")
+	c, err := Load(root)
+	if err != nil {
+		t.Fatalf("config should load regardless of connector name: %v", err)
+	}
+	if c.Connector != "gitlab" {
+		t.Errorf("expected connector 'gitlab', got %q", c.Connector)
 	}
 }
 
