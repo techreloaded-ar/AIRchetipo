@@ -34,6 +34,8 @@ async function main() {
   const manifest = YAML.parse(await fs.readFile(configPath, "utf8"));
   const scenarios = normalizeConfig(manifest, configPath, options.scenario);
 
+  const cliBinaryPath = await buildArchetipoBinary();
+
   const results = [];
   for (const scenario of scenarios) {
     const agentLabel = `${scenario.agent.id}`;
@@ -43,6 +45,7 @@ async function main() {
       connector: options.connector,
       configPath,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      cliBinaryPath,
     });
     results.push(result);
     console.log(formatResultLine(result));
@@ -190,7 +193,31 @@ function filterScenarioList(scenarios, filter, configPath) {
   return filtered;
 }
 
-async function runConfiguredScenario({ scenario, connector, configPath, timeoutMs }) {
+async function buildArchetipoBinary() {
+  const goCheck = await ensureCommand("go");
+  if (goCheck.skip) {
+    throw new Error(
+      "ARchetipo e2e requires Go to compile the CLI from source. Install Go and re-run.",
+    );
+  }
+
+  const binDir = path.join(repoRoot, "test", "e2e", ".bin");
+  await fs.mkdir(binDir, { recursive: true });
+  const binName = process.platform === "win32" ? "archetipo.exe" : "archetipo";
+  const binPath = path.join(binDir, binName);
+
+  console.log(` -> [build] compiling archetipo CLI -> ${binPath}`);
+  const build = await runProbe("go", ["build", "-o", binPath, "./cmd/archetipo"], {
+    cwd: path.join(repoRoot, "cli"),
+  });
+  if (!build.ok) {
+    throw new Error(`go build failed (exit ${build.code}): ${build.stderr || build.stdout}`);
+  }
+  console.log(` <- [build] archetipo CLI ready`);
+  return binPath;
+}
+
+async function runConfiguredScenario({ scenario, connector, configPath, timeoutMs, cliBinaryPath }) {
   const agent = scenario.agent;
   const toolSkillRoot = TOOL_SKILL_ROOT[agent.tool];
   if (!toolSkillRoot) {
@@ -236,6 +263,8 @@ async function runConfiguredScenario({ scenario, connector, configPath, timeoutM
     summaryPath,
     timeoutMs,
     toolSkillRoot,
+    cliBinaryPath,
+    cliEnv: { ARCHETIPO_DATA_DIR: repoRoot },
     skillRoot(skillName) {
       return path.join(sandboxDir, toolSkillRoot, skillName);
     },
@@ -389,57 +418,26 @@ async function prepareWorkspace(context) {
 }
 
 async function installWorkspace(context) {
-  const invocation = getInstallerInvocation(context);
   const install = await runReportedCommand({
     ...context,
     step: "install",
-    command: invocation.command,
-    args: invocation.args,
-  });
-  if (!install.ok) {
-    throw new Error(`Installer failed: ${install.stderr || install.stdout || `exit ${install.code}`}`);
-  }
-}
-
-function getInstallerInvocation(context) {
-  if (process.platform === "win32") {
-    const installScript = path.join(repoRoot, "install.ps1");
-    return {
-      command: "powershell",
-      args: [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        installScript,
-        "-Local",
-        "-Tool",
-        context.agent.tool,
-        "-Connector",
-        context.connector,
-        "-Yes",
-      ],
-    };
-  }
-
-  const installScript = path.join(repoRoot, "install.sh");
-  return {
-    command: "bash",
+    command: context.cliBinaryPath,
     args: [
-      installScript,
-      "--local",
+      "init",
       "--tool",
       context.agent.tool,
       "--connector",
       context.connector,
       "--yes",
     ],
-  };
+  });
+  if (!install.ok) {
+    throw new Error(`archetipo init failed: ${install.stderr || install.stdout || `exit ${install.code}`}`);
+  }
 }
 
 async function verifyInstallation(context) {
   const requiredPaths = [
-    getCliBinaryPath(context.sandboxDir),
     path.join(context.sandboxDir, ".archetipo", "config.yaml"),
     path.join(context.sandboxDir, ".archetipo", "shared-runtime.md"),
     ...deriveSkillNames(context.scenario.prompts).map((skillName) => context.skillRoot(skillName)),
@@ -459,11 +457,6 @@ async function verifyInstallation(context) {
   }
 }
 
-function getCliBinaryPath(sandboxDir) {
-  const executable = process.platform === "win32" ? "archetipo.exe" : "archetipo";
-  return path.join(sandboxDir, ".archetipo", "bin", executable);
-}
-
 function deriveSkillNames(prompts) {
   return [...new Set(prompts.map(deriveSkillName).filter(Boolean).map((skill) => skill.replace(/^\/+/, "")))];
 }
@@ -473,11 +466,10 @@ function deriveSkillName(prompt) {
 }
 
 async function readCliEnvelope(context, step, cliArgs) {
-  const archetipoPath = getCliBinaryPath(context.sandboxDir);
   const result = await runReportedCommand({
     ...context,
     step,
-    command: archetipoPath,
+    command: context.cliBinaryPath,
     args: cliArgs,
   });
   if (!result.ok) {
@@ -510,6 +502,8 @@ function interpolateArg(arg, context, prompt) {
 
 async function runReportedCommand({
   sandboxDir,
+  cliBinaryPath,
+  cliEnv,
   report,
   step,
   command,
@@ -526,7 +520,7 @@ async function runReportedCommand({
   const heartbeatLabel = `${step} (${path.basename(command)})`;
   const event = {
     step,
-    kind: kind ?? inferCommandKind({ sandboxDir, command }),
+    kind: kind ?? inferCommandKind({ cliBinaryPath, command }),
     skill,
     prompt,
     command,
@@ -538,7 +532,7 @@ async function runReportedCommand({
 
   const child = spawn(command, args, {
     cwd: sandboxDir,
-    env: process.env,
+    env: { ...process.env, ...(cliEnv ?? {}) },
     stdio: ["ignore", "pipe", "pipe"],
     shell: process.platform === "win32",
   });
@@ -616,8 +610,11 @@ function createRunReport({ scenario, connector, configPath, runRoot, sandboxDir,
   };
 }
 
-function inferCommandKind({ sandboxDir, command }) {
-  return path.resolve(command) === path.resolve(getCliBinaryPath(sandboxDir)) ? "cli" : "command";
+function inferCommandKind({ cliBinaryPath, command }) {
+  if (!cliBinaryPath) {
+    return "command";
+  }
+  return path.resolve(command) === path.resolve(cliBinaryPath) ? "cli" : "command";
 }
 
 async function writeHtmlReport(context) {
@@ -978,11 +975,12 @@ function sanitizeGitHubName(value) {
     .replace(/^-|-$/g, "");
 }
 
-async function runProbe(command, args) {
+async function runProbe(command, args, options = {}) {
   return new Promise((resolve) => {
     const child = spawn(command, args, {
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
+      cwd: options.cwd,
     });
     const stdout = [];
     const stderr = [];

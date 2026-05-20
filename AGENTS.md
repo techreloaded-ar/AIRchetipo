@@ -25,7 +25,6 @@ cli/                     # Modulo Go che implementa la CLI `archetipo`
     connector/           # Interfaccia + due implementazioni (filefs, github)
     config/              # Loader di .archetipo/config.yaml
     iox/                 # Envelope JSON stdin/stdout/stderr
-install.ps1 / install.sh # Installer legacy (curl|bash) — alternativa senza Node.js
 npm/                     # Pacchetto npm (@techreloaded/archetipo + 6 sub-package per piattaforma)
 scripts/                 # Build e publish dei pacchetti npm
 ```
@@ -66,8 +65,6 @@ archetipo init [--tool …] [--connector …]
 ```
 
 Lo shim Node in `npm/archetipo/bin/archetipo.js` risolve il sub-package binario per la piattaforma corrente, setta `ARCHETIPO_DATA_DIR` e spawna la binary Go. Le skill bundle sono in `npm/archetipo/skills/` e vengono copiate da `archetipo init` verso `.{tool}/skills/` nel progetto.
-
-Percorso alternativo (legacy, senza Node): gli installer `install.ps1` / `install.sh` continuano a funzionare e copiano la binary in `.archetipo/bin/archetipo` del progetto target.
 
 ## Note operative
 

@@ -44,9 +44,4 @@ The conformance suite runs against `filefs` and `inmemory`. The `github` connect
 
 ## Distribution
 
-Tags `vX.Y.Z` produce a single bare binary per platform via GoReleaser. Release assets are named `archetipo-<os>-<arch>` for macOS/Linux and `archetipo-windows-<arch>.exe` for Windows, then downloaded by `install.sh` / `install.ps1` into `.archetipo/bin/` of the target project. GoReleaser appends the Windows executable extension automatically for `binary` archives.
-
-The release asset names are platform-specific, but the installed command path is stable for skills:
-
-- macOS/Linux: `.archetipo/bin/archetipo`
-- Windows: `.archetipo/bin/archetipo.exe` plus `.archetipo/bin/archetipo.cmd` shim
+Tags `vX.Y.Z` produce a single bare binary per platform via GoReleaser. Release assets are named `archetipo-<os>-<arch>` for macOS/Linux and `archetipo-windows-<arch>.exe` for Windows. These binaries are then bundled by `scripts/build-npm.mjs` into the per-platform npm packages (`@techreloaded/archetipo-<platform>-<arch>`) that `@techreloaded/archetipo` pulls in as `optionalDependencies`.

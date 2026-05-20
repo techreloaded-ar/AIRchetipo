@@ -22,6 +22,7 @@ evals.json
 .serena
 *.stackdump
 test/workspaces/*
+test/e2e/.bin/
 node_modules/
 .pi-lens
 .pi

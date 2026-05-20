@@ -81,39 +81,25 @@
     </table>
 
     <h2 id="install">2 · Installazione</h2>
-    <p>Un unico script installa tutto: scarica le skill, mostra un menu interattivo per selezionare gli AI tool di destinazione, copia ogni skill nella directory corretta e crea <code>.archetipo/config.yaml</code>.</p>
+    <p>ARchetipo si installa tramite npm. Una volta installata la CLI, <code>archetipo init</code> mostra un menu interattivo per scegliere gli AI tool di destinazione, copia ogni skill nella directory corretta e crea <code>.archetipo/config.yaml</code>.</p>
 
-    <div class="tabs radio-tabs">
-      <input type="radio" name="os" id="tab-mac" checked>
-      <label class="tab-label" for="tab-mac">macOS / Linux</label>
-      <input type="radio" name="os" id="tab-win">
-      <label class="tab-label" for="tab-win">Windows (PowerShell)</label>
-      <div class="tab-content" style="grid-column:1/-1;margin-top:18px;">
-        <div class="tab-panel" id="panel-mac">
-          <div class="code-block">
-            <div class="code-head"><span>terminal</span><span>bash</span></div>
-<pre><span class="cmt"># macOS / Linux</span>
-<span class="p">curl</span> -fsSL https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.sh | <span class="p">bash</span>
+    <div class="code-block">
+      <div class="code-head"><span>terminal</span><span>bash</span></div>
+<pre><span class="cmt"># 1. Installa la CLI (cross-platform)</span>
+<span class="p">npm</span> i -g @techreloaded/archetipo
+
+<span class="cmt"># 2. Nella radice del tuo progetto</span>
+<span class="p">archetipo</span> init                                      <span class="cmt"># interattivo: scegli tool e connector</span>
+<span class="cmt"># oppure non interattivo:</span>
+<span class="p">archetipo</span> init --tool claude --connector file
 </pre>
-          </div>
-        </div>
-        <div class="tab-panel" id="panel-win">
-          <div class="code-block">
-            <div class="code-head"><span>PowerShell</span><span>ps1</span></div>
-<pre><span class="cmt"># Windows</span>
-<span class="p">irm</span> https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.ps1 | <span class="p">iex</span>
-</pre>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <h3>Cosa fa l'installer</h3>
+    <h3>Cosa fa <code>archetipo init</code></h3>
     <ul>
-      <li>Scarica le skill ufficiali dal repository GitHub.</li>
-      <li>Mostra un menu interattivo per scegliere su quali AI tool installarle.</li>
-      <li>Copia ciascuna skill nella directory corretta del tool selezionato.</li>
-      <li>Crea <code>.archetipo/config.yaml</code> con il connector scelto (<code>file</code> di default).</li>
+      <li>Mostra un menu interattivo per scegliere su quali AI tool installare le skill.</li>
+      <li>Copia ciascuna skill nella directory corretta del tool selezionato (<code>.claude/skills/</code>, <code>.gemini/skills/</code>, …).</li>
+      <li>Crea <code>.archetipo/config.yaml</code> con il connector scelto (<code>file</code> di default) e <code>.archetipo/shared-runtime.md</code>.</li>
     </ul>
 
     <h2 id="prerequisiti">3 · Prerequisiti</h2>

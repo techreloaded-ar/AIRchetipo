@@ -56,20 +56,6 @@ archetipo init --tool claude --connector file
 (`.claude/skills/`, `.gemini/skills/`, …) and writes
 `.archetipo/config.yaml` and `.archetipo/shared-runtime.md` in the project.
 
-### Alternative installer (without Node.js)
-
-The legacy shell installers remain available for environments without npm:
-
-```bash
-# macOS / Linux
-curl -fsSL https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.sh | bash
-# Windows (PowerShell)
-irm https://raw.githubusercontent.com/techreloaded-ar/ARchetipo/main/install.ps1 | iex
-```
-
-They install a per-project copy of the CLI under `.archetipo/bin/`. New
-projects should prefer the npm path above.
-
 ---
 
 ## The workflow

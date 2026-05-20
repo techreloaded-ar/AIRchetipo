@@ -42,6 +42,7 @@ var allSkills = []string{
 func newInitProjectCmd(s streams) *cobra.Command {
 	var toolFlags []string
 	var connectorFlag string
+	var assumeYes bool
 
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -50,15 +51,16 @@ func newInitProjectCmd(s streams) *cobra.Command {
 			"Also creates .archetipo/config.yaml and .archetipo/shared-runtime.md in the current directory.",
 		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return runInitProject(s, toolFlags, connectorFlag)
+			return runInitProject(s, toolFlags, connectorFlag, assumeYes)
 		},
 	}
 	cmd.Flags().StringSliceVar(&toolFlags, "tool", nil, "Tool key(s) to install for: claude, codex, gemini, opencode, copilot, pi. Repeat or comma-separate.")
 	cmd.Flags().StringVar(&connectorFlag, "connector", "", "Connector for .archetipo/config.yaml: file|github")
+	cmd.Flags().BoolVar(&assumeYes, "yes", false, "Assume 'yes' to overwrite prompts (non-interactive).")
 	return cmd
 }
 
-func runInitProject(s streams, toolFlags []string, connectorFlag string) error {
+func runInitProject(s streams, toolFlags []string, connectorFlag string, assumeYes bool) error {
 	dataDir, err := discoverDataDir()
 	if err != nil {
 		return err
@@ -124,7 +126,7 @@ func runInitProject(s streams, toolFlags []string, connectorFlag string) error {
 		fmt.Fprintf(s.out, "  ✓ %s → %s\n", t.Name, target)
 	}
 
-	if err := installRuntimeAssets(s, runtimeDir, conn); err != nil {
+	if err := installRuntimeAssets(s, runtimeDir, conn, assumeYes); err != nil {
 		return err
 	}
 
@@ -273,7 +275,7 @@ func pickConnectorInteractive(s streams) (string, error) {
 	return "", iox.NewInvalidInput("invalid connector choice: "+line, "enter 1 or 2", nil)
 }
 
-func installRuntimeAssets(s streams, runtimeDir, connector string) error {
+func installRuntimeAssets(s streams, runtimeDir, connector string, assumeYes bool) error {
 	root := runtimeDir
 	if _, err := os.Stat(filepath.Join(root, "config.yaml")); err != nil {
 		// dataDir/runtime missing -> try repo .archetipo/
@@ -291,13 +293,17 @@ func installRuntimeAssets(s streams, runtimeDir, connector string) error {
 
 	configPath := ".archetipo/config.yaml"
 	if _, err := os.Stat(configPath); err == nil {
-		fmt.Fprintf(s.out, "\n  ! .archetipo/config.yaml already exists. Overwrite? [s/N] ")
-		line, err := readLine(s.in)
-		if err != nil {
-			return err
+		overwrite := assumeYes
+		if !overwrite {
+			fmt.Fprintf(s.out, "\n  ! .archetipo/config.yaml already exists. Overwrite? [s/N] ")
+			line, err := readLine(s.in)
+			if err != nil {
+				return err
+			}
+			ans := strings.ToLower(strings.TrimSpace(line))
+			overwrite = ans == "s" || ans == "y"
 		}
-		ans := strings.ToLower(strings.TrimSpace(line))
-		if ans != "s" && ans != "y" {
+		if !overwrite {
 			fmt.Fprintln(s.out, "  config left unchanged")
 		} else {
 			if err := writeConfig(filepath.Join(root, "config.yaml"), configPath, connector); err != nil {
