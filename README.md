@@ -4,16 +4,16 @@
 
 **English** · [Italiano](README.it.md)
 
-**An AI team at your side, from idea to finished product.**
+**From a rough product idea to reviewed code, with an AI product team that follows a real process.**
 
-A spec-driven workflow that turns your AI assistant into a product development squad: analyst, architect, developer, tester, reviewer, designer, each with their own role and voice.
+ARchetipo is a spec-driven workflow for AI coding agents. It gives your assistant a shared method, persistent project artifacts, and specialized roles for discovery, requirements, architecture, design, implementation, testing, and review.
 
 [![Status](https://img.shields.io/badge/status-beta-orange.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![Made for](https://img.shields.io/badge/made%20for-Claude%20Code%20%7C%20Codex%20%7C%20Gemini%20%7C%20OpenCode%20%7C%20Copilot-black.svg)](#)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
 
-[Quickstart](#quickstart) · [Skills](#skill-details) · [How it works](#the-workflow) · [Configuration](#configuration) · [FAQ](#faq)
+[Quickstart](#quickstart) · [Workflow](#workflow) · [Where to start](#where-to-start) · [CLI](#cli-and-commands) · [Configuration](#configuration) · [FAQ](#faq)
 
 </div>
 
@@ -21,133 +21,204 @@ A spec-driven workflow that turns your AI assistant into a product development s
 
 ## Why ARchetipo
 
-AI coding agents are powerful, but they tend to answer isolated prompts without a process. **ARchetipo introduces a workflow inspired by real product teams**, with specialized roles and persistent artifacts (PRD, backlog, technical plans, mockups).
+AI coding agents are fast, but a fast answer to an isolated prompt is not the same as a product process. **ARchetipo turns the agent into a disciplined product development squad**: it captures intent, writes specs, builds a backlog, plans each slice, implements it, tests it, and leaves durable artifacts behind.
 
-- **A process, not a prompt.** From discovery to code production, every phase has its own skill.
-- **Tool-agnostic.** The same skills work on Claude Code, Codex, Gemini CLI, OpenCode, and GitHub Copilot.
-- **Autonomous when needed.** The flow can be guided step-by-step or launched on autopilot across the whole backlog.
+- **A workflow, not prompt lore.** Every phase has a skill, a role, a contract, and an output that feeds the next step.
+- **Spec-driven by default.** The `spec -> plan -> implement` loop repeats for each valuable slice until the product is done.
+- **Persistent project memory.** PRD, backlog, story files, plans, mockups, and test results live in your repo or in the configured connector.
+- **Tool-agnostic.** The same product method works with Claude Code, Codex, Gemini CLI, OpenCode, and GitHub Copilot.
+- **Language-aware.** Skills automatically follow the language of the conversation: write in English, get English artifacts; write in Italian, get Italian artifacts.
 
 ---
 
 ## Quickstart
 
-### 1. Install the CLI once (global)
+### 1. Install the CLI once
 
 ```bash
-npm i -g @techreloaded/archetipo
+npm install -g @techreloaded/archetipo
 ```
 
-Single install, works on macOS, Linux and Windows. Updates with `archetipo update`.
+One global install works on macOS, Linux, and Windows. Update it later with:
 
-> On Linux, if `npm i -g` complains about permissions, set a user-owned
-> prefix once: `npm config set prefix ~/.npm-global` and add
-> `~/.npm-global/bin` to your `PATH`.
+```bash
+archetipo update
+```
 
-### 2. Initialise a project
+> On Linux, if `npm install -g` reports permission problems, set a user-owned prefix once:
+> `npm config set prefix ~/.npm-global`, then add `~/.npm-global/bin` to your `PATH`.
+
+### 2. Initialize a project
 
 ```bash
 cd my-project
-archetipo init                                      # interactive: pick tools + connector
+archetipo init
+
 # or non-interactive:
 archetipo init --tool claude --connector file
 ```
 
-`init` copies the ARchetipo skills under the chosen tool's directory
-(`.claude/skills/`, `.gemini/skills/`, …) and writes
-`.archetipo/config.yaml` and `.archetipo/shared-runtime.md` in the project.
+`archetipo init` copies the ARchetipo skills into the selected AI tool directory, for example `.claude/skills/` or `.gemini/skills/`, and creates:
+
+- `.archetipo/config.yaml`
+- `.archetipo/shared-runtime.md`
+
+After that, use the `/archetipo-*` skills inside your AI coding agent. The skills call the CLI in the background when they need to read or persist workflow artifacts.
 
 ---
 
-## The workflow
+## Workflow
 
-ARchetipo is a set of **skills** that compose a **workflow**. Each skill embodies one phase of the process, inspired by the **Spec-Driven Development** methodology: the `spec → plan → implement` cycle repeats continuously for each product increment.
-
+ARchetipo implements Spec-Driven Development: the spec is the contract, and each product increment moves through `spec -> plan -> implement`.
 
 ```mermaid
 flowchart LR
-    I["<b>Inception</b><br/><i>→ PRD</i>"] --> S
-    I -. initial mockup .-> D["<b>Design</b><br/><i>→ mockup</i>"]
+    I["<b>Inception</b><br/><i>docs/PRD.md</i>"] --> S
+    I -. optional concept .-> D["<b>Design</b><br/><i>docs/mockups/</i>"]
 
     subgraph Loop["Spec-Driven Loop"]
         direction TB
-        S["<b>Spec</b><br/><i>→ backlog</i>"] --> P["<b>Plan</b><br/><i>→ technical plan</i>"]
-        P --> IM["<b>Implement</b><br/><i>→ code + tests</i>"]
+        S["<b>Spec</b><br/><i>.archetipo/backlog.yaml<br/>.archetipo/stories/</i>"] --> P["<b>Plan</b><br/><i>.archetipo/plans/</i>"]
+        P --> IM["<b>Implement</b><br/><i>code + tests + review</i>"]
         IM -. next story .-> S
     end
 
     P -. UI needed .-> D
-
-    classDef oneshot fill:#eef,stroke:#557,stroke-width:1px,color:#000;
-    classDef loop fill:#efe,stroke:#575,stroke-width:1px,color:#000;
-    classDef aside fill:#fef,stroke:#755,stroke-width:1px,color:#000;
-    class I oneshot;
-    class S,P,IM loop;
-    class D aside;
 ```
 
-- **Inception** (`/archetipo-inception`) is one-shot: it runs product discovery and produces a `PRD` (Product Requirements Document) covering vision, personas, MVP, architecture, and functional requirements.
-- **Spec** (`/archetipo-spec`) opens the iterative loop. It generates the initial `Backlog` from the `PRD`, or extends it with new user stories.
-- **Plan** (`/archetipo-plan`) plans a single story. It handles technical analysis, task breakdown, and test strategy. If the story requires new UI, it automatically invokes Design.
-- **Implement** (`/archetipo-implement`) executes the plan. It produces code and tests, runs a rigorous code review, and hands the story off for user review.
-- **Design** produces distinctive frontend mockups. It is invoked by `/archetipo-plan` when new UI is needed for a feature, or directly via `/archetipo-design` to explore visual concepts without touching the application code.
+| Step | Skill | Output | What happens |
+|---|---|---|---|
+| 1. Discovery | `/archetipo-inception` | `docs/PRD.md` | Defines product vision, scope, personas, functional requirements, and core architecture. |
+| 2. Visual concept, optional | `/archetipo-design` | `docs/mockups/` | Creates isolated HTML/CSS mockups without touching application code. |
+| 3. Backlog | `/archetipo-spec` | `.archetipo/backlog.yaml`, `.archetipo/stories/` | Converts the PRD into INVEST-compliant user stories or extends an existing backlog. |
+| 4. Planning | `/archetipo-plan US-001` | `.archetipo/plans/US-001-plan.yaml` | Produces the technical solution, ordered tasks, dependencies, and test strategy. |
+| 5. Code | `/archetipo-implement US-001` | Code, tests, review notes | Executes the plan, runs tests, performs review, and moves the story toward human approval. |
 
-The `Spec → Plan → Implement` cycle repeats for every feature.
+### Workflow states
 
-### The team
+Stories move through standardized states. ARchetipo automates the loop, while final acceptance stays human.
 
-In every phase of ARchetipo, you will work with different AI personas, each with a clear role and set of skills.
+| State | Meaning | Transition |
+|---|---|---|
+| `TODO` | Story exists in the backlog and has not been planned yet. | Created by spec |
+| `PLANNED` | Technical planning is complete. | Set by plan |
+| `IN PROGRESS` | Implementation has started. | Set by implement |
+| `REVIEW` | Code review and tests are complete; ready for human review. | Set by implement |
+| `DONE` | Story accepted and released. | Manual only |
+
+### The AI team
+
+ARchetipo personas are not theater; they are lenses that make the process visible.
 
 | Persona | Role | Main expertise |
 |---|---|---|
-| 💎 **Andrea** | Product Manager | Vision, personas, MVP scope |
-| 🧭 **Costanza** | Business Strategist | Brainstorming and discovery |
-| 🔎 **Emanuele** | Requirements Analyst | Clarifies acceptance criteria and edge cases |
-| 📐 **Leonardo** | Architect | Technical solution and architectural decisions |
-| 🔧 **Ugo** | Full-Stack Developer | Implementation and task breakdown |
-| 🧪 **Mina** | Test Architect | Test strategy and coverage |
-| 🔍 **Cesare** | Code Reviewer | Quality, security, adherence to the plan |
-| ✨ **Livia** | UX Designer | Mockups and visual language |
-
-### Connector architecture
-
-Skills don't know **where** artifacts live: they delegate persistence to a configurable **connector** through the `archetipo` CLI.
-
-- **Runtime rules** → `.archetipo/shared-runtime.md` (JSON envelopes, error handling, CLI discipline)
-- **Operations** → explicit `archetipo ...` commands embedded in each skill
-
-Switching connectors happens through `.archetipo/config.yaml`, without touching the skills' workflow logic.
-
-| Connector | Where artifacts land |
-|---|---|
-| `file` *(default)* | Local markdown files in the repo |
-| `github` | Issues + GitHub Projects v2 |
-| *custom* | Linear, Jira, Notion, … (extensible) |
+| Andrea | Product Manager | Vision, personas, MVP scope |
+| Costanza | Business Strategist | Discovery, positioning, product hypotheses |
+| Emanuele | Requirements Analyst | Acceptance criteria, edge cases, story quality |
+| Leonardo | Architect | Technical solution and architectural decisions |
+| Ugo | Full-Stack Developer | Implementation and task breakdown |
+| Mina | Test Architect | Test strategy and coverage |
+| Cesare | Code Reviewer | Quality, security, adherence to the plan |
+| Livia | UX Designer | Mockups and visual language |
 
 ---
 
-## Skill details
+## Where to start
+
+Use this decision guide inside your AI coding agent:
+
+| Question | If the answer is no | If the answer is yes |
+|---|---|---|
+| Do you already have a PRD? | Run `/archetipo-inception`. | Continue. |
+| Do you want visual concepts before development? | Skip design for now. | Run `/archetipo-design`. |
+| Do you already have a backlog with user stories? | Run `/archetipo-spec`. | Continue. |
+| Are the stories already `PLANNED`? | Run `/archetipo-plan US-001` on a `TODO` story. | Continue. |
+| Is a story ready for implementation? | Plan it first. | Run `/archetipo-implement US-001`. |
+
+For batch work, `/archetipo-autopilot` can run the plan and implement pipeline across eligible backlog stories with filters such as epic, priority, maximum story count, or stop conditions.
+
+---
+
+## CLI and commands
+
+ARchetipo uses a deterministic Go CLI, `archetipo`, for persistence and connector operations. In normal use you speak to the skills; the skills call these commands behind the scenes.
+
+| Command | Purpose |
+|---|---|
+| `archetipo init` | Installs ARchetipo into the current project and creates `.archetipo/config.yaml` plus `.archetipo/shared-runtime.md`. |
+| `archetipo viewer` | Starts a local Kanban viewer for `.archetipo/backlog.yaml`, `.archetipo/stories/`, and `.archetipo/plans/`. |
+| `archetipo config` | Initializes the connector and prints metadata. |
+| `archetipo prd write` | Saves PRD markdown from stdin. |
+| `archetipo backlog show` | Reads backlog items and summary metadata. |
+| `archetipo story add --file stories.yaml` | Creates or extends the backlog with user stories. |
+| `archetipo story show US-001` | Reads one story and its tasks. |
+| `archetipo story show --status TODO` | Auto-selects the first eligible story by status. |
+| `archetipo story plan US-001 --file plan.yaml` | Saves the implementation plan and moves the story to `PLANNED`. |
+| `archetipo story start US-001` | Moves a planned story to `IN PROGRESS`. |
+| `archetipo story review US-001` | Moves a story to `REVIEW` and can attach a final comment. |
+| `archetipo task done US-001 TASK-01` | Marks one task as completed. |
+| `archetipo board move US-001 --to review` | Reorders or moves a story across workflow columns. |
+
+The CLI reads `.archetipo/config.yaml` from the project to choose the active connector and artifact paths.
+
+---
+
+## Connectors
+
+Skills never decide where artifacts live. They apply the shared runtime rules, call explicit CLI commands, and let the configured connector persist the result.
+
+| Connector | Where artifacts live | Best for |
+|---|---|---|
+| `file` | Local project files under `.archetipo/` plus `docs/PRD.md` and `docs/mockups/` | Solo work, early product phases, offline workflows |
+| `github` | GitHub Issues plus GitHub Projects v2 | Team tracking, cloud collaboration, project board workflows |
+
+### `file` connector
+
+- Backlog: `.archetipo/backlog.yaml`
+- Story documents: `.archetipo/stories/US-XXX.yaml`
+- Plans: `.archetipo/plans/US-XXX-plan.yaml`
+- PRD: `docs/PRD.md`
+- Mockups: `docs/mockups/`
+- Test results: `docs/test-results/`
+
+No authentication is required. Everything is local and versionable.
+
+### `github` connector
+
+- Backlog items become GitHub Issues on a GitHub Projects v2 board.
+- Story tasks are created as linked sub-issues.
+- Plans are added to the parent story issue body.
+- Status transitions are managed through Project custom fields.
+- Requires the `gh` CLI authenticated with `repo` and `project` scopes.
+
+The CLI architecture is extensible, but the built-in connectors today are `file` and `github`.
+
+---
+
+## Skill reference
 
 | Skill | Purpose | Typical triggers |
 |---|---|---|
-| **`archetipo-inception`** | Interactive facilitation of product discovery and PRD generation (vision, personas, MVP, architecture, functional requirements). | "define the product", "product idea", "write a PRD" |
-| **`archetipo-spec`** | Create the initial backlog from the PRD **or** add new user stories to an existing backlog. Mode is auto-detected. | "create the backlog", "add a story", "we need a feature for…" |
-| **`archetipo-design`** | Generate distinctive frontend mockups, isolated in `docs/mockups/`. Never touches application code. | "make me a mockup", "dashboard concept", "landing page" |
-| **`archetipo-plan`** | Technical planning of a user story: analysis, architectural solution, task breakdown, test strategy (including e2e when needed). | "plan US-005", "how do we build this?", "break the story into tasks" |
-| **`archetipo-implement`** | Guided implementation of the planned story: code, tests, suite execution, rigorous code review, fix loop, transition to `REVIEW`. | "implement US-005", "run the next ready story" |
+| `archetipo-inception` | Facilitates product discovery and writes the PRD. | "define the product", "product idea", "write a PRD" |
+| `archetipo-design` | Produces isolated frontend mockups in `docs/mockups/`. | "make a mockup", "dashboard concept", "landing page" |
+| `archetipo-spec` | Creates or extends the backlog from product intent. | "create the backlog", "add a story", "we need a feature for..." |
+| `archetipo-plan` | Plans one user story with architecture, tasks, dependencies, and tests. | "plan US-005", "how do we build this?", "break this into tasks" |
+| `archetipo-implement` | Executes a planned story through code, tests, review, and handoff. | "implement US-005", "run the next ready story" |
+| `archetipo-autopilot` | Runs planning and implementation across multiple eligible stories. | "run everything", "autopilot the backlog", "implement all stories" |
 
 ---
 
 ## Configuration
 
-After installation, `.archetipo/config.yaml` holds the project parameters:
+`.archetipo/config.yaml` defines connector, paths, and workflow states. Missing keys are filled with official defaults.
 
 ```yaml
-connector: file              # file | github
+connector: file   # file | github
 
 paths:
   prd: docs/PRD.md
-  backlog: docs/BACKLOG.md   # file connector only
-  planning: docs/planning/
+  backlog: .archetipo/backlog.yaml   # file connector only
+  planning: .archetipo/plans/
   mockups: docs/mockups/
   test_results: docs/test-results/
 
@@ -157,70 +228,61 @@ workflow:
     planned: PLANNED
     in_progress: IN PROGRESS
     review: REVIEW
-    done: DONE               # manual transition
+    done: DONE   # no skill moves a story to DONE automatically
 
-github:                      # github connector only
-  # owner: auto-detected
-  # project_number: auto-detected
+github:
+  # owner: auto-detected from repo
+  # project_number: auto-detected from repo
 ```
-
-### Available connectors
-
-#### `file` *(default)*
-
-- Backlog in a single markdown file (`docs/BACKLOG.md`).
-- Technical plans in `docs/planning/US-XXX.md`.
-- Zero external dependencies, everything versioned with your repo.
-
-#### `github`
-
-- Backlog as issues on a GitHub Project v2.
-- Stories and tasks linked via sub-issues.
-- State transitions as Project custom fields.
-- Requires `gh` CLI authenticated with `repo` + `project` scopes.
-
-The CLI is the only backend surface. Each skill documents the exact `archetipo` sub-commands it uses.
 
 ---
 
 ## Philosophy
 
-- **Persistent output.** Every phase produces artifacts that live in the repo (or in the connector system). The next command, or the next working day, starts from there.
-- **Responsible autonomy.** Skills only stop at real blockers (external dependencies, CLI preconditions, real ambiguity). Local adjustments, mechanical fixes, and test updates don't require confirmation.
-- **Tool-agnostic and connector-agnostic.** Switching the AI agent or tracking system shouldn't rewrite the process.
+- **The team is a lens, not a costume.** Each persona applies a different kind of scrutiny so the work is easier to reason about.
+- **Lean context.** Skills load only what they need: shared runtime, config, CLI contracts, then the specific templates for the phase.
+- **Persistent output.** Every phase produces artifacts that survive the chat session and feed the next command.
+- **Responsible autonomy.** Skills stop for real blockers: external dependencies, missing preconditions, or ambiguity that changes the contract.
+- **Tool and connector agnostic.** Changing AI agent or tracking system should not rewrite the product process.
 
 ---
 
 ## FAQ
 
 <details>
-<summary><b>Do I have to use all the skills?</b></summary>
+<summary><b>Do I need a PRD to start?</b></summary>
 
-No. Every skill can be used in isolation. You can start directly from `archetipo-plan` if you already have a hand-written backlog, or use only `archetipo-design` to explore visual concepts.
+For a strong backlog, yes. If you do not have one yet, run `/archetipo-inception` first.
+</details>
+
+<details>
+<summary><b>Can I add stories without rebuilding the whole backlog?</b></summary>
+
+Yes. `/archetipo-spec` detects whether it is creating the initial backlog or extending an existing one.
+</details>
+
+<details>
+<summary><b>Do design mockups become application code?</b></summary>
+
+No. `/archetipo-design` writes isolated mockups in `docs/mockups/`. Implementation can use them as visual references, but the mockup files do not touch production code.
 </details>
 
 <details>
 <summary><b>Can I use ARchetipo on an existing project?</b></summary>
 
-Yes. `archetipo-spec` adds stories to an existing backlog. `archetipo-plan` and `archetipo-implement` work on any existing story, regardless of how it was created.
+Yes. Add or refine stories with `/archetipo-spec`, plan them with `/archetipo-plan`, then implement them with `/archetipo-implement`.
 </details>
 
 <details>
-<summary><b>Are artifacts bound to a specific format?</b></summary>
+<summary><b>What if my AI tool does not support subagents?</b></summary>
 
-The templates in `references/` are editable. If you use the `github` connector, issues follow a precise layout — see `.archetipo/connectors/github.md`.
-</details>
-
-<details>
-<summary><b>Why the Italian names (Emanuele, Leonardo, Ugo, Mina, Cesare, Livia)?</b></summary>
-
-ARchetipo was born in Italy and keeps a recognizable voice: a team with proper names works better than "the analyst agent" / "the architect agent". Skills still speak the language of the conversation (auto-detected).
+The main skills still work in-context. Subagents improve separation of duties, but they are not required for the workflow.
 </details>
 
 <details>
 <summary><b>How do I debug a skill?</b></summary>
 
-Every skill declares which references it loads. Turn on your AI tool's verbose mode and verify that the expected `archetipo ...` commands are executed in the expected order.
+Each skill declares the references it loads and the CLI commands it uses. Turn on your AI tool's verbose mode and check that the expected `archetipo ...` commands run in order.
 </details>
 
 ---
@@ -233,7 +295,7 @@ MIT © [techreloaded](https://github.com/techreloaded-ar)
 
 <div align="center">
 
-**If ARchetipo is useful to you, leave a ⭐ on the repo and share it with your team.**
+**If ARchetipo helps your team build with AI more deliberately, leave a star and share it.**
 
 [Report bug](https://github.com/techreloaded-ar/ARchetipo/issues) · [Request feature](https://github.com/techreloaded-ar/ARchetipo/issues) · [Discussions](https://github.com/techreloaded-ar/ARchetipo/discussions)
 
