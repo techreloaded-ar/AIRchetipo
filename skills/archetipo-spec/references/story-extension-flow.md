@@ -52,7 +52,7 @@ With you today:
 
 ### Step 2 - Backlog and PRD Loading
 
-Run `archetipo backlog show` and extract from the returned envelope:
+Run `archetipo spec list` and extract from the returned envelope:
 - existing epics from `data.summary.epics` (`EP-XXX` + titles)
 - the last `US-XXX` code used from `data.summary.last_code`
 - ticket statuses already in use, scanning `data.items` for the `status` field of each story
@@ -152,7 +152,7 @@ Proceed with adding them? Or tell me what to change.
 
 ## Phase 3 - Output
 
-Construct the full JSON payload string in your own context (not via shell heredoc or inline script). Choose a unique temp filename using the new story codes (e.g. `tmp-payload-US-016-US-018.json`). Write the file to `.archetipo/` using your file-writing tool. Then invoke `archetipo story add --file <path>`. After the CLI exits, delete the temp file.
+Construct the full JSON payload string in your own context (not via shell heredoc or inline script). Choose a unique temp filename using the new story codes (e.g. `tmp-payload-US-016-US-018.json`). Write the file to `.archetipo/` using your file-writing tool. Then invoke `archetipo spec add --file <path>`. After the CLI exits, delete the temp file.
 
 > **⚠️ Cross-platform warning:** Do NOT generate the JSON via shell scripting (PowerShell heredoc, bash `cat <<EOF`, or pipe-to-stdin). Shell heredocs break when markdown bodies contain `$`, `{`, or `` ` `` characters. Shell variable interpolation converts objects to `[object Object]`. Use your file-writing tool to write the JSON file directly — this works correctly on every OS.
 >

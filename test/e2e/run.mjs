@@ -302,10 +302,6 @@ async function runConfiguredScenario({ scenario, connector, configPath, timeoutM
     await verifyInstallation(context);
     logRunStepDone(scenario.id, "verify-install", "Installed files verified");
 
-    logRunStepStart(scenario.id, "config", "Reading project metadata from local CLI");
-    await readCliEnvelope(context, "config", ["config"]);
-    logRunStepDone(scenario.id, "config", "CLI config completed");
-
     for (let index = 0; index < scenario.prompts.length; index += 1) {
       const prompt = scenario.prompts[index];
       const step = `prompt-${index + 1}`;
@@ -463,24 +459,6 @@ function deriveSkillNames(prompts) {
 
 function deriveSkillName(prompt) {
   return String(prompt).trim().split(/\s+/)[0] ?? "";
-}
-
-async function readCliEnvelope(context, step, cliArgs) {
-  const result = await runReportedCommand({
-    ...context,
-    step,
-    command: context.cliBinaryPath,
-    args: cliArgs,
-  });
-  if (!result.ok) {
-    throw new Error(`CLI command failed (${cliArgs.join(" ")}): ${result.stderr || result.stdout}`);
-  }
-
-  try {
-    return JSON.parse(result.stdout);
-  } catch (error) {
-    throw new Error(`Invalid JSON from archetipo ${cliArgs.join(" ")}: ${error.message}`);
-  }
 }
 
 function buildPromptInvocation(context, prompt) {

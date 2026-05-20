@@ -69,11 +69,9 @@ func newRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		newUninstallCmd(s),
 		newUpdateCmd(s),
 		newPRDCmd(s),
-		newBacklogCmd(s),
-		newBoardCmd(s),
-		newStoryCmd(s),
+		newSpecCmd(s),
 		newTaskCmd(s),
-		newViewerCmd(s),
+		newViewCmd(s),
 	)
 	return cmd
 }

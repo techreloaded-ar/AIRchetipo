@@ -8,12 +8,25 @@ import (
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/connector"
 )
 
-// newConfigCmd implements `archetipo config` -> initialize_connector.
+// newConfigCmd builds `archetipo config ...` as a command group. The only
+// leaf today is `config show` (initialize_connector), but the group is in
+// place to host future read/edit/validate sub-commands without breaking the
+// surface again.
+func newConfigCmd(s streams) *cobra.Command {
+	root := &cobra.Command{
+		Use:   "config",
+		Short: "Configuration operations",
+	}
+	root.AddCommand(newConfigShowCmd(s))
+	return root
+}
+
+// newConfigShowCmd implements `archetipo config show` -> initialize_connector.
 //
 // Output kind: "setup"
-func newConfigCmd(s streams) *cobra.Command {
+func newConfigShowCmd(s streams) *cobra.Command {
 	return &cobra.Command{
-		Use:   "config",
+		Use:   "show",
 		Short: "Initialize the connector and emit metadata",
 		Long:  "Authenticates (when applicable), detects repo/project, and prints connector metadata as JSON on stdout.",
 		Args:  cobra.NoArgs,

@@ -23,14 +23,14 @@ agents:
 
 scenarios:
   spec-plan:
-    agent: pi-olmx-qwen36
+    agent: pi-go-ds4-flash
     prd: ../PRD.md
     prompts:
       - /archetipo-spec
       - /archetipo-plan US-001
 
   spec:
-    agent: pi-olmx-qwen36
+    agent: pi-go-ds4-flash
     prd: ../PRD.md
     prompts:
       - /archetipo-spec

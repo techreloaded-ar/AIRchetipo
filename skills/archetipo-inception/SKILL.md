@@ -15,10 +15,10 @@ Read `.archetipo/shared-runtime.md` for Language Policy, Assumptions and Questio
 
 ## Config Loading & Connector Dispatch
 
-1. Run `archetipo config` and parse the stdout JSON envelope (`{"schema":"archetipo/v1","kind":"setup","data":{...}}`).
+1. Run `archetipo config show` and parse the stdout JSON envelope (`{"schema":"archetipo/v1","kind":"setup","data":{...}}`).
 2. On failure, parse stderr as `{"schema":"archetipo/v1","kind":"error","error":{"code":"E_*","message":"...","hint":"..."}}` and branch on `error.code`.
 3. This skill uses only these CLI operations:
-   - `archetipo config`
+   - `archetipo config show`
    - `archetipo prd write`
 
 If the CLI cannot find `.archetipo/config.yaml`, it falls back to its built-in defaults for connector, paths, and workflow statuses.

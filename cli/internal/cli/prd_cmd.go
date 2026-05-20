@@ -2,15 +2,14 @@ package cli
 
 import (
 	"context"
-	"io"
 
 	"github.com/spf13/cobra"
 
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/connector"
-	"github.com/techreloaded-ar/ARchetipo/cli/internal/iox"
 )
 
-// newPRDCmd builds `archetipo prd write` -> save_prd. Stdin is the raw markdown.
+// newPRDCmd builds `archetipo prd write` -> save_prd. The markdown body is
+// read from --file (or stdin when the flag is omitted or set to "-").
 func newPRDCmd(s streams) *cobra.Command {
 	root := &cobra.Command{Use: "prd", Short: "PRD operations"}
 	root.AddCommand(newPRDWriteCmd(s))
@@ -18,18 +17,21 @@ func newPRDCmd(s streams) *cobra.Command {
 }
 
 func newPRDWriteCmd(s streams) *cobra.Command {
-	return &cobra.Command{
+	var filePath string
+	cmd := &cobra.Command{
 		Use:   "write",
-		Short: "Persist the PRD markdown read from stdin",
+		Short: "Persist the PRD markdown read from --file or stdin",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			body, err := io.ReadAll(s.in)
+			body, err := readRawInput(s.in, filePath)
 			if err != nil {
-				return iox.NewInvalidInput("reading stdin", "", err)
+				return err
 			}
 			return withConnector(cmd, s, "write_result", func(ctx context.Context, c connector.Connector) (any, error) {
 				return c.SavePRD(ctx, string(body))
 			})
 		},
 	}
+	cmd.Flags().StringVar(&filePath, "file", "", "path to the PRD markdown, or - for stdin (default: stdin)")
+	return cmd
 }

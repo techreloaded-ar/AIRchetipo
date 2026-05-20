@@ -146,18 +146,18 @@ ARchetipo usa una CLI deterministica scritta in Go, `archetipo`, per persistenza
 | Comando | Scopo |
 |---|---|
 | `archetipo init` | Installa ARchetipo nel progetto corrente e crea `.archetipo/config.yaml` più `.archetipo/shared-runtime.md`. |
-| `archetipo viewer` | Avvia una board Kanban locale per `.archetipo/backlog.yaml`, `.archetipo/stories/` e `.archetipo/plans/`. |
-| `archetipo config` | Inizializza il connector e stampa i metadati. |
-| `archetipo prd write` | Salva da stdin il markdown del PRD. |
-| `archetipo backlog show` | Legge backlog e metadati riassuntivi. |
-| `archetipo story add --file stories.yaml` | Crea o estende il backlog con user story. |
-| `archetipo story show US-001` | Legge una story e i suoi task. |
-| `archetipo story show --status TODO` | Seleziona automaticamente la prima story eleggibile per stato. |
-| `archetipo story plan US-001 --file plan.yaml` | Salva il piano di implementazione e porta la story in `PLANNED`. |
-| `archetipo story start US-001` | Porta una story pianificata in `IN PROGRESS`. |
-| `archetipo story review US-001` | Porta una story in `REVIEW` e può allegare un commento finale. |
+| `archetipo view` | Avvia una board Kanban locale per `.archetipo/backlog.yaml`, `.archetipo/stories/` e `.archetipo/plans/`. |
+| `archetipo config show` | Inizializza il connector e stampa i metadati. |
+| `archetipo prd write [--file PRD.md]` | Salva il markdown del PRD da `--file` o stdin. |
+| `archetipo spec list [--status STATUS]` | Legge backlog e metadati riassuntivi, opzionalmente filtrato per stato. |
+| `archetipo spec add --file stories.yaml` | Crea o estende il backlog con user story. |
+| `archetipo spec show US-001` | Legge una story e i suoi task per codice. |
+| `archetipo spec next --status TODO` | Seleziona automaticamente la prima story eleggibile per stato. |
+| `archetipo spec plan US-001 --file plan.yaml` | Salva il piano di implementazione e porta la story in `PLANNED`. |
+| `archetipo spec start US-001` | Porta una story pianificata in `IN PROGRESS`. |
+| `archetipo spec review US-001 [--file note.md]` | Porta una story in `REVIEW` e può allegare un commento finale. |
 | `archetipo task done US-001 TASK-01` | Marca un task come completato. |
-| `archetipo board move US-001 --to review` | Riordina o sposta una story tra colonne del workflow. |
+| `archetipo spec move US-001 --to review` | Riordina o sposta una story tra colonne del workflow. |
 
 La CLI legge `.archetipo/config.yaml` dal progetto per scegliere connector attivo e percorsi degli artefatti.
 

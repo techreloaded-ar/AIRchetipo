@@ -166,7 +166,7 @@ type Ref struct {
 // WriteResult is the canonical envelope-level data for write operations.
 //
 // Skipped lists the codes that the CLI intentionally did not write because
-// they would conflict with existing artifacts (e.g. `archetipo story add`
+// they would conflict with existing artifacts (e.g. `archetipo spec add`
 // idempotently skips stories whose code is already present in the backlog).
 type WriteResult struct {
 	OK      bool     `json:"ok" yaml:"ok"`
@@ -174,7 +174,7 @@ type WriteResult struct {
 	Skipped []string `json:"skipped,omitempty" yaml:"skipped,omitempty"`
 }
 
-// PlanInput is the stdin payload of `archetipo plan save`.
+// PlanInput is the stdin payload of `archetipo spec plan`.
 type PlanInput struct {
 	PlanBody string `json:"plan_body" yaml:"plan_body"`
 	Tasks    []Task `json:"tasks" yaml:"tasks"`

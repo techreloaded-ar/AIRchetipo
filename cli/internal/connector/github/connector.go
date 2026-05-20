@@ -867,7 +867,7 @@ func (c *Connector) idempotencyCheck(ctx context.Context) error {
 	if len(raw) > 0 {
 		return iox.NewConnector(iox.CodeConflict,
 			fmt.Sprintf("backlog already has %d archetipo-backlog issues", len(raw)),
-			"use `archetipo backlog append` to add to it, or close existing issues to recreate", nil)
+			"use `archetipo spec add` to add to it, or close existing issues to recreate", nil)
 	}
 	return nil
 }

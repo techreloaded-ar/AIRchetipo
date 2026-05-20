@@ -9,7 +9,7 @@ ARchetipo skills use `archetipo` as the only backend for PRD, backlog, plan, tas
 
 Common rules:
 
-- Run `archetipo config` at the start of every skill that needs project metadata or configured paths.
+- Run `archetipo config show` at the start of every skill that needs project metadata or configured paths.
 - Parse stdout as a JSON success envelope:
 
 ```json

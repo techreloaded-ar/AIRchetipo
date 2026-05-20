@@ -95,19 +95,19 @@ const planJSON = `{"plan_body":"## Plan\nDo the work","tasks":[
 	{"id":"TASK-02","title":"Test","type":"Test","status":"TODO"}
 ]}`
 
-func TestConfig(t *testing.T) {
+func TestConfigShow(t *testing.T) {
 	newProject(t)
-	res := runCLI(t, "", "config")
+	res := runCLI(t, "", "config", "show")
 	kind, _ := decodeOK(t, res)
 	if kind != "setup" {
 		t.Fatalf("expected kind=setup, got %s", kind)
 	}
 }
 
-func TestStoryAdd_EmptyBacklog(t *testing.T) {
+func TestSpecAdd_EmptyBacklog(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	res := runCLI(t, "", "story", "add", "--file", storiesFile)
+	res := runCLI(t, "", "spec", "add", "--file", storiesFile)
 	kind, data := decodeOK(t, res)
 	if kind != "write_result" {
 		t.Fatalf("expected kind=write_result, got %s", kind)
@@ -120,14 +120,14 @@ func TestStoryAdd_EmptyBacklog(t *testing.T) {
 	}
 }
 
-func TestStoryAdd_Idempotent(t *testing.T) {
+func TestSpecAdd_Idempotent(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	first := runCLI(t, "", "story", "add", "--file", storiesFile)
+	first := runCLI(t, "", "spec", "add", "--file", storiesFile)
 	if first.exit != 0 {
 		t.Fatalf("first add failed: %s", first.stderr.String())
 	}
-	second := runCLI(t, "", "story", "add", "--file", storiesFile)
+	second := runCLI(t, "", "spec", "add", "--file", storiesFile)
 	_, data := decodeOK(t, second)
 	skipped, _ := data["skipped"].([]any)
 	if len(skipped) != 2 {
@@ -138,10 +138,10 @@ func TestStoryAdd_Idempotent(t *testing.T) {
 	}
 }
 
-func TestStoryAdd_MixedSkipAndAppend(t *testing.T) {
+func TestSpecAdd_MixedSkipAndAppend(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
 	mixed := `{"stories":[
@@ -149,7 +149,7 @@ func TestStoryAdd_MixedSkipAndAppend(t *testing.T) {
 		{"code":"US-003","title":"new","priority":"LOW","story_points":1,"status":"TODO","epic":{"code":"EP-001","title":"Epic"}}
 	]}`
 	mixedFile := writeInputFile(t, "mixed.json", mixed)
-	res := runCLI(t, "", "story", "add", "--file", mixedFile)
+	res := runCLI(t, "", "spec", "add", "--file", mixedFile)
 	_, data := decodeOK(t, res)
 	skipped, _ := data["skipped"].([]any)
 	if len(skipped) != 1 || skipped[0] != "US-001" {
@@ -161,13 +161,13 @@ func TestStoryAdd_MixedSkipAndAppend(t *testing.T) {
 	}
 }
 
-func TestBacklogShow(t *testing.T) {
+func TestSpecList(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "backlog", "show")
+	res := runCLI(t, "", "spec", "list")
 	kind, data := decodeOK(t, res)
 	if kind != "backlog" {
 		t.Fatalf("expected kind=backlog, got %s", kind)
@@ -183,13 +183,13 @@ func TestBacklogShow(t *testing.T) {
 	}
 }
 
-func TestStoryShow_ByCode(t *testing.T) {
+func TestSpecShow_ByCode(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "story", "show", "US-001")
+	res := runCLI(t, "", "spec", "show", "US-001")
 	kind, data := decodeOK(t, res)
 	if kind != "story" {
 		t.Fatalf("expected kind=story, got %s", kind)
@@ -204,14 +204,26 @@ func TestStoryShow_ByCode(t *testing.T) {
 	}
 }
 
-func TestStoryShow_ByStatus(t *testing.T) {
+func TestSpecShow_MissingCodeRejected(t *testing.T) {
+	newProject(t)
+	res := runCLI(t, "", "spec", "show")
+	_, code := decodeError(t, res)
+	if code != iox.CodeInvalidInput {
+		t.Fatalf("expected E_INVALID_INPUT, got %s", code)
+	}
+}
+
+func TestSpecNext_AutoPickByStatus(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "story", "show", "--status", "TODO")
-	_, data := decodeOK(t, res)
+	res := runCLI(t, "", "spec", "next", "--status", "TODO")
+	kind, data := decodeOK(t, res)
+	if kind != "story" {
+		t.Fatalf("expected kind=story, got %s", kind)
+	}
 	story, _ := data["story"].(map[string]any)
 	// Auto-pick: priority HIGH first → US-001 (HIGH) before US-002 (MEDIUM).
 	if story["code"] != "US-001" {
@@ -219,37 +231,28 @@ func TestStoryShow_ByStatus(t *testing.T) {
 	}
 }
 
-func TestStoryShow_BothFormsRejected(t *testing.T) {
+func TestSpecNext_MissingStatusRejected(t *testing.T) {
 	newProject(t)
-	res := runCLI(t, "", "story", "show", "US-001", "--status", "TODO")
+	res := runCLI(t, "", "spec", "next")
 	_, code := decodeError(t, res)
 	if code != iox.CodeInvalidInput {
 		t.Fatalf("expected E_INVALID_INPUT, got %s", code)
 	}
 }
 
-func TestStoryShow_NeitherFormGiven(t *testing.T) {
-	newProject(t)
-	res := runCLI(t, "", "story", "show")
-	_, code := decodeError(t, res)
-	if code != iox.CodeInvalidInput {
-		t.Fatalf("expected E_INVALID_INPUT, got %s", code)
-	}
-}
-
-func TestStoryPlan_TODOToPlanned(t *testing.T) {
+func TestSpecPlan_TODOToPlanned(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
 	planFile := writeInputFile(t, "plan.json", planJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "story", "plan", "US-001", "--file", planFile)
+	res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile)
 	if res.exit != 0 {
 		t.Fatalf("plan failed: %s", res.stderr.String())
 	}
 	// Verify status moved by reading it back.
-	show := runCLI(t, "", "story", "show", "US-001")
+	show := runCLI(t, "", "spec", "show", "US-001")
 	_, data := decodeOK(t, show)
 	story, _ := data["story"].(map[string]any)
 	if story["status"] != "PLANNED" {
@@ -264,29 +267,29 @@ func TestStoryPlan_TODOToPlanned(t *testing.T) {
 	}
 }
 
-func TestStoryPlan_IdempotentOnPlanned(t *testing.T) {
+func TestSpecPlan_IdempotentOnPlanned(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
 	planFile := writeInputFile(t, "plan.json", planJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	if res := runCLI(t, "", "story", "plan", "US-001", "--file", planFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile); res.exit != 0 {
 		t.Fatalf("first plan failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "story", "plan", "US-001", "--file", planFile)
+	res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile)
 	if res.exit != 0 {
 		t.Fatalf("re-plan should be idempotent, got exit %d, stderr=%s", res.exit, res.stderr.String())
 	}
 }
 
-func TestStoryPlan_FromStdin(t *testing.T) {
+func TestSpecPlan_FromStdin(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, planJSON, "story", "plan", "US-001", "--file", "-")
+	res := runCLI(t, planJSON, "spec", "plan", "US-001", "--file", "-")
 	_, data := decodeOK(t, res)
 	refs, _ := data["refs"].([]any)
 	if len(refs) == 0 {
@@ -303,58 +306,58 @@ func TestStoryPlan_FromStdin(t *testing.T) {
 	}
 }
 
-func TestStoryStart_ConflictFromTodo(t *testing.T) {
+func TestSpecStart_ConflictFromTodo(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "story", "start", "US-001")
+	res := runCLI(t, "", "spec", "start", "US-001")
 	_, code := decodeError(t, res)
 	if code != iox.CodeConflict {
 		t.Fatalf("expected E_CONFLICT, got %s", code)
 	}
 }
 
-func TestStoryStart_HappyPath(t *testing.T) {
+func TestSpecStart_HappyPath(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
 	planFile := writeInputFile(t, "plan.json", planJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	if res := runCLI(t, "", "story", "plan", "US-001", "--file", planFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile); res.exit != 0 {
 		t.Fatalf("plan failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "", "story", "start", "US-001")
+	res := runCLI(t, "", "spec", "start", "US-001")
 	if res.exit != 0 {
 		t.Fatalf("start failed: %s", res.stderr.String())
 	}
 	// Re-running is idempotent.
-	again := runCLI(t, "", "story", "start", "US-001")
+	again := runCLI(t, "", "spec", "start", "US-001")
 	if again.exit != 0 {
 		t.Fatalf("idempotent start failed: %s", again.stderr.String())
 	}
 }
 
-func TestStoryReview_HappyPathWithComment(t *testing.T) {
+func TestSpecReview_HappyPathWithComment(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
 	planFile := writeInputFile(t, "plan.json", planJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	if res := runCLI(t, "", "story", "plan", "US-001", "--file", planFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile); res.exit != 0 {
 		t.Fatalf("plan failed: %s", res.stderr.String())
 	}
-	if res := runCLI(t, "", "story", "start", "US-001"); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "start", "US-001"); res.exit != 0 {
 		t.Fatalf("start failed: %s", res.stderr.String())
 	}
-	res := runCLI(t, "Closing notes for the story", "story", "review", "US-001")
+	res := runCLI(t, "Closing notes for the story", "spec", "review", "US-001")
 	if res.exit != 0 {
 		t.Fatalf("review failed: %s", res.stderr.String())
 	}
-	show := runCLI(t, "", "story", "show", "US-001")
+	show := runCLI(t, "", "spec", "show", "US-001")
 	_, data := decodeOK(t, show)
 	story, _ := data["story"].(map[string]any)
 	if story["status"] != "REVIEW" {
@@ -362,14 +365,34 @@ func TestStoryReview_HappyPathWithComment(t *testing.T) {
 	}
 }
 
+func TestSpecReview_CommentFromFile(t *testing.T) {
+	newProject(t)
+	storiesFile := writeInputFile(t, "stories.json", storyJSON)
+	planFile := writeInputFile(t, "plan.json", planJSON)
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
+		t.Fatalf("seed add failed: %s", res.stderr.String())
+	}
+	if res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile); res.exit != 0 {
+		t.Fatalf("plan failed: %s", res.stderr.String())
+	}
+	if res := runCLI(t, "", "spec", "start", "US-001"); res.exit != 0 {
+		t.Fatalf("start failed: %s", res.stderr.String())
+	}
+	commentFile := writeInputFile(t, "comment.md", "## Done\nShipping it.")
+	res := runCLI(t, "", "spec", "review", "US-001", "--file", commentFile)
+	if res.exit != 0 {
+		t.Fatalf("review failed: %s", res.stderr.String())
+	}
+}
+
 func TestTaskDone_Positional(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
 	planFile := writeInputFile(t, "plan.json", planJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	if res := runCLI(t, "", "story", "plan", "US-001", "--file", planFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "plan", "US-001", "--file", planFile); res.exit != 0 {
 		t.Fatalf("plan failed: %s", res.stderr.String())
 	}
 	res := runCLI(t, "", "task", "done", "US-001", "TASK-01")
@@ -378,26 +401,52 @@ func TestTaskDone_Positional(t *testing.T) {
 	}
 }
 
-func TestBoardMove_ChangesStatusAndOrder(t *testing.T) {
+func TestSpecMove_ChangesStatusAndOrder(t *testing.T) {
 	newProject(t)
 	storiesFile := writeInputFile(t, "stories.json", storyJSON)
-	if res := runCLI(t, "", "story", "add", "--file", storiesFile); res.exit != 0 {
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
 		t.Fatalf("seed add failed: %s", res.stderr.String())
 	}
-	if res := runCLI(t, "", "board", "move", "US-002", "--to", "review"); res.exit != 0 {
-		t.Fatalf("board move failed: %s", res.stderr.String())
+	if res := runCLI(t, "", "spec", "move", "US-002", "--to", "review"); res.exit != 0 {
+		t.Fatalf("spec move failed: %s", res.stderr.String())
 	}
-	show := runCLI(t, "", "story", "show", "US-002")
+	show := runCLI(t, "", "spec", "show", "US-002")
 	_, data := decodeOK(t, show)
 	story, _ := data["story"].(map[string]any)
 	if story["status"] != "REVIEW" {
-		t.Fatalf("expected REVIEW after board move, got %v", story["status"])
+		t.Fatalf("expected REVIEW after spec move, got %v", story["status"])
 	}
 }
 
-func TestPRDWrite(t *testing.T) {
+func TestSpecMove_InvalidToReturnsInvalidInput(t *testing.T) {
+	newProject(t)
+	storiesFile := writeInputFile(t, "stories.json", storyJSON)
+	if res := runCLI(t, "", "spec", "add", "--file", storiesFile); res.exit != 0 {
+		t.Fatalf("seed add failed: %s", res.stderr.String())
+	}
+	res := runCLI(t, "", "spec", "move", "US-001", "--to", "BOGUS")
+	_, code := decodeError(t, res)
+	if code != iox.CodeInvalidInput {
+		t.Fatalf("expected E_INVALID_INPUT, got %s", code)
+	}
+}
+
+func TestPRDWrite_FromStdin(t *testing.T) {
 	newProject(t)
 	res := runCLI(t, "# Product Vision\n\nMVP for early adopters.", "prd", "write")
+	kind, data := decodeOK(t, res)
+	if kind != "write_result" {
+		t.Fatalf("expected kind=write_result, got %s", kind)
+	}
+	if ok, _ := data["ok"].(bool); !ok {
+		t.Fatalf("expected ok=true, got %v", data["ok"])
+	}
+}
+
+func TestPRDWrite_FromFileFlag(t *testing.T) {
+	newProject(t)
+	prdFile := writeInputFile(t, "PRD.md", "# Product Vision\n\nFrom file.")
+	res := runCLI(t, "", "prd", "write", "--file", prdFile)
 	kind, data := decodeOK(t, res)
 	if kind != "write_result" {
 		t.Fatalf("expected kind=write_result, got %s", kind)

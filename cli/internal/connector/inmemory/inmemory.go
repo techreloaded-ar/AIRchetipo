@@ -68,7 +68,7 @@ func (c *Connector) SelectStory(ctx context.Context, q domain.SelectQuery) (doma
 		}
 		return domain.Story{}, iox.NewPrecondition(
 			fmt.Sprintf("story %s not found", q.StoryCode),
-			"check the backlog or run `archetipo backlog list`", nil)
+			"check the backlog or run `archetipo spec list`", nil)
 	}
 	eligible := make(map[domain.Status]struct{}, len(q.EligibleStatuses))
 	for _, st := range q.EligibleStatuses {
@@ -82,7 +82,7 @@ func (c *Connector) SelectStory(ctx context.Context, q domain.SelectQuery) (doma
 	}
 	if len(candidates) == 0 {
 		return domain.Story{}, iox.NewPrecondition("no eligible stories",
-			"adjust --eligible or run `archetipo backlog list`", nil)
+			"adjust --eligible or run `archetipo spec list`", nil)
 	}
 	domain.SortByPriorityThenCode(candidates)
 	return candidates[0], nil
@@ -153,7 +153,7 @@ func (c *Connector) SaveInitialBacklog(ctx context.Context, stories []domain.Sto
 	defer c.mu.Unlock()
 	if len(c.stories) > 0 {
 		return domain.WriteResult{}, iox.NewConnector(iox.CodeConflict,
-			"backlog is not empty", "use `archetipo backlog append` to add stories", nil)
+			"backlog is not empty", "use `archetipo spec add` to add stories", nil)
 	}
 	c.stories = append([]domain.Story(nil), stories...)
 	refs := make([]domain.Ref, 0, len(stories))

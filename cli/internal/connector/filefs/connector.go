@@ -80,7 +80,7 @@ func (c *Connector) SelectStory(ctx context.Context, q domain.SelectQuery) (doma
 		}
 		return domain.Story{}, iox.NewPrecondition(
 			fmt.Sprintf("story %s not found in backlog", q.StoryCode),
-			"check the backlog or run `archetipo backlog show`", nil,
+			"check the backlog or run `archetipo spec list`", nil,
 		)
 	}
 	eligible := map[domain.Status]struct{}{}
@@ -241,7 +241,7 @@ func (c *Connector) SaveInitialBacklog(ctx context.Context, stories []domain.Sto
 			return domain.WriteResult{}, iox.NewConnector(
 				iox.CodeConflict,
 				"backlog already exists with stories",
-				"use `archetipo story add` to extend it",
+				"use `archetipo spec add` to extend it",
 				nil,
 			)
 		}

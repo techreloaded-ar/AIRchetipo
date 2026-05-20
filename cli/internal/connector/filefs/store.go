@@ -206,7 +206,7 @@ func (c *Connector) readLegacyPlan(storyCode string) (planDoc, error) {
 		if errors.Is(err, fs.ErrNotExist) {
 			return planDoc{}, iox.NewPrecondition(
 				fmt.Sprintf("planning file for %s not found", storyCode),
-				"run `archetipo story plan` first", err,
+				"run `archetipo spec plan` first", err,
 			)
 		}
 		return planDoc{}, fmt.Errorf("reading legacy plan: %w", err)
@@ -233,7 +233,7 @@ func (c *Connector) loadLegacyStore() (yamlStore, error) {
 		if errors.Is(err, fs.ErrNotExist) {
 			return yamlStore{}, iox.NewPrecondition(
 				fmt.Sprintf("backlog not found at %s", c.backlogPath()),
-				"run `archetipo story add` or `archetipo-spec` first", errBacklogMissing,
+				"run `archetipo spec add` or `archetipo-spec` first", errBacklogMissing,
 			)
 		}
 		return yamlStore{}, fmt.Errorf("reading legacy backlog: %w", err)

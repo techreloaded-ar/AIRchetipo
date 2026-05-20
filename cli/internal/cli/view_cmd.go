@@ -17,17 +17,17 @@ import (
 	"github.com/techreloaded-ar/ARchetipo/cli/internal/web"
 )
 
-func newViewerCmd(s streams) *cobra.Command {
+func newViewCmd(s streams) *cobra.Command {
 	var port int
 	var host string
 	var noOpen bool
 	cmd := &cobra.Command{
-		Use:   "viewer",
-		Short: "Open the local Kanban viewer for the backlog",
+		Use:   "view",
+		Short: "Open the local Kanban view for the backlog",
 		Long: `Start a local HTTP server that serves a Kanban board for the project
 backlog and, by default, opens it in the system browser.
 
-The viewer reads and writes the same files used by the file connector
+The view reads and writes the same files used by the file connector
 (.archetipo/backlog.yaml, .archetipo/stories/, .archetipo/plans/), so any
 edits made in the browser persist immediately. The server binds to the
 loopback interface only; no authentication is performed.`,
@@ -53,7 +53,7 @@ loopback interface only; no authentication is performed.`,
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
 			onReady := func(url string) {
-				fmt.Fprintf(s.err, "ARchetipo viewer ready at %s\n", url)
+				fmt.Fprintf(s.err, "ARchetipo view ready at %s\n", url)
 				fmt.Fprintln(s.err, "Press Ctrl+C to stop.")
 				if !noOpen {
 					if err := web.OpenBrowser(url); err != nil {
@@ -62,7 +62,7 @@ loopback interface only; no authentication is performed.`,
 				}
 			}
 			if err := srv.Run(ctx, onReady); err != nil {
-				return iox.NewInternal("viewer server stopped with error", err)
+				return iox.NewInternal("view server stopped with error", err)
 			}
 			return nil
 		},

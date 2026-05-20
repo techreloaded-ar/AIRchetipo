@@ -7,7 +7,7 @@ description: Implements a planned user story by executing its technical implemen
 
 You facilitate a **user story implementation** session with a virtual delivery team. Your goal is to implement the planned story, add the necessary tests, pass code review, and move the story to review while following the existing implementation plan.
 
-The implementation plan is loaded via a single CLI call: `archetipo story show {US-CODE}` returns both the story body and the task list in one envelope (`data.story`, `data.tasks`).
+The implementation plan is loaded via a single CLI call: `archetipo spec show {US-CODE}` returns both the story body and the task list in one envelope (`data.story`, `data.tasks`).
 
 ## Shared Runtime
 
@@ -93,11 +93,11 @@ Do not avoid worker-backed execution only because a wave must be scheduled seque
 
 ### PHASE 0 - Setup, Story Selection, and Plan Loading
 
-1. Run `archetipo config` and parse the stdout JSON envelope; keep `data` (SetupInfo) available.
+1. Run `archetipo config show` and parse the stdout JSON envelope; keep `data` (SetupInfo) available.
 2. On failure, parse stderr as the JSON error envelope and branch on `error.code`.
 3. Load the story and its plan with a single CLI call:
-   - If a code was passed: `archetipo story show {US-CODE}`
-   - Otherwise: `archetipo story show --status {config.workflow.statuses.planned}` (auto-pick first eligible by priority + code)
+   - If a code was passed: `archetipo spec show {US-CODE}`
+   - Otherwise: `archetipo spec next --status {config.workflow.statuses.planned}` (auto-pick first eligible by priority + code)
 
    The envelope returns `data.story` (the full Story including `body`) and `data.tasks` (the implementation task list).
 
@@ -106,12 +106,12 @@ Do not avoid worker-backed execution only because a wave must be scheduled seque
 
 4. Load the relevant project context: agent instructions (CLAUDE.md, AGENTS.md), project config, conventions, and existing patterns in the touched area.
 5. If the plan contains UI work, scan it for mockups or design references and search `{config.paths.mockups}` for matching files. Treat explicitly referenced mockups as the source of truth.
-6. Run `archetipo story start {US-CODE}` to transition the story to `{config.workflow.statuses.in_progress}`. The verb is idempotent — re-running on a story already `IN PROGRESS` is a safe no-op.
+6. Run `archetipo spec start {US-CODE}` to transition the story to `{config.workflow.statuses.in_progress}`. The verb is idempotent — re-running on a story already `IN PROGRESS` is a safe no-op.
 7. Announce the session briefly using the template from `./references/output-templates.md` ("Session Announcement").
 
 ### Validation policy for task parsing
 
-When loading tasks via `archetipo story show`, apply these validation rules to the JSON envelope's `data.tasks`:
+When loading tasks via `archetipo spec show`, apply these validation rules to the JSON envelope's `data.tasks`:
 
 - If `type` is missing but the body clearly describes an implementation or test task, infer it and log a warning
 - If `type` is missing and the task cannot be classified confidently, treat that task as sequential-only
@@ -202,7 +202,7 @@ Skipping the demo video does not remove the obligation to write e2e tests when t
 
 When the decision rule above says a video is warranted, the story's `Demonstrates` line is the contract for what that video must show. Treat it as the script, not as decoration.
 
-- Read the `Demonstrates` field from `data.story.body` returned by `archetipo story show {US-CODE}`.
+- Read the `Demonstrates` field from `data.story.body` returned by `archetipo spec show {US-CODE}`.
 - Produce exactly one **demo** e2e scenario that reproduces the Demonstrates flow end to end, from a clean starting state to the visible increment the story promises. Name the test file or the test case after the Demonstrates outcome so it is obvious when the artifact is browsed later (e.g. `demo__user-exports-monthly-report.spec.ts`).
 - The demo scenario must include: an initial state that makes the change observable (empty list, logged-out shell, etc.), the user actions described in `Demonstrates`, and a final assertion on the user-visible increment (the new row, the redirected page, the downloaded file, the updated badge).
 - Edge cases, error paths, and validation stay in separate e2e files and are **not** recorded. Do not bloat the demo test with them; they pollute the video and obscure the story outcome.
@@ -281,7 +281,7 @@ If Cesare found no issues, or all critical issues are fixed, proceed to completi
 Proceed to Phase 5 only when all of the following are true:
 - no `🔴 CRITICAL` findings remain open
 - the full required final test suite passes
-- the story can be moved to `{config.workflow.statuses.review}` via `archetipo story review`
+- the story can be moved to `{config.workflow.statuses.review}` via `archetipo spec review`
 
 `🟡 IMPROVEMENT` findings do not block completion by default.
 Implementation is not complete until the story status has been updated to `{config.workflow.statuses.review}`.
@@ -290,7 +290,7 @@ Do not end with the story still in `{config.workflow.statuses.in_progress}`, and
 ### PHASE 5 - Completion & Backlog Update
 
 1. Run the full required test suite one final time. If it fails, return to the fix loop and do not transition the story.
-2. Pipe the completion summary markdown into `archetipo story review {US-CODE}`. This single command transitions the story to `{config.workflow.statuses.review}` AND posts the comment on the parent issue (or silently ignores it for connectors without comment support — never branch on connector type).
+2. Pipe the completion summary markdown into `archetipo spec review {US-CODE}`. This single command transitions the story to `{config.workflow.statuses.review}` AND posts the comment on the parent issue (or silently ignores it for connectors without comment support — never branch on connector type).
 3. Confirm completion with a concise summary. See `references/output-templates.md` for the "Completion Summary" template. If non-blocking `🟡 IMPROVEMENT` items remain open, include them in the final report under an explicit optional improvements section.
 
 ## Edge Case Handling

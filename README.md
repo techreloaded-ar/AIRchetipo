@@ -146,18 +146,18 @@ ARchetipo uses a deterministic Go CLI, `archetipo`, for persistence and connecto
 | Command | Purpose |
 |---|---|
 | `archetipo init` | Installs ARchetipo into the current project and creates `.archetipo/config.yaml` plus `.archetipo/shared-runtime.md`. |
-| `archetipo viewer` | Starts a local Kanban viewer for `.archetipo/backlog.yaml`, `.archetipo/stories/`, and `.archetipo/plans/`. |
-| `archetipo config` | Initializes the connector and prints metadata. |
-| `archetipo prd write` | Saves PRD markdown from stdin. |
-| `archetipo backlog show` | Reads backlog items and summary metadata. |
-| `archetipo story add --file stories.yaml` | Creates or extends the backlog with user stories. |
-| `archetipo story show US-001` | Reads one story and its tasks. |
-| `archetipo story show --status TODO` | Auto-selects the first eligible story by status. |
-| `archetipo story plan US-001 --file plan.yaml` | Saves the implementation plan and moves the story to `PLANNED`. |
-| `archetipo story start US-001` | Moves a planned story to `IN PROGRESS`. |
-| `archetipo story review US-001` | Moves a story to `REVIEW` and can attach a final comment. |
+| `archetipo view` | Starts a local Kanban view for `.archetipo/backlog.yaml`, `.archetipo/stories/`, and `.archetipo/plans/`. |
+| `archetipo config show` | Initializes the connector and prints metadata. |
+| `archetipo prd write [--file PRD.md]` | Saves PRD markdown from `--file` or stdin. |
+| `archetipo spec list [--status STATUS]` | Reads backlog items and summary metadata, optionally filtered by status. |
+| `archetipo spec add --file stories.yaml` | Creates or extends the backlog with user stories. |
+| `archetipo spec show US-001` | Reads one story and its tasks by code. |
+| `archetipo spec next --status TODO` | Auto-selects the first eligible story by status. |
+| `archetipo spec plan US-001 --file plan.yaml` | Saves the implementation plan and moves the story to `PLANNED`. |
+| `archetipo spec start US-001` | Moves a planned story to `IN PROGRESS`. |
+| `archetipo spec review US-001 [--file note.md]` | Moves a story to `REVIEW` and can attach a final comment. |
 | `archetipo task done US-001 TASK-01` | Marks one task as completed. |
-| `archetipo board move US-001 --to review` | Reorders or moves a story across workflow columns. |
+| `archetipo spec move US-001 --to review` | Reorders or moves a story across workflow columns. |
 
 The CLI reads `.archetipo/config.yaml` from the project to choose the active connector and artifact paths.
 
