@@ -273,9 +273,9 @@ async function runConfiguredScenario({ scenario, connector, configPath, timeoutM
     await verifyInstallation(context);
     logRunStepDone(scenario.id, "verify-install", "Installed files verified");
 
-    logRunStepStart(scenario.id, "init", "Reading project metadata from local CLI");
-    await readCliEnvelope(context, "init", ["init"]);
-    logRunStepDone(scenario.id, "init", "CLI init completed");
+    logRunStepStart(scenario.id, "config", "Reading project metadata from local CLI");
+    await readCliEnvelope(context, "config", ["config"]);
+    logRunStepDone(scenario.id, "config", "CLI config completed");
 
     for (let index = 0; index < scenario.prompts.length; index += 1) {
       const prompt = scenario.prompts[index];
