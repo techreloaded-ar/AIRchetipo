@@ -34,7 +34,7 @@ async function main() {
   const manifest = YAML.parse(await fs.readFile(configPath, "utf8"));
   const scenarios = normalizeConfig(manifest, configPath, options.scenario);
 
-  const cliBinaryPath = await buildArchetipoBinary();
+  const cliSourceBinaryPath = await buildArchetipoBinary();
 
   const results = [];
   for (const scenario of scenarios) {
@@ -45,7 +45,7 @@ async function main() {
       connector: options.connector,
       configPath,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-      cliBinaryPath,
+      cliSourceBinaryPath,
     });
     results.push(result);
     console.log(formatResultLine(result));
@@ -217,7 +217,7 @@ async function buildArchetipoBinary() {
   return binPath;
 }
 
-async function runConfiguredScenario({ scenario, connector, configPath, timeoutMs, cliBinaryPath }) {
+async function runConfiguredScenario({ scenario, connector, configPath, timeoutMs, cliSourceBinaryPath }) {
   const agent = scenario.agent;
   const toolSkillRoot = TOOL_SKILL_ROOT[agent.tool];
   if (!toolSkillRoot) {
@@ -240,6 +240,7 @@ async function runConfiguredScenario({ scenario, connector, configPath, timeoutM
   logRunStepStart(scenario.id, "workspace", `Creating sandbox at ${sandboxDir}`);
   await fs.mkdir(path.join(sandboxDir, "docs"), { recursive: true });
   const prdSourcePath = await copyConfiguredPrd({ scenario, configPath, sandboxDir });
+  const cliBinaryPath = await copyCliBinaryToSandbox({ scenario, cliSourceBinaryPath, sandboxDir });
   logRunStepDone(scenario.id, "workspace", `Sandbox ready in ${sandboxDir}`);
 
   const report = createRunReport({
@@ -356,6 +357,21 @@ async function copyConfiguredPrd({ scenario, configPath, sandboxDir }) {
 
   logRunStepDetail(scenario.id, "workspace", `Copied PRD ${sourcePath} -> ${targetPath}`);
   return sourcePath;
+}
+
+async function copyCliBinaryToSandbox({ scenario, cliSourceBinaryPath, sandboxDir }) {
+  const binName = path.basename(cliSourceBinaryPath);
+  const targetDir = path.join(sandboxDir, "bin");
+  const targetPath = path.join(targetDir, binName);
+
+  await fs.mkdir(targetDir, { recursive: true });
+  await fs.copyFile(cliSourceBinaryPath, targetPath);
+  if (process.platform !== "win32") {
+    await fs.chmod(targetPath, 0o755);
+  }
+
+  logRunStepDetail(scenario.id, "workspace", `Copied CLI ${cliSourceBinaryPath} -> ${targetPath}`);
+  return targetPath;
 }
 
 async function createRunRoot(workspaceRoot) {
