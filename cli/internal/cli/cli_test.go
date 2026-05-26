@@ -95,12 +95,94 @@ const planJSON = `{"plan_body":"## Plan\nDo the work","tasks":[
 	{"id":"TASK-02","title":"Test","type":"Test","status":"TODO"}
 ]}`
 
+const validSpecJSON = `{"specs":[
+	{"code":"US-001","title":"First","priority":"HIGH","points":3,"status":"TODO","epic":{"code":"EP-001","title":"Epic"},"body":"**User Story**\nAs a user, I want X.\n\n**Demonstrates**\nA reviewer can see X working.\n\n**Acceptance Criteria**\n- [ ] X works"}
+]}`
+
+const validPlanJSON = `{"plan_body":"## Plan\nDo the work","tasks":[
+	{"id":"TASK-01","title":"Implement","description":"Implement the behavior","type":"Impl","status":"TODO","body":"Objective: add behavior.\nRead: relevant source files.\nChange: implementation files only.\nSteps: code the behavior.\nVerify: go test ./...\nDone: tests pass.\nBlocker: missing requirement."},
+	{"id":"TASK-02","title":"Test","description":"Cover the behavior","type":"Test","status":"TODO","dependencies":["TASK-01"],"body":"Objective: test behavior.\nRead: existing tests.\nChange: test files only.\nSteps: add coverage.\nVerify: go test ./...\nDone: tests pass.\nBlocker: unstable test harness."}
+]}`
+
 func TestConfigShow(t *testing.T) {
 	newProject(t)
 	res := runCLI(t, "", "config", "show")
 	kind, _ := decodeOK(t, res)
 	if kind != "setup" {
 		t.Fatalf("expected kind=setup, got %s", kind)
+	}
+}
+
+func TestValidateSpecs_OK(t *testing.T) {
+	newProject(t)
+	specsFile := writeInputFile(t, "specs.json", validSpecJSON)
+	res := runCLI(t, "", "validate", "specs", "--file", specsFile)
+	kind, data := decodeOK(t, res)
+	if kind != "validation_result" {
+		t.Fatalf("expected validation_result, got %s", kind)
+	}
+	if ok, _ := data["ok"].(bool); !ok {
+		t.Fatalf("expected ok=true, got %v", data)
+	}
+	issues, _ := data["issues"].([]any)
+	if len(issues) != 0 {
+		t.Fatalf("expected no issues, got %v", issues)
+	}
+}
+
+func TestValidateSpecs_ReportsErrorsWithoutFailingProcess(t *testing.T) {
+	newProject(t)
+	bad := `{"specs":[{"code":"1","title":"","priority":"URGENT","points":0,"status":"TODO","epic":{"code":"E1"},"body":"no checklist"}]}`
+	specsFile := writeInputFile(t, "bad-specs.json", bad)
+	res := runCLI(t, "", "validate", "specs", "--file", specsFile)
+	_, data := decodeOK(t, res)
+	if ok, _ := data["ok"].(bool); ok {
+		t.Fatalf("expected ok=false, got %v", data)
+	}
+	issues, _ := data["issues"].([]any)
+	if len(issues) == 0 {
+		t.Fatalf("expected validation issues")
+	}
+}
+
+func TestValidatePlan_OK(t *testing.T) {
+	newProject(t)
+	planFile := writeInputFile(t, "plan.json", validPlanJSON)
+	res := runCLI(t, "", "validate", "plan", "US-001", "--file", planFile)
+	kind, data := decodeOK(t, res)
+	if kind != "validation_result" {
+		t.Fatalf("expected validation_result, got %s", kind)
+	}
+	if ok, _ := data["ok"].(bool); !ok {
+		t.Fatalf("expected ok=true, got %v", data)
+	}
+}
+
+func TestValidatePlan_CatchesDependencyAndMissingTestTask(t *testing.T) {
+	newProject(t)
+	bad := `{"plan_body":"## Plan","tasks":[
+		{"id":"TASK-01","title":"Impl","description":"Do it","type":"Impl","status":"TODO","dependencies":["TASK-99"],"body":"Objective: x"}
+	]}`
+	planFile := writeInputFile(t, "bad-plan.json", bad)
+	res := runCLI(t, "", "validate", "plan", "US-001", "--file", planFile)
+	_, data := decodeOK(t, res)
+	if ok, _ := data["ok"].(bool); ok {
+		t.Fatalf("expected ok=false, got %v", data)
+	}
+	issues, _ := data["issues"].([]any)
+	foundDep := false
+	foundTest := false
+	for _, raw := range issues {
+		issue, _ := raw.(map[string]any)
+		switch issue["code"] {
+		case "E_PLAN_TASK_DEP_UNKNOWN":
+			foundDep = true
+		case "E_PLAN_TEST_TASK_MISSING":
+			foundTest = true
+		}
+	}
+	if !foundDep || !foundTest {
+		t.Fatalf("expected dependency and missing test issues, got %v", issues)
 	}
 }
 

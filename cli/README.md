@@ -11,6 +11,15 @@ go build ./cmd/archetipo
 
 The output binary `archetipo` reads `.archetipo/config.yaml` from the project root (or any ancestor) to choose the connector (`file` or `github`) and execute the requested sub-command.
 
+Generated artifacts can be checked without side effects before persistence:
+
+```bash
+archetipo validate specs --file specs.yaml
+archetipo validate plan US-001 --file plan.yaml
+```
+
+Validation returns a normal JSON success envelope with `kind: "validation_result"` and `data.ok` set to `false` when structural issues are found, so skills can repair payloads before calling `spec add` or `spec plan`.
+
 To build all release binaries locally from the repository root:
 
 ```bash

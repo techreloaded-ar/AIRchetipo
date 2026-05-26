@@ -192,6 +192,24 @@ type PlanInput struct {
 	Tasks    []Task `json:"tasks" yaml:"tasks"`
 }
 
+// ValidationIssue describes a deterministic artifact-quality problem found
+// before a skill persists generated specs or plans.
+type ValidationIssue struct {
+	Severity string `json:"severity" yaml:"severity"`
+	Code     string `json:"code" yaml:"code"`
+	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
+	Message  string `json:"message" yaml:"message"`
+	Hint     string `json:"hint,omitempty" yaml:"hint,omitempty"`
+}
+
+// ValidationResult is emitted by `archetipo validate ...` commands. Validation
+// failures are normal command output, not process errors, so skills can parse
+// issues and repair their payloads without mutating project state.
+type ValidationResult struct {
+	OK     bool              `json:"ok" yaml:"ok"`
+	Issues []ValidationIssue `json:"issues" yaml:"issues"`
+}
+
 // SelectQuery captures the inputs of select_spec.
 type SelectQuery struct {
 	SpecCode         string   // empty => auto-select

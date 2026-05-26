@@ -158,8 +158,14 @@ ARchetipo usa una CLI deterministica scritta in Go, `archetipo`, per persistenza
 | `archetipo spec review US-001 [--file note.md]` | Porta una spec in `REVIEW` e può allegare un commento finale. |
 | `archetipo task done US-001 TASK-01` | Marca un task come completato. |
 | `archetipo spec move US-001 --to review` | Riordina o sposta una spec tra colonne del workflow. |
+| `archetipo validate specs --file specs.yaml` | Valida un payload di spec generato senza salvarlo. |
+| `archetipo validate plan US-001 --file plan.yaml` | Valida un payload di piano senza cambiare lo stato della spec. |
 
 La CLI legge `.archetipo/config.yaml` dal progetto per scegliere connector attivo e percorsi degli artefatti.
+
+### Workflow ibrido per modelli
+
+ARchetipo è ottimizzato per un setup misto. Usa un modello più forte per `/archetipo-inception`, `/archetipo-spec`, `/archetipo-plan` e review sensibili; poi usa un modello più economico o open-weight per `/archetipo-implement`. I task del piano contengono execution contract, e i comandi `validate` bloccano problemi strutturali prima che gli artefatti diventino fonte di verità.
 
 ---
 

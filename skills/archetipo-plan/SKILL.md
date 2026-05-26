@@ -47,6 +47,7 @@ Agents appear only in the **Team Brief** output. Each agent speaks **1-3 sentenc
    - `archetipo config show`
    - `archetipo spec show {US-CODE}`
    - `archetipo spec next --status {config.workflow.statuses.todo}`
+   - `archetipo validate plan {US-CODE} --file <path>`
    - `archetipo spec plan {US-CODE} --file <path>`
 
 #### Step 1 — Spec Selection
@@ -108,6 +109,7 @@ Silently perform all of the following — this is your chain of thought, not vis
 - Validate the solution is realistically implementable
 - Check for hidden dependencies or blocking issues
 - Break down into concrete tasks ordered by dependency, adapting the sequence to the project's architecture (tests interleaved, not all at end)
+- For every task, write `body` as an execution contract for smaller implementation models. Include explicit labels for Objective, Read, Change, Steps, Verify, Done, and Blockers.
 
 **As Mina (Testing):**
 - Define test strategy: what to test, test type (unit/integration/e2e), coverage focus
@@ -157,14 +159,18 @@ In a **single turn**, produce both:
 
 **2. Save the plan and transition the spec:**
 
-Construct the full JSON payload string in your own context (not via shell heredoc or inline script). Choose a unique temp filename using the spec code (e.g. `tmp-payload-US-005-plan.json`). Write the file to `.archetipo/` using your file-writing tool. Then invoke `archetipo spec plan {US-CODE} --file <path>`. After the CLI exits, delete the temp file.
+Construct the full JSON payload string in your own context (not via shell heredoc or inline script). Choose a unique temp filename using the spec code (e.g. `tmp-payload-US-005-plan.json`). Write the file to `.archetipo/` using your file-writing tool. Then invoke `archetipo validate plan {US-CODE} --file <path>` before saving the plan.
+
+If validation returns `kind: "validation_result"` with `data.ok: false`, do not call `archetipo spec plan`. Read `data.issues`, repair every `severity: "error"` in the payload, and rerun validation. Treat warnings as quality feedback; fix them when straightforward, but they do not block persistence.
+
+Only after validation passes, invoke `archetipo spec plan {US-CODE} --file <path>`. After the CLI exits, delete the temp file.
 
 > **⚠️ Cross-platform warning:** Do NOT pipe the JSON through stdin via shell (`--file -` with shell pipe). Shell pipes are OS-dependent and can corrupt JSON that contains markdown with special characters (`` ` ``, `$`, `{`, line breaks, Unicode). Use your file-writing tool to write the JSON file first, then pass its path to `--file`.
 >
 > **Temp file:** Use `.archetipo/tmp-payload-{US-CODE}-plan.json`. The code is known to you already. After the CLI command exits, delete it with `rm .archetipo/tmp-payload-{US-CODE}-plan.json` (works in both bash and PowerShell). Always clean up, regardless of CLI success or failure.
 
 ```json
-{"plan_body":"<technical solution + test strategy as markdown>","tasks":[{"id":"TASK-01","title":"...","description":"...","type":"Impl|Test","status":"TODO","dependencies":[]}]}
+{"plan_body":"<technical solution + test strategy as markdown>","tasks":[{"id":"TASK-01","title":"...","description":"...","type":"Impl|Test","status":"TODO","dependencies":[],"body":"Objective: ...\nRead: ...\nChange: ...\nSteps: ...\nVerify: ...\nDone: ...\nBlockers: ..."}]}
 ```
 
 This single command saves the plan AND transitions the spec to `{config.workflow.statuses.planned}` atomically — no separate `status set` step is needed. The CLI persists according to the active connector (file: writes `{paths.planning}/{US-CODE}-plan.yaml`; github: appends to the parent issue body and creates one sub-issue per task). For the file connector, follow the template in `./references/plan-template.md` to compose `plan_body`.

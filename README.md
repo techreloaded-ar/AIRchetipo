@@ -158,8 +158,14 @@ ARchetipo uses a deterministic Go CLI, `archetipo`, for persistence and connecto
 | `archetipo spec review US-001 [--file note.md]` | Moves a spec to `REVIEW` and can attach a final comment. |
 | `archetipo task done US-001 TASK-01` | Marks one task as completed. |
 | `archetipo spec move US-001 --to review` | Reorders or moves a spec across workflow columns. |
+| `archetipo validate specs --file specs.yaml` | Validates a generated spec payload without persisting it. |
+| `archetipo validate plan US-001 --file plan.yaml` | Validates a generated plan payload without changing the spec status. |
 
 The CLI reads `.archetipo/config.yaml` from the project to choose the active connector and artifact paths.
+
+### Hybrid model workflow
+
+ARchetipo is optimized for a mixed model setup. Use a stronger model for `/archetipo-inception`, `/archetipo-spec`, `/archetipo-plan`, and sensitive reviews; then use a cheaper or open-weight model for `/archetipo-implement`. The plan tasks carry execution contracts, and the `validate` commands catch structural problems before artifacts become source of truth.
 
 ---
 

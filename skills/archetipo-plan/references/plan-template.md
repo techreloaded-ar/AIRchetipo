@@ -72,7 +72,8 @@ _Plan generated via ARchetipo Planning — {DATE}_
 >
 > **Task rules:**
 > - Each task: small enough for a single work session, independently verifiable, ordered by dependency
-> - Task format: sequential ID (TASK-01, TASK-02...), action-oriented title, brief description (1-2 sentences), type (Impl/Test), dependencies
+> - Task format: sequential ID (TASK-01, TASK-02...), action-oriented title, brief description (1-2 sentences), type (Impl/Test), dependencies, and `body`
+> - Task `body` is mandatory and must be an execution contract with explicit labels: Objective, Read, Change, Steps, Verify, Done, Blockers. Keep it concrete enough that a smaller implementation model can execute the task without making new architectural decisions.
 > - Implementation order: follow the project's natural dependency chain — lower layers first, tests interleaved (not all at end)
 > - Frontend tasks when mockups exist: If `mockup_generated = true`, include at least one frontend implementation task (type: Impl) that explicitly references the mockups directory `{config.paths.mockups}/{US-CODE}/`. Omitting frontend tasks when `mockup_generated = true` is a plan error — do not proceed without them.
 > - Task dependencies must only reference tasks within the same spec plan. Cross-spec task dependencies are not supported — use spec-level `Blocked by` for cross-spec sequencing

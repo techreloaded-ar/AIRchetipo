@@ -79,6 +79,17 @@ For non-critical gaps:
 - continue
 - record the assumption or open question in the final artifact
 
+## Small Model Discipline
+
+ARchetipo artifacts must be usable by smaller or lower-cost models during later phases. Prefer explicit contracts over broad interpretation:
+
+- Keep generated specs small, independently demonstrable, and testable.
+- Make `Demonstrates` concrete enough to become a review script.
+- In implementation plans, split work into small tasks with local context, clear allowed changes, verification commands, done criteria, and blockers.
+- Do not leave architectural choices implicit for implementation. If a decision matters, put it in the plan.
+- Before persisting generated specs or plans, run the relevant `archetipo validate ...` command and repair blocking issues instead of saving malformed artifacts.
+- Treat warnings as quality feedback. They do not block persistence, but fix them when the repair is straightforward.
+
 ## Conversation Rules
 
 - Each agent speaks in character

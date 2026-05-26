@@ -318,6 +318,10 @@ async function runConfiguredScenario({ scenario, connector, configPath, timeoutM
       logRunStepDone(scenario.id, step, "Prompt completed");
     }
 
+    logRunStepStart(scenario.id, "quality", "Validating generated artifacts");
+    await verifyGeneratedArtifacts(context);
+    logRunStepDone(scenario.id, "quality", "Artifact quality checks passed");
+
     return finish({
       status: "pass",
       sandboxDir,
@@ -450,6 +454,74 @@ async function verifyInstallation(context) {
   const connectorPattern = new RegExp(`^connector:\\s*${context.connector}\\b`, "m");
   if (!connectorPattern.test(configText)) {
     throw new Error(`Installed config.yaml does not use connector: ${context.connector}.`);
+  }
+}
+
+async function verifyGeneratedArtifacts(context) {
+  const promptText = context.scenario.prompts.join("\n");
+  if (promptText.includes("/archetipo-spec")) {
+    await verifySpecArtifacts(context);
+  }
+  if (promptText.includes("/archetipo-plan")) {
+    await verifyPlanArtifacts(context);
+  }
+}
+
+async function verifySpecArtifacts(context) {
+  const backlogPath = path.join(context.sandboxDir, ".archetipo", "backlog.yaml");
+  const backlog = YAML.parse(await fs.readFile(backlogPath, "utf8"));
+  assertQuality(backlog?.schema === "archetipo/backlog/v2", "backlog.yaml has unexpected schema");
+  assertQuality(Array.isArray(backlog?.order) && backlog.order.length > 0, "backlog has no spec order");
+
+  const seen = new Set();
+  for (const code of backlog.order) {
+    assertQuality(/^US-\d{3,}$/.test(code), `invalid spec code in backlog order: ${code}`);
+    assertQuality(!seen.has(code), `duplicate spec code in backlog order: ${code}`);
+    seen.add(code);
+    const specPath = path.join(context.sandboxDir, ".archetipo", "specs", `${code}.yaml`);
+    const spec = YAML.parse(await fs.readFile(specPath, "utf8"));
+    assertQuality(spec?.schema === "archetipo/spec/v2", `${code} has unexpected schema`);
+    assertQuality(spec?.epic?.code && /^EP-\d{3,}$/.test(spec.epic.code), `${code} has invalid epic`);
+    assertQuality(["HIGH", "MEDIUM", "LOW"].includes(spec?.priority), `${code} has invalid priority`);
+    assertQuality(Number(spec?.points) > 0, `${code} has invalid points`);
+    const body = String(spec?.body ?? "");
+    assertQuality(/demonstr|dimostra/i.test(body), `${code} is missing Demonstrates/Dimostra`);
+    assertQuality(body.includes("- [ ]"), `${code} is missing checklist acceptance criteria`);
+  }
+}
+
+async function verifyPlanArtifacts(context) {
+  const planDir = path.join(context.sandboxDir, ".archetipo", "plans");
+  const entries = await fs.readdir(planDir);
+  const plans = entries.filter((name) => name.endsWith("-plan.yaml")).sort();
+  assertQuality(plans.length > 0, "no plan YAML files generated");
+  for (const name of plans) {
+    const planPath = path.join(planDir, name);
+    const plan = YAML.parse(await fs.readFile(planPath, "utf8"));
+    assertQuality(plan?.schema === "archetipo/plan/v2", `${name} has unexpected schema`);
+    assertQuality(/^US-\d{3,}$/.test(plan?.spec_code ?? ""), `${name} has invalid spec_code`);
+    assertQuality(String(plan?.body ?? "").trim().length > 0, `${name} has empty body`);
+    const tasks = plan?.tasks ?? [];
+    assertQuality(Array.isArray(tasks) && tasks.length > 0, `${name} has no tasks`);
+    assertQuality(tasks.some((task) => task?.type === "Test"), `${name} has no Test task`);
+    const ids = new Set();
+    for (const [index, task] of tasks.entries()) {
+      assertQuality(/^TASK-\d{2,}$/.test(task?.id ?? ""), `${name} task ${index + 1} has invalid id`);
+      assertQuality(!ids.has(task.id), `${name} has duplicate task id ${task.id}`);
+      ids.add(task.id);
+      assertQuality(["Impl", "Test"].includes(task?.type), `${name} ${task.id} has invalid type`);
+      assertQuality(String(task?.description ?? "").trim().length > 0, `${name} ${task.id} has empty description`);
+      assertQuality(String(task?.body ?? "").trim().length > 0, `${name} ${task.id} has no execution contract body`);
+      for (const dep of task?.dependencies ?? []) {
+        assertQuality(ids.has(dep), `${name} ${task.id} depends on unknown or future task ${dep}`);
+      }
+    }
+  }
+}
+
+function assertQuality(condition, message) {
+  if (!condition) {
+    throw new Error(`quality check failed: ${message}`);
   }
 }
 

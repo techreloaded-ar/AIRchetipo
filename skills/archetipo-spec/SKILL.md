@@ -56,6 +56,7 @@ In this mode:
 3. This skill uses only these CLI operations:
    - `archetipo config show`
    - `archetipo spec list`
+   - `archetipo validate specs --file <path|->`
    - `archetipo spec add --file <path|->`
 
 Extract and keep available from `data`:
@@ -118,6 +119,8 @@ Do not expose mode names, routing decisions, or workflow labels in user-facing m
 
 - Ask clarifying questions only when critical information is missing and cannot be inferred responsibly
 - Group clarifying questions in a single message when possible
+- Optimize specs for downstream low-cost implementation models: keep each spec small, independently demonstrable, and free of hidden architectural decisions.
+- Every spec body must include a concrete `Demonstrates` section and checklist acceptance criteria. If the increment is foundational, `Demonstrates` must describe what a developer or reviewer can actually run or inspect.
 
 ## Output Boundaries
 

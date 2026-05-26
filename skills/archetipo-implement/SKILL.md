@@ -139,10 +139,12 @@ Execute the work wave by wave using the selected execution context and schedulin
 
 For each task:
 1. Read only the relevant sections of the touched files.
-2. Follow the implementation plan unless doing so would hit an explicit blocker.
-3. Follow mockups when UI work is involved.
-4. Mark the task as done: run `archetipo task done {US-CODE} {TASK-ID}`.
-5. Announce completion briefly.
+2. Treat the task `body` execution contract as the primary instruction for that task. If it contains Objective, Read, Change, Steps, Verify, Done, and Blockers, follow those sections literally.
+3. Do not make new architectural decisions during implementation. If the task contract is missing a decision that changes the user-facing contract, data model, security model, or integration boundary, stop and report the blocker.
+4. Follow mockups when UI work is involved.
+5. Run the task-specific verification from the task contract when present. If the contract has no verification command, run the smallest relevant project check that proves the task.
+6. Mark the task as done only after verification passes: run `archetipo task done {US-CODE} {TASK-ID}`.
+7. Announce completion briefly.
 
 #### Ugo's rules
 
@@ -241,6 +243,7 @@ After all implementation waves:
 1. Run the project's unit and integration tests
 2. Run e2e tests if this spec required or introduced them
 3. If tests fail, determine whether the failure is new or pre-existing, fix local issues autonomously, and escalate only if an explicit blocker appears
+4. Perform a plan adherence drift check: compare the final diff against the spec acceptance criteria, the plan body, and every task execution contract. Fix missing planned work before review; report any deliberate deviation in the completion summary.
 
 ### PHASE 3 - Code Review
 
